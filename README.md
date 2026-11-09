@@ -7,10 +7,17 @@ An Android app for players and DMs of TTRPG Codex campaign sites.
 - **Sites:** add any number of campaign sites by address and sign in with the
   site's player or DM password, or read the public campaign without one. The
   app reopens the site used last.
+- **Overview:** each site opens on its party, the last session's events,
+  recently changed records, what you read last and every page with records.
 - **Reading:** every record page (characters, locations, events, mysteries,
-  factions, pantheon, artifacts, history, companions), articles with Markdown
-  and portraits, wiki links between records, and search by name that ignores
-  accents.
+  factions, pantheon, artifacts, history, companions) with its portrait,
+  facts, Markdown article, known facts and questions, relationships, related
+  records, the records that mention it and a location's own map (zoomable).
+  Wiki links open records natively; pages filter by name, party and status;
+  search by name ignores accents.
+- **Look and language:** the website's fonts (Cinzel and Lora), the site's
+  Classic or Moonlit colours in light or dark, and English or Czech following
+  the site's language.
 - **Offline:** the last campaign copy stays on the phone; without a connection
   the app shows it and says how old it is.
 - **Live:** while a site is open, changes made on the website appear within
@@ -20,8 +27,8 @@ An Android app for players and DMs of TTRPG Codex campaign sites.
 - **Updates:** Settings → Updates installs newer releases from GitHub.
 
 Planned next (host backlog): the optional character sheet module, for sites
-running host 2.2.0 or newer with Character Sheets installed, and a native map
-viewer.
+running host 2.2.0 or newer with Character Sheets installed, and a native
+world map with location pins.
 
 ## Requirements
 

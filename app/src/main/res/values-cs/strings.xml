@@ -1,0 +1,148 @@
+<resources>
+    <string name="action_back">Zpět</string>
+    <string name="action_cancel">Zrušit</string>
+    <string name="action_close">Zavřít</string>
+    <string name="action_clear">Vymazat</string>
+    <string name="action_search">Hledat</string>
+    <string name="action_refresh">Obnovit</string>
+    <string name="action_more">Další možnosti</string>
+    <string name="action_website">Otevřít web</string>
+    <string name="action_settings">Nastavení</string>
+    <string name="action_sign_in_again">Znovu přihlásit</string>
+
+    <string name="sites_title">Weby kampaní</string>
+    <string name="sites_welcome">Vítej, dobrodruhu</string>
+    <string name="sites_empty">Začni přidáním adresy webu kampaně TTRPG Codex.</string>
+    <string name="sites_add">Přidat web</string>
+    <string name="site_remove">Odebrat</string>
+    <string name="site_remove_title">Odebrat %1$s?</string>
+    <string name="site_remove_text">Aplikace se z tohoto webu odhlásí a smaže svou kopii kampaně.</string>
+    <string name="role_dm">PJ</string>
+    <string name="role_player">Hráč</string>
+    <string name="role_reader">Čtenář</string>
+
+    <string name="add_site_title">Přidat web kampaně</string>
+    <string name="sign_in_title">Přihlásit k %1$s</string>
+    <string name="field_address">Adresa webu</string>
+    <string name="field_password">Heslo</string>
+    <string name="password_hint">Hráčské heslo webu nebo heslo PJ. Bez hesla uvidíš veřejnou část kampaně.</string>
+    <string name="action_add">Přidat</string>
+    <string name="action_sign_in">Přihlásit</string>
+    <string name="problem_address_empty">Zadej adresu webu.</string>
+    <string name="problem_address_malformed">Tohle nevypadá jako adresa webu.</string>
+    <string name="problem_https">Weby kampaní musí používat HTTPS.</string>
+    <string name="problem_unsupported">Tento web běží na TTRPG Codex %1$s; aplikace potřebuje verzi 2.</string>
+    <string name="problem_wrong_password">Heslo nesouhlasí.</string>
+    <string name="problem_too_many">Příliš mnoho pokusů. Počkej minutu a zkus to znovu.</string>
+    <string name="problem_unreachable">Web není dostupný: %1$s</string>
+
+    <string name="campaign_loading">Načítám kampaň…</string>
+    <string name="campaign_failed">Kampaň se nepodařilo načíst: %1$s</string>
+    <string name="status_cached">Zobrazuji kopii uloženou %1$s. %2$s</string>
+    <string name="status_expired">Přihlášení vypršelo, proto vidíš jen veřejnou část kampaně.</string>
+
+    <string name="home_search_hint">Hledat v kampani</string>
+    <string name="home_synced">synchronizováno %1$s</string>
+    <string name="home_last_session">Sezení %1$d</string>
+    <string name="home_recent_changes">Nedávné změny</string>
+    <string name="home_continue_reading">Pokračovat ve čtení</string>
+    <string name="home_browse">Procházet</string>
+    <string name="change_created">přidáno %1$s</string>
+    <string name="change_updated">upraveno %1$s</string>
+    <string name="time_just_now">právě teď</string>
+    <string name="party_default_name">Naše družina</string>
+
+    <string name="collection_empty">Zatím tu nic není.</string>
+    <string name="collection_no_match">Nic neodpovídá.</string>
+    <string name="collection_filter">Filtrovat podle jména</string>
+    <string name="collection_filter_hint">Filtrovat: %1$s</string>
+
+    <string name="record_missing">Tento záznam už není vidět.</string>
+    <string name="record_open_website">Otevřít na webu</string>
+    <string name="record_known">Co víme</string>
+    <string name="record_questions">Otázky</string>
+    <plurals name="record_questions_open">
+        <item quantity="one">otevřena %1$d z %2$d</item>
+        <item quantity="few">otevřeny %1$d z %2$d</item>
+        <item quantity="many">otevřeno %1$d z %2$d</item>
+        <item quantity="other">otevřeno %1$d z %2$d</item>
+    </plurals>
+    <string name="record_question_open">Otevřená otázka</string>
+    <string name="record_question_answered">Zodpovězeno</string>
+    <string name="record_map">Mapa</string>
+    <string name="record_map_description">Mapa: %1$s</string>
+    <string name="record_relationships">Vztahy</string>
+    <string name="record_tags">Štítky</string>
+    <string name="record_mentioned_in">Zmíněno v</string>
+    <string name="related_characters">Postavy</string>
+    <string name="related_locations">Místa</string>
+    <string name="related_places_within">Místa uvnitř</string>
+    <string name="related_people_here">Kdo je tady</string>
+    <string name="related_events">Události</string>
+    <string name="related_companions">Společníci</string>
+
+    <string name="fact_status">Stav</string>
+    <string name="fact_title">Titul</string>
+    <string name="fact_rank">Hodnost</string>
+    <string name="fact_species">Druh</string>
+    <string name="fact_gender">Pohlaví</string>
+    <string name="fact_age">Věk</string>
+    <string name="fact_faction">Frakce</string>
+    <string name="fact_location">Místo</string>
+    <string name="fact_type">Typ</string>
+    <string name="fact_region">Oblast</string>
+    <string name="fact_parent">Součást</string>
+    <string name="fact_marker">Značka na mapě</string>
+    <string name="fact_date">Datum</string>
+    <string name="fact_session">Sezení</string>
+    <string name="fact_priority">Priorita</string>
+    <string name="fact_consequence">Důsledek</string>
+    <string name="fact_domain">Doména</string>
+    <string name="fact_alignment">Přesvědčení</string>
+    <string name="fact_symbol">Symbol</string>
+    <string name="fact_start">Začátek</string>
+    <string name="fact_end">Konec</string>
+    <string name="fact_owner">Majitel</string>
+
+    <string name="field_description">Popis</string>
+    <string name="field_circumstances">Okolnosti</string>
+    <string name="field_history">Historie</string>
+    <string name="field_map_notes">Poznámky k mapě</string>
+    <string name="field_short">Shrnutí</string>
+    <string name="field_summary">Shrnutí</string>
+    <string name="field_body">Vyprávění</string>
+    <string name="field_note">Poznámka</string>
+
+    <string name="search_hint">Hledat jména</string>
+    <string name="search_empty">Žádné jméno neodpovídá.</string>
+    <string name="portrait_description">Portrét: %1$s</string>
+
+    <string name="page_characters">Postavy</string>
+    <string name="page_locations">Místa</string>
+    <string name="page_events">Události</string>
+    <string name="page_mysteries">Záhady</string>
+    <string name="page_factions">Frakce</string>
+    <string name="page_pantheon">Panteon</string>
+    <string name="page_artifacts">Artefakty</string>
+    <string name="page_history">Dějiny</string>
+    <string name="page_companions">Společníci</string>
+
+    <string name="settings_title">Nastavení</string>
+    <string name="settings_version">Verze %1$s, sestavení %2$d</string>
+    <string name="appearance_title">Vzhled</string>
+    <string name="appearance_text">Barvy se řídí motivem každého webu.</string>
+    <string name="appearance_system">Systém</string>
+    <string name="appearance_light">Světlý</string>
+    <string name="appearance_dark">Tmavý</string>
+    <string name="updates_title">Aktualizace</string>
+    <string name="update_check">Zkontrolovat aktualizace</string>
+    <string name="update_checking">Kontroluji…</string>
+    <string name="update_up_to_date">Máš nejnovější verzi.</string>
+    <string name="update_available">K dispozici je verze %1$s.</string>
+    <string name="update_download">Stáhnout a nainstalovat</string>
+    <string name="update_downloading">Stahuji… %1$d %%</string>
+    <string name="update_install">Nainstalovat</string>
+    <string name="update_dismiss">Zavřít</string>
+    <string name="about_title">O aplikaci</string>
+    <string name="about_fonts">Nadpisy jsou v písmu Cinzel a články v písmu Lora, obě pod licencí SIL Open Font License 1.1.</string>
+</resources>

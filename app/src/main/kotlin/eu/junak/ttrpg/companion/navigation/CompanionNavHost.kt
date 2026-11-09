@@ -18,6 +18,7 @@ import eu.junak.ttrpg.companion.ui.campaign.CampaignHomeScreen
 import eu.junak.ttrpg.companion.ui.campaign.CollectionScreen
 import eu.junak.ttrpg.companion.ui.campaign.RecordScreen
 import eu.junak.ttrpg.companion.ui.campaign.SearchScreen
+import eu.junak.ttrpg.companion.ui.campaign.SiteScope
 import eu.junak.ttrpg.companion.ui.settings.SettingsScreen
 import eu.junak.ttrpg.companion.ui.sites.AddSiteScreen
 import eu.junak.ttrpg.companion.ui.sites.SitesScreen
@@ -65,44 +66,53 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?) {
         }
         composable<CampaignRoute> { backStack ->
             val siteId = backStack.toRoute<CampaignRoute>().siteId
-            CampaignHomeScreen(
-                onBack = { navController.popBackStack(SitesRoute, inclusive = false) },
-                onOpenPage = { navController.navigate(CollectionRoute(siteId, it.id)) },
-                onSearch = { navController.navigate(SearchRoute(siteId)) },
-                onOpenWebsite = { navController.navigate(WebRoute(siteId, it)) },
-                onSignIn = { navController.navigate(AddSiteRoute(siteId)) },
-                onSettings = { navController.navigate(SettingsRoute) },
-            )
+            SiteScope {
+                CampaignHomeScreen(
+                    onBack = { navController.popBackStack(SitesRoute, inclusive = false) },
+                    onOpenPage = { navController.navigate(CollectionRoute(siteId, it.id)) },
+                    onOpenRecord = { page, key -> navController.navigate(RecordRoute(siteId, page.id, key)) },
+                    onSearch = { navController.navigate(SearchRoute(siteId)) },
+                    onOpenWebsite = { navController.navigate(WebRoute(siteId, it)) },
+                    onSignIn = { navController.navigate(AddSiteRoute(siteId)) },
+                    onSettings = { navController.navigate(SettingsRoute) },
+                )
+            }
         }
         composable<CollectionRoute> { backStack ->
             val route = backStack.toRoute<CollectionRoute>()
             val page = CampaignPage.byId(route.pageId) ?: return@composable LeaveUnknownPage(navController)
-            CollectionScreen(
-                page = page,
-                onBack = navController::popBackStack,
-                onOpenRecord = { target, key -> navController.navigate(RecordRoute(route.siteId, target.id, key)) },
-            )
+            SiteScope {
+                CollectionScreen(
+                    page = page,
+                    onBack = navController::popBackStack,
+                    onOpenRecord = { target, key -> navController.navigate(RecordRoute(route.siteId, target.id, key)) },
+                )
+            }
         }
         composable<RecordRoute> { backStack ->
             val route = backStack.toRoute<RecordRoute>()
             val page = CampaignPage.byId(route.pageId) ?: return@composable LeaveUnknownPage(navController)
-            RecordScreen(
-                page = page,
-                key = route.key,
-                onBack = navController::popBackStack,
-                onOpenRecord = { target, key -> navController.navigate(RecordRoute(route.siteId, target.id, key)) },
-                onOpenWebsite = { navController.navigate(WebRoute(route.siteId, it)) },
-            )
+            SiteScope {
+                RecordScreen(
+                    page = page,
+                    key = route.key,
+                    onBack = navController::popBackStack,
+                    onOpenRecord = { target, key -> navController.navigate(RecordRoute(route.siteId, target.id, key)) },
+                    onOpenWebsite = { navController.navigate(WebRoute(route.siteId, it)) },
+                )
+            }
         }
         composable<SearchRoute> { backStack ->
             val siteId = backStack.toRoute<SearchRoute>().siteId
-            SearchScreen(
-                onBack = navController::popBackStack,
-                onOpenRecord = { page, key -> navController.navigate(RecordRoute(siteId, page.id, key)) },
-            )
+            SiteScope {
+                SearchScreen(
+                    onBack = navController::popBackStack,
+                    onOpenRecord = { page, key -> navController.navigate(RecordRoute(siteId, page.id, key)) },
+                )
+            }
         }
         composable<WebRoute> { backStack ->
-            WebScreen(path = backStack.toRoute<WebRoute>().path, onBack = navController::popBackStack)
+            SiteScope { WebScreen(path = backStack.toRoute<WebRoute>().path, onBack = navController::popBackStack) }
         }
         composable<SettingsRoute> {
             SettingsScreen(onBack = navController::popBackStack)

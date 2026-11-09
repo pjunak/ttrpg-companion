@@ -11,21 +11,23 @@ import java.text.Normalizer
 enum class CampaignPage(
     val id: String,
     val collection: String,
-    val icon: String,
     /** Fields that give a short subtitle; the first non-empty one wins. */
     val subtitleFields: List<String>,
-    /** Fields whose Markdown makes up the article, in reading order. */
+    /**
+     * Fields whose Markdown makes up the article, in reading order. Lists such
+     * as known facts and questions are shown from [RecordDetails] instead.
+     */
     val articleFields: List<String>,
 ) {
-    CHARACTERS("characters", "characters", "👤", listOf("title", "species"), listOf("description", "known", "circumstances")),
-    LOCATIONS("locations", "locations", "📍", listOf("region", "type"), listOf("description", "history", "mapNotes")),
-    EVENTS("events", "events", "⏳", listOf("date", "short"), listOf("short", "description")),
-    MYSTERIES("mysteries", "mysteries", "❓", listOf("priority"), listOf("description", "questions")),
-    FACTIONS("factions", "factions", "⬡", emptyList(), listOf("description")),
-    PANTHEON("pantheon", "pantheon", "✨", listOf("domain", "title"), listOf("description")),
-    ARTIFACTS("artifacts", "artifacts", "🗝", emptyList(), listOf("description")),
-    HISTORY("history", "historicalEvents", "📜", listOf("start", "end"), listOf("summary", "body")),
-    COMPANIONS("companions", "companions", "🐾", listOf("species", "ownerType"), listOf("note")),
+    CHARACTERS("characters", "characters", listOf("title", "species"), listOf("description", "circumstances")),
+    LOCATIONS("locations", "locations", listOf("region", "type"), listOf("description", "history", "mapNotes")),
+    EVENTS("events", "events", listOf("date", "short"), listOf("short", "description")),
+    MYSTERIES("mysteries", "mysteries", listOf("priority"), listOf("description")),
+    FACTIONS("factions", "factions", emptyList(), listOf("description")),
+    PANTHEON("pantheon", "pantheon", listOf("domain", "title"), listOf("description")),
+    ARTIFACTS("artifacts", "artifacts", emptyList(), listOf("description")),
+    HISTORY("history", "historicalEvents", listOf("start", "end"), listOf("summary", "body")),
+    COMPANIONS("companions", "companions", listOf("species"), listOf("note")),
     ;
 
     /** The web app's address of a record on this page. */
@@ -63,9 +65,9 @@ data class RecordSummary(
     val excerpt: String,
     /** A host media path (`/api/media/b_…`) or null. */
     val portrait: String?,
+    /** A short symbol (usually an emoji) the record sets for itself, or "". */
+    val icon: String = "",
 )
-
-private val mediaPath = Regex("^/api/media/b_[0-9a-f]{32}$")
 
 fun CampaignRecord.summary(page: CampaignPage): RecordSummary {
     val subtitle = page.subtitleFields.map(value::text).firstOrNull(String::isNotEmpty).orEmpty()
@@ -76,9 +78,12 @@ fun CampaignRecord.summary(page: CampaignPage): RecordSummary {
         name = value.text("name").ifEmpty { key },
         subtitle = subtitle,
         excerpt = plainExcerpt(excerpt),
-        portrait = value.text("portrait").takeIf(mediaPath::matches),
+        portrait = value.text("portrait").takeIf(::isMediaPath),
+        icon = value.text("icon").takeIf { it.length <= MAX_ICON_LENGTH }.orEmpty(),
     )
 }
+
+private const val MAX_ICON_LENGTH = 16
 
 fun CampaignDataset.summaries(page: CampaignPage): List<RecordSummary> =
     records(page.collection).map { it.summary(page) }

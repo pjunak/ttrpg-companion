@@ -20,7 +20,10 @@ simple, clear code over extra hardening or process.
   lists every route this app may use, including add-on services by contract
   (host 2.2.0 and newer).
 - Record pages, subtitle and article fields follow the host's
-  `frontend/src/app/routes.ts` and `campaign-projection.ts`.
+  `frontend/src/app/routes.ts` and `campaign-projection.ts`; the dashboard,
+  facts and settings lists follow `campaign-projection.ts`,
+  `campaign-party.ts` and the record views. `core-model` turns them into
+  `CampaignOverview`, `RecordDetails` and `CampaignSettings`.
 
 ## Commands
 
@@ -66,8 +69,11 @@ Dependencies point inward: `app` uses everything, `core-network` uses
 - ViewModels own orchestration; composables render state and send events.
 - Colours, spacing and typography come from `ui/theme`; screens use shared
   pieces from `ui/components` instead of local styling.
-- User-visible text lives in `res/values/strings.xml`; icon-only buttons have
-  content descriptions.
+- User-visible text lives in `res/values/strings.xml` with a Czech copy in
+  `res/values-cs/`; add both. A site's screens follow its theme and language
+  through `SiteScope`; icon-only buttons have content descriptions.
+- Titles use Cinzel and articles Lora (`res/font`, licences in
+  `assets/licenses`), as on the website.
 - One OkHttp client and cookie jar serve REST, images and the event stream.
   Session cookies are stored encrypted per site origin; passwords are never
   stored.

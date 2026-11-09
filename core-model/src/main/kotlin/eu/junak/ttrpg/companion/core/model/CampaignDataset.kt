@@ -4,8 +4,17 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
-/** One record of a core collection: its key, revision and free-form JSON value. */
-data class CampaignRecord(val key: String, val revision: Long, val value: JsonObject)
+/**
+ * One record of a core collection: its key, revision and free-form JSON value.
+ * [value] is the record as an object (empty for other values); [element] is
+ * the stored value itself, which keyed settings may hold as an array.
+ */
+data class CampaignRecord(
+    val key: String,
+    val revision: Long,
+    val value: JsonObject,
+    val element: JsonElement = value,
+)
 
 data class CampaignCollection(
     val name: String,
@@ -75,9 +84,8 @@ data class CampaignDataset(val collections: Map<String, CampaignCollection>) {
                 ?: throw HostFormatException(BOUNDARY, "$location.key is missing")
             val revision = body["revision"].longOrNull()?.takeIf { it >= 1 }
                 ?: throw HostFormatException(BOUNDARY, "$location.revision is invalid")
-            // Keyed settings may hold arrays; the app only reads object records.
-            val value = body["value"].objectOrNull() ?: JsonObject(emptyMap())
-            return CampaignRecord(key, revision, value)
+            val stored = body["value"] ?: JsonObject(emptyMap())
+            return CampaignRecord(key, revision, stored.objectOrNull() ?: JsonObject(emptyMap()), stored)
         }
     }
 }

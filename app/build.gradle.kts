@@ -66,6 +66,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // A site may show the app in another language than the device's (ui/theme/SiteLanguage.kt),
+    // so every language's strings stay in the package.
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"

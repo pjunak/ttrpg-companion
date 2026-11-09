@@ -4,6 +4,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import eu.junak.ttrpg.companion.core.model.CampaignPage
+import eu.junak.ttrpg.companion.core.model.CampaignSettings
+import eu.junak.ttrpg.companion.core.model.RecordRef
+import eu.junak.ttrpg.companion.core.model.recordRef
+import eu.junak.ttrpg.companion.core.model.settings
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignRepository
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignState
 import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
@@ -13,6 +18,8 @@ import eu.junak.ttrpg.companion.navigation.SITE_ID_ARGUMENT
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -39,6 +46,19 @@ class CampaignViewModel @Inject constructor(
     val state: StateFlow<CampaignState> =
         sites.site(siteId)?.let(campaigns::state) ?: MutableStateFlow(CampaignState())
 
+    /** The site's shared settings (theme, language, option lists), once a campaign is shown. */
+    val settings: StateFlow<CampaignSettings?> = state
+        .map { it.dataset }
+        .distinctUntilChanged()
+        .map { it?.settings }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, state.value.dataset?.settings)
+
+    /** Records the user opened on this site, newest first, that are still visible. */
+    val recentlyOpened: StateFlow<List<RecordRef>> = combine(state, sites.recentRecords(siteId)) { campaign, addresses ->
+        val dataset = campaign.dataset ?: return@combine emptyList()
+        addresses.mapNotNull(dataset::recordRef)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     init {
         sites.lastOpenedId = siteId
         ensureLoaded()
@@ -55,6 +75,8 @@ class CampaignViewModel @Inject constructor(
         val site = sites.site(siteId) ?: return
         viewModelScope.launch { campaigns.refresh(site) }
     }
+
+    fun noteOpened(page: CampaignPage, key: String) = sites.noteRecordOpened(siteId, "${page.id}/$key")
 
     /** The cookie that signs the in-app web view in to this site, if signed in. */
     fun webViewCookie(): String? = sites.site(siteId)?.let { cookies.webViewCookie(it.baseUrl) }

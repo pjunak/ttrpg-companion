@@ -11,6 +11,7 @@ object CampaignMarkdown {
     private val wikiLink = Regex("""\[\[([^\]|\n]{1,200})(?:\|([^\]\n]{1,300}))?]]""")
     private val relativeTarget = Regex("""(]\()(/(?!/)[^)\s]*)""")
     private val markdownSpecial = Regex("""([\\\[\]*_`])""")
+    private val recordAddress = Regex("""]\((/[^)\s]+)\)""")
 
     fun prepare(markdown: String, dataset: CampaignDataset, siteBaseUrl: String): String {
         val linked = wikiLink.replace(markdown) { match ->
@@ -20,6 +21,15 @@ object CampaignMarkdown {
             if (target == null) text else "[$text](${target.first.recordPath(target.second)})"
         }
         return relativeTarget.replace(linked) { it.groupValues[1] + siteBaseUrl + it.groupValues[2] }
+    }
+
+    /** The records [markdown] links to, as wiki links or record addresses, in order. */
+    fun links(markdown: String, dataset: CampaignDataset): List<Pair<CampaignPage, String>> {
+        if (markdown.isEmpty()) return emptyList()
+        val wiki = wikiLink.findAll(markdown).mapNotNull { resolve(it.groupValues[1].trim(), it.groupValues[2].trim(), dataset) }
+        val addresses = recordAddress.findAll(markdown).mapNotNull { CampaignPage.parseRecordPath(it.groupValues[1]) }
+            .filter { (page, key) -> dataset.record(page.collection, key) != null }
+        return (wiki + addresses).toList()
     }
 
     /** The page and key a wiki link points at, or null when nothing visible matches. */

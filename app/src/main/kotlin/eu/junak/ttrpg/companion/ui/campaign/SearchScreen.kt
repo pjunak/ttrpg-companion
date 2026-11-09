@@ -30,6 +30,7 @@ import eu.junak.ttrpg.companion.core.model.search
 import eu.junak.ttrpg.companion.ui.components.BackButton
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.components.RecordRow
+import eu.junak.ttrpg.companion.ui.components.pageLabel
 
 /** Finds records across every page by name. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,7 +69,11 @@ fun SearchScreen(
                 results.isEmpty() -> CenteredMessage(stringResource(R.string.search_empty))
                 else -> LazyColumn(Modifier.fillMaxSize()) {
                     items(results, key = { "${it.page.id}/${it.key}" }) { summary ->
-                        RecordRow(site?.baseUrl.orEmpty(), summary) { onOpenRecord(summary.page, summary.key) }
+                        RecordRow(
+                            site?.baseUrl.orEmpty(),
+                            summary,
+                            supporting = listOf(pageLabel(summary.page), summary.subtitle).filter(String::isNotEmpty).joinToString(" · "),
+                        ) { onOpenRecord(summary.page, summary.key) }
                     }
                 }
             }
