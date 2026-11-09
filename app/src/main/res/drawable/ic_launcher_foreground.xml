@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A gold twenty-sided die outline inside the adaptive icon's safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M54,30 L75,42 L75,66 L54,78 L33,66 L33,42 Z"
+        android:strokeWidth="3"
+        android:strokeColor="#FFC8A040"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M54,30 L42,58 L66,58 Z M42,58 L33,66 M66,58 L75,66 M42,58 L54,78 L66,58 M54,30 L33,42 M54,30 L75,42 M42,58 L33,42 M66,58 L75,42"
+        android:strokeWidth="2"
+        android:strokeColor="#FFC8A040"
+        android:strokeLineJoin="round" />
+</vector>

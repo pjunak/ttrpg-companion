@@ -1,0 +1,28 @@
+# Build output
+.gradle/
+build/
+.kotlin/
+captures/
+*.apk
+*.aab
+output-metadata.json
+release-output/
+
+# Machine-local configuration
+local.properties
+*.iml
+.idea/
+
+# Signing material and secrets (CI writes them from encrypted secrets)
+*.jks
+*.keystore
+*.p12
+keystore.properties
+.env
+.env.*
+
+# Logs and OS files
+*.log
+*.hprof
+.DS_Store
+Thumbs.db

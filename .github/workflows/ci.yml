@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Main builds publish in order; pull request builds may be superseded.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      # The run number is the Android build number, so it only grows. Releases
+      # are v0.1.<build> with one asset, ttrpg-companion-<build>.apk, which the
+      # in-app updater looks for.
+      BUILD: ${{ github.run_number }}
+      RELEASE: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up the Gradle daemon JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: jetbrains
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Write the release keystore
+        if: env.RELEASE == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${KEYSTORE_BASE64:?The release keystore secret is missing}"
+          : "${STORE_PASSWORD:?The store password secret is missing}"
+          : "${KEY_ALIAS:?The key alias secret is missing}"
+          : "${KEY_PASSWORD:?The key password secret is missing}"
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          {
+            echo "storeFile=$RUNNER_TEMP/release.keystore"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > keystore.properties
+
+      - name: Build, test and lint; sign main builds
+        run: |
+          chmod +x ./gradlew
+          tasks=(assembleDebug test lintDebug)
+          if [[ "$RELEASE" == true ]]; then tasks+=(lintRelease assembleRelease); fi
+          ./gradlew "${tasks[@]}" "-Pcompanion.versionName=0.1.$BUILD" "-Pcompanion.versionCode=$BUILD" --stacktrace
+
+      - name: Remove signing material
+        if: always()
+        run: rm -f -- keystore.properties "$RUNNER_TEMP/release.keystore"
+
+      - name: Name the signed APK
+        if: env.RELEASE == 'true'
+        run: |
+          mkdir -p release-output
+          cp app/build/outputs/apk/release/app-release.apk "release-output/ttrpg-companion-$BUILD.apk"
+
+      - name: Keep the signed APK for publication
+        if: env.RELEASE == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: signed-apk
+          path: release-output/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Keep test and lint reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports
+          path: |
+            **/build/test-results/**
+            **/build/reports/tests/**
+            **/build/reports/lint-results-*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  publish:
+    name: Publish the signed APK
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: signed-apk
+          path: release-output
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD: ${{ github.run_number }}
+        run: |
+          gh release create "v0.1.$BUILD" "release-output/ttrpg-companion-$BUILD.apk" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "TTRPG Companion 0.1.$BUILD" \
+            --notes "Built and tested from \`$GITHUB_SHA\`. Install it from Settings → Updates in the app."

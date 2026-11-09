@@ -1,0 +1,4 @@
+<resources>
+    <!-- Window theme before Compose draws; the real theme is CompanionTheme. values-night has the dark twin. -->
+    <style name="Theme.Companion" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
