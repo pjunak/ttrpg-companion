@@ -15,10 +15,10 @@ simple, clear code over extra hardening or process.
 ## Read by task
 
 - [README.md](README.md) for setup, testing against a local host and releases.
-- Before changing a host call: the host's frontend clients in
-  `frontend/src/core/` (`api.ts`, `campaign-data.ts`, `event-stream.ts`) are
-  the current reference; the host will publish `docs/reference/CLIENT_API.md`
-  for the routes this app uses.
+- Before changing a host call: the host's
+  [client API](https://github.com/pjunak/ttrpg-codex/blob/main/docs/reference/CLIENT_API.md)
+  lists every route this app may use, including add-on services by contract
+  (host 2.2.0 and newer).
 - Record pages, subtitle and article fields follow the host's
   `frontend/src/app/routes.ts` and `campaign-projection.ts`.
 
@@ -52,8 +52,10 @@ Dependencies point inward: `app` uses everything, `core-network` uses
   `GET /api/media/{blob}`. Anything else opens in the signed-in web view.
 - The host decides roles and projections. The app never shows data the
   session's projection lacks and never asks for a role.
-- Find add-on features by service contract and version, never by add-on ID.
-  Optional features hide themselves when no provider answers.
+- Find add-on features by service contract and version through
+  `POST /api/services/connect` and `/call`, never by add-on ID. Optional
+  features hide themselves when no provider answers or the host is older than
+  2.2.0 (`405`).
 - A wire change needs both sides checked: the host's tests and this app's
   model and client tests.
 
