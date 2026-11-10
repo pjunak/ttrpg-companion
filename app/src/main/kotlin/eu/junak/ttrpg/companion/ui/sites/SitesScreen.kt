@@ -54,6 +54,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.network.site.Site
 import eu.junak.ttrpg.companion.core.network.site.SiteRepository
+import eu.junak.ttrpg.companion.ui.components.UpdateBadge
 import eu.junak.ttrpg.companion.ui.components.roleLabel
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
@@ -76,6 +77,7 @@ fun SitesScreen(
     onAdd: () -> Unit,
     onSignIn: (Site) -> Unit,
     onSettings: () -> Unit,
+    updatePending: Boolean,
     viewModel: SitesViewModel = hiltViewModel(),
 ) {
     val spacing = LocalSpacing.current
@@ -90,7 +92,9 @@ fun SitesScreen(
                 title = { Text(stringResource(R.string.sites_title)) },
                 actions = {
                     IconButton(onClick = onSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.action_settings))
+                        UpdateBadge(updatePending) {
+                            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.action_settings))
+                        }
                     }
                 },
                 scrollBehavior = scrollBehavior,

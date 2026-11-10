@@ -1,0 +1,8 @@
+<resources>
+    <string name="update_error_source">Zdroj aktualizací je špatně nastavený.</string>
+    <string name="update_error_check">Nepodařilo se zkontrolovat GitHub: %1$s</string>
+    <string name="update_error_network">chyba sítě</string>
+    <string name="update_error_package">Zveřejněný balíček se nepodařilo ověřit.</string>
+    <string name="update_error_download">Stažení selhalo: %1$s</string>
+    <string name="update_error_installer">Nepodařilo se otevřít instalátor: %1$s</string>
+</resources>

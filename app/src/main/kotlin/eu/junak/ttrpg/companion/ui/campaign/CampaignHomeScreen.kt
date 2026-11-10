@@ -63,6 +63,8 @@ import eu.junak.ttrpg.companion.ui.components.PortraitTile
 import eu.junak.ttrpg.companion.ui.components.RecordRow
 import eu.junak.ttrpg.companion.ui.components.SectionCard
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
+import eu.junak.ttrpg.companion.ui.components.UpdateBadge
+import eu.junak.ttrpg.companion.ui.components.UpdateDot
 import eu.junak.ttrpg.companion.ui.components.pageIcon
 import eu.junak.ttrpg.companion.ui.components.pageLabel
 import eu.junak.ttrpg.companion.ui.components.partyName
@@ -87,6 +89,7 @@ fun CampaignHomeScreen(
     onOpenWebsite: (path: String) -> Unit,
     onSignIn: () -> Unit,
     onSettings: () -> Unit,
+    updatePending: Boolean,
     viewModel: CampaignViewModel = hiltViewModel(),
 ) {
     val spacing = LocalSpacing.current
@@ -117,7 +120,9 @@ fun CampaignHomeScreen(
                         Icon(Icons.Default.Search, contentDescription = stringResource(R.string.action_search))
                     }
                     IconButton(onClick = { menuOpen = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.action_more))
+                        UpdateBadge(updatePending) {
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.action_more))
+                        }
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         DropdownMenuItem(
@@ -135,6 +140,7 @@ fun CampaignHomeScreen(
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.action_settings)) },
                             onClick = { menuOpen = false; onSettings() },
+                            trailingIcon = if (updatePending) ({ UpdateDot() }) else null,
                         )
                     }
                 },

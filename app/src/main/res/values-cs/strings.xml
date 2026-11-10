@@ -141,8 +141,10 @@
     <string name="update_available">K dispozici je verze %1$s.</string>
     <string name="update_download">Stáhnout a nainstalovat</string>
     <string name="update_downloading">Stahuji… %1$d %%</string>
+    <string name="update_downloaded">Verze %1$s je stažená.</string>
     <string name="update_install">Nainstalovat</string>
     <string name="update_dismiss">Zavřít</string>
+    <string name="update_pending">Je k dispozici aktualizace</string>
     <string name="about_title">O aplikaci</string>
     <string name="about_fonts">Nadpisy jsou v písmu Cinzel a články v písmu Lora, obě pod licencí SIL Open Font License 1.1.</string>
     <string name="sessions_title">Sezení</string>

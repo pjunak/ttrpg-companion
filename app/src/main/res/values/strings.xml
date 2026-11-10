@@ -143,8 +143,10 @@
     <string name="update_available">Version %1$s is available.</string>
     <string name="update_download">Download and install</string>
     <string name="update_downloading">Downloading… %1$d%%</string>
+    <string name="update_downloaded">Version %1$s is downloaded.</string>
     <string name="update_install">Install</string>
     <string name="update_dismiss">Dismiss</string>
+    <string name="update_pending">Update available</string>
     <string name="about_title">About</string>
     <string name="about_fonts">Titles are set in Cinzel and articles in Lora, both under the SIL Open Font License 1.1.</string>
     <string name="sessions_title">Sessions</string>

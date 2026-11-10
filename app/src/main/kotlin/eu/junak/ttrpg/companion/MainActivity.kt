@@ -14,10 +14,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import eu.junak.ttrpg.companion.core.network.site.SiteStore
 import eu.junak.ttrpg.companion.feature.update.Updater
+import eu.junak.ttrpg.companion.feature.update.isPending
 import eu.junak.ttrpg.companion.navigation.CompanionNavHost
 import eu.junak.ttrpg.companion.ui.theme.CompanionTheme
 import eu.junak.ttrpg.companion.ui.theme.LocalThemeMode
 import eu.junak.ttrpg.companion.ui.theme.ThemeMode
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -38,11 +41,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Silent: a newer release only shows as a dot on the ways into Settings.
         updater.checkOnLaunch()
+        val updatePendingFlow = updater.state.map { it.isPending }.distinctUntilChanged()
         // A fresh start reopens the last site; a recreated activity restores its own screens.
         val initialSiteId = if (savedInstanceState == null) sites.lastOpenedId else null
         setContent {
             val mode by preferences.themeMode.collectAsStateWithLifecycle()
+            val updatePending by updatePendingFlow.collectAsStateWithLifecycle(initialValue = false)
             val dark = when (mode) {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
                 ThemeMode.LIGHT -> false
@@ -59,7 +65,7 @@ class MainActivity : ComponentActivity() {
             }
             CompositionLocalProvider(LocalThemeMode provides mode) {
                 CompanionTheme {
-                    CompanionNavHost(liveUpdates, initialSiteId)
+                    CompanionNavHost(liveUpdates, initialSiteId, updatePending)
                 }
             }
         }

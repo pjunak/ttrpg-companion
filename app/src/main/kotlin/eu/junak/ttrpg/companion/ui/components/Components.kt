@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -38,6 +40,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -53,6 +57,19 @@ fun BackButton(onBack: () -> Unit) {
     IconButton(onClick = onBack) {
         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
     }
+}
+
+/** The dot that marks a way into Settings while an app update waits there. */
+@Composable
+fun UpdateDot() {
+    val description = stringResource(R.string.update_pending)
+    Badge(Modifier.semantics { contentDescription = description })
+}
+
+/** [content], usually an icon, with an [UpdateDot] in its corner while [pending]. */
+@Composable
+fun UpdateBadge(pending: Boolean, content: @Composable () -> Unit) {
+    BadgedBox(badge = { if (pending) UpdateDot() }) { content() }
 }
 
 /**

@@ -29,10 +29,11 @@ import eu.junak.ttrpg.companion.ui.web.WebScreen
 
 /**
  * The app's screens. While a site's screen is shown and the app is visible,
- * [liveUpdates] follows that site's event stream.
+ * [liveUpdates] follows that site's event stream. [updatePending] marks the
+ * ways into Settings while a newer app build waits there.
  */
 @Composable
-fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?) {
+fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?, updatePending: Boolean) {
     val navController = rememberNavController()
     val entry by navController.currentBackStackEntryAsState()
     val openSiteId = entry?.arguments?.getString(SITE_ID_ARGUMENT)
@@ -52,6 +53,7 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?) {
                 onAdd = { navController.navigate(AddSiteRoute()) },
                 onSignIn = { navController.navigate(AddSiteRoute(it.id)) },
                 onSettings = { navController.navigate(SettingsRoute) },
+                updatePending = updatePending,
             )
         }
         composable<AddSiteRoute> { backStack ->
@@ -80,6 +82,7 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?) {
                     onOpenWebsite = { navController.navigate(WebRoute(siteId, it)) },
                     onSignIn = { navController.navigate(AddSiteRoute(siteId)) },
                     onSettings = { navController.navigate(SettingsRoute) },
+                    updatePending = updatePending,
                 )
             }
         }

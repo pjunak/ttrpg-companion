@@ -33,6 +33,10 @@ sealed interface UpdateState {
     data class Error(val message: String) : UpdateState
 }
 
+/** A newer build waits for the user: offered, downloading or ready to install. */
+val UpdateState.isPending: Boolean
+    get() = this is UpdateState.Available || this is UpdateState.Downloading || this is UpdateState.ReadyToInstall
+
 /**
  * Checks this repository's latest GitHub release for a newer build, downloads
  * and verifies its APK and opens Android's installer, which asks the user.

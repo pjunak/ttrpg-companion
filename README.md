@@ -29,7 +29,9 @@ An Android app for players and DMs of TTRPG Codex campaign sites.
   seconds; reconnecting catches up on what was missed.
 - **Website:** anything without a native screen (the Builder, DM tools, maps,
   add-ons) opens in an in-app web view that is already signed in.
-- **Updates:** Settings → Updates installs newer releases from GitHub.
+- **Updates:** at start the app checks GitHub quietly; when a newer release
+  exists, the Settings button (or the menu on a site's home) shows a dot, and
+  Settings → Updates downloads, verifies and installs it.
 
 Planned next (host backlog): the optional character sheet module, for sites
 running host 2.2.0 or newer with Character Sheets installed, and a native

@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -92,7 +93,15 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 }
                 is UpdateState.Available -> {
                     Text(stringResource(R.string.update_available, state.version))
-                    state.notes?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    state.notes?.takeIf(String::isNotBlank)?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 6,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                     Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
                         Button(onClick = { updater.download(state) }) { Text(stringResource(R.string.update_download)) }
                         TextButton(onClick = updater::dismiss) { Text(stringResource(R.string.update_dismiss)) }
@@ -102,8 +111,10 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                     Text(stringResource(R.string.update_downloading, (state.progress * 100).toInt()))
                     LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth())
                 }
-                is UpdateState.ReadyToInstall -> Button(onClick = { updater.install(state.file) }) {
-                    Text(stringResource(R.string.update_install))
+                is UpdateState.ReadyToInstall -> {
+                    // Shown again when the user backs out of the installer or must first allow installs.
+                    Text(stringResource(R.string.update_downloaded, state.version))
+                    Button(onClick = { updater.install(state.file) }) { Text(stringResource(R.string.update_install)) }
                 }
                 is UpdateState.Error -> {
                     Text(state.message, color = MaterialTheme.colorScheme.error)
