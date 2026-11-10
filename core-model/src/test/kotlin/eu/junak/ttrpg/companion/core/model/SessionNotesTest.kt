@@ -54,8 +54,9 @@ class SessionNotesTest {
 
     @Test
     fun createsANewEventAtTheEndOfItsSession() {
-        val base = EventBase.new("Tom's escape!", token = "0A1B2C3D-4E5F-6789")
-        assertEquals("tom-s-escape-0a1b2c3d4e5f", base.key)
+        // The suffix keeps only lowercase letters and digits, at most 12.
+        val base = EventBase.new("Tom's escape!", "Night-Run-2026-Gate")
+        assertEquals("tom-s-escape-nightrun2026", base.key)
         val save = campaign.prepareEventSave(base, EventFields(name = " Tom's escape! ", sitting = 3), canManageVisibility = true)
         val put = (save as EventSave.Ready).mutation
         assertEquals(0L, put.expectedRevision)
