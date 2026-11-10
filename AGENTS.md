@@ -51,8 +51,13 @@ Dependencies point inward: `app` uses everything, `core-network` uses
 
 - Routes: `GET /api/version` (major version 2), `GET /api/auth`,
   `POST /api/login`, `POST /api/logout`, `GET /api/campaign`
-  (`campaign-data.v1`), `GET /api/events` (SSE with `Last-Event-ID`) and
-  `GET /api/media/{blob}`. Anything else opens in the signed-in web view.
+  (`campaign-data.v1`), `GET /api/events` (SSE with `Last-Event-ID`),
+  `GET /api/media/{blob}` and, for session notes (events only),
+  `POST /api/campaign/transactions`. Anything else opens in the signed-in web
+  view.
+- Writes are online only. They change only the fields the editor shows,
+  merge with changes made elsewhere and ask before overwriting the same field
+  (`core-model` `SessionNotes.kt`, `core-network` `EventWriter`).
 - The host decides roles and projections. The app never shows data the
   session's projection lacks and never asks for a role.
 - Find add-on features by service contract and version through

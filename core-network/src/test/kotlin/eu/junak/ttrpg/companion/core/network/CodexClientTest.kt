@@ -1,10 +1,13 @@
 package eu.junak.ttrpg.companion.core.network
 
 import eu.junak.ttrpg.companion.core.model.AuthState
+import eu.junak.ttrpg.companion.core.model.CampaignMutation
 import eu.junak.ttrpg.companion.core.model.Role
 import eu.junak.ttrpg.companion.core.network.session.SessionVault
 import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import okhttp3.OkHttpClient
@@ -64,6 +67,38 @@ class CodexClientTest {
         server.enqueue(MockResponse.Builder().code(401).body("""{"error":"unauthorized"}""").build())
         val error = runCatching { client.login(base, "nope") }.exceptionOrNull() as HostException
         assertEquals(401, error.status)
+    }
+
+    @Test
+    fun commitsWithTheSessionsCsrfToken() = runTest {
+        server.enqueue(
+            json(
+                """{"contractVersion":"campaign-commit.v1","commitId":42,"occurredAt":"2026-11-10T10:00:00Z",
+                   "results":[],"collectionRevisions":{"events":3}}""",
+            ),
+        )
+        val mutation = CampaignMutation.Put("events", "brawl-abc", 0, JsonObject(mapOf("name" to JsonPrimitive("Brawl"))))
+        assertEquals(42L, client.commit(base, token, listOf(mutation)))
+        val request = server.takeRequest()
+        assertEquals("/api/campaign/transactions", request.url.encodedPath)
+        assertEquals(token, request.headers["X-Codex-CSRF"])
+        assertEquals(
+            """{"contractVersion":"campaign-mutation.v1","mutations":[{"operation":"put","collection":"events",""" +
+                """"key":"brawl-abc","expectedRevision":0,"value":{"name":"Brawl"}}]}""",
+            request.body?.utf8(),
+        )
+    }
+
+    @Test
+    fun aStaleWriteReportsTheHostsErrorKind() = runTest {
+        server.enqueue(
+            MockResponse.Builder().code(409)
+                .body("""{"error":{"kind":"WRITE_CONFLICT","message":"campaign data changed; refresh before retrying"}}""")
+                .addHeader("Content-Type", "application/json").build(),
+        )
+        val error = runCatching { client.commit(base, token, emptyList()) }.exceptionOrNull() as HostException
+        assertEquals(409, error.status)
+        assertEquals("WRITE_CONFLICT", error.kind)
     }
 
     @Test

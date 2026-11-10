@@ -17,12 +17,14 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
@@ -31,6 +33,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -78,6 +81,8 @@ fun CampaignHomeScreen(
     onBack: () -> Unit,
     onOpenPage: (CampaignPage) -> Unit,
     onOpenRecord: (CampaignPage, String) -> Unit,
+    onOpenSession: (Int) -> Unit,
+    onOpenSessions: () -> Unit,
     onSearch: () -> Unit,
     onOpenWebsite: (path: String) -> Unit,
     onSignIn: () -> Unit,
@@ -169,18 +174,9 @@ fun CampaignHomeScreen(
                             }
                         }
                     }
-                    val lastSession = overview.lastSession
-                    if (lastSession != null && overview.lastSessionEvents.isNotEmpty()) {
-                        item {
-                            Column(Modifier.padding(horizontal = spacing.md)) {
-                                SectionHeader(stringResource(R.string.home_last_session, lastSession))
-                                SectionCard {
-                                    overview.lastSessionEvents.forEach { event ->
-                                        RecordRow(baseUrl, event) { onOpenRecord(event.page, event.key) }
-                                    }
-                                }
-                            }
-                        }
+                    val canWrite = site?.role != null
+                    if (overview.lastSession != null || canWrite) {
+                        item { SessionSection(baseUrl, overview, canWrite, onOpenRecord, onOpenSession, onOpenSessions) }
                     }
                     if (overview.recent.isNotEmpty()) {
                         item {
@@ -215,6 +211,54 @@ fun CampaignHomeScreen(
                             Spacer(Modifier.size(spacing.sm))
                             Text(stringResource(R.string.action_website))
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The latest session's events with the way into session notes: add a note to
+ * that session, or see every session. Before the first event, a signed-in
+ * reader can start session 1.
+ */
+@Composable
+private fun SessionSection(
+    baseUrl: String,
+    overview: CampaignOverview,
+    canWrite: Boolean,
+    onOpenRecord: (CampaignPage, String) -> Unit,
+    onOpenSession: (Int) -> Unit,
+    onOpenSessions: () -> Unit,
+) {
+    val spacing = LocalSpacing.current
+    val last = overview.lastSession
+    Column(Modifier.padding(horizontal = spacing.md)) {
+        SectionHeader(if (last != null) stringResource(R.string.home_last_session, last) else stringResource(R.string.sessions_title))
+        SectionCard {
+            overview.lastSessionEvents.forEach { event ->
+                RecordRow(baseUrl, event) { onOpenRecord(event.page, event.key) }
+            }
+            if (last == null) {
+                Text(
+                    stringResource(R.string.sessions_empty),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = spacing.md, vertical = spacing.sm),
+                )
+            }
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = spacing.md, vertical = spacing.sm),
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm, Alignment.End),
+            ) {
+                if (last != null) {
+                    TextButton(onClick = onOpenSessions) { Text(stringResource(R.string.home_all_sessions)) }
+                }
+                if (canWrite) {
+                    FilledTonalButton(onClick = { onOpenSession(last ?: 1) }) {
+                        Icon(Icons.Default.EditNote, contentDescription = null, modifier = Modifier.size(spacing.md + spacing.xs))
+                        Spacer(Modifier.size(spacing.sm))
+                        Text(stringResource(if (last != null) R.string.home_add_note else R.string.home_start_notes))
                     }
                 }
             }

@@ -1,6 +1,7 @@
 package eu.junak.ttrpg.companion.core.network
 
 import eu.junak.ttrpg.companion.core.model.AuthState
+import eu.junak.ttrpg.companion.core.model.CampaignMutation
 import eu.junak.ttrpg.companion.core.model.CampaignDataset
 import eu.junak.ttrpg.companion.core.model.HostFormatException
 import eu.junak.ttrpg.companion.core.model.HostJson
@@ -12,6 +13,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -22,8 +24,11 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** A host answer the app cannot use: an HTTP error status or a malformed body. */
-class HostException(val status: Int?, message: String) : IOException(message) {
+/**
+ * A host answer the app cannot use: an HTTP error status (with the host's
+ * error [kind], such as `WRITE_CONFLICT`, when it sent one) or a malformed body.
+ */
+class HostException(val status: Int?, message: String, val kind: String? = null) : IOException(message) {
     val isUnauthorized: Boolean get() = status == 401 || status == 403
 }
 
@@ -61,6 +66,22 @@ class CodexClient @Inject constructor(private val client: OkHttpClient) {
         return text to parseCampaign(text)
     }
 
+    /**
+     * Commits [mutations] in one `campaign-mutation.v1` transaction with the
+     * session's [csrfToken] and returns the commit ID. A stale revision fails
+     * with kind `WRITE_CONFLICT` and changes nothing.
+     */
+    suspend fun commit(baseUrl: String, csrfToken: String, mutations: List<CampaignMutation>): Long {
+        val boundary = "POST /api/campaign/transactions"
+        val body = CampaignMutation.body(mutations).toString().toRequestBody(JSON)
+        val builder = Request.Builder().url(baseUrl + "/api/campaign/transactions").post(body).header(CSRF_HEADER, csrfToken)
+        val receipt = parse(request(builder, boundary), boundary) as? JsonObject
+        if (receipt?.get("contractVersion")?.jsonPrimitive?.contentOrNull != COMMIT_CONTRACT) {
+            throw HostException(null, "$boundary: receipt contract is unsupported")
+        }
+        return receipt["commitId"]?.jsonPrimitive?.longOrNull ?: throw HostException(null, "$boundary: commitId is missing")
+    }
+
     private suspend fun getJson(baseUrl: String, path: String, boundary: String): JsonElement =
         parse(request(Request.Builder().url(baseUrl + path).get(), boundary), boundary)
 
@@ -69,10 +90,20 @@ class CodexClient @Inject constructor(private val client: OkHttpClient) {
 
     private suspend fun request(builder: Request.Builder, boundary: String): String = withContext(Dispatchers.IO) {
         client.newCall(builder.header("Accept", "application/json").build()).execute().use { response ->
-            if (!response.isSuccessful) throw HostException(response.code, "$boundary returned ${response.code}")
+            if (!response.isSuccessful) {
+                throw HostException(response.code, "$boundary returned ${response.code}", errorKind(response))
+            }
             readBounded(response, boundary)
         }
     }
+
+    /** The `kind` of the host's `{"error":{"kind","message"}}` body, if it sent one. */
+    private fun errorKind(response: Response): String? = runCatching {
+        val source = response.body.source()
+        if (source.request(MAX_ERROR_BYTES + 1)) return null
+        val error = HostJson.parseToJsonElement(source.readUtf8()) as? JsonObject
+        ((error?.get("error") as? JsonObject)?.get("kind") as? JsonPrimitive)?.contentOrNull
+    }.getOrNull()
 
     private fun readBounded(response: Response, boundary: String): String {
         val type = response.body.contentType()
@@ -93,6 +124,9 @@ class CodexClient @Inject constructor(private val client: OkHttpClient) {
     companion object {
         private val JSON = "application/json".toMediaType()
         private const val MAX_BODY_BYTES = 64L * 1024 * 1024
+        private const val MAX_ERROR_BYTES = 64L * 1024
+        private const val CSRF_HEADER = "X-Codex-CSRF"
+        private const val COMMIT_CONTRACT = "campaign-commit.v1"
 
         /** Parses a campaign body, from the network or the cache. */
         fun parseCampaign(text: String): CampaignDataset = try {

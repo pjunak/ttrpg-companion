@@ -15,6 +15,11 @@ An Android app for players and DMs of TTRPG Codex campaign sites.
   records, the records that mention it and a location's own map (zoomable).
   Wiki links open records natively; pages filter by name, party and status;
   search by name ignores accents.
+- **Session notes:** sessions list the campaign's events by session; start
+  the next session, write a note whose first line becomes the event's name,
+  or open the full editor for its session, date, priority, summary,
+  description and the characters and places involved (DMs can keep an event
+  to themselves). Saving needs a connection and a signed-in session.
 - **Look and language:** the website's fonts (Cinzel and Lora), the site's
   Classic or Moonlit colours in light or dark, and English or Czech following
   the site's language.

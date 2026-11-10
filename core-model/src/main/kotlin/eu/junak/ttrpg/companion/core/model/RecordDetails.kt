@@ -114,7 +114,7 @@ fun CampaignDataset.details(page: CampaignPage, key: String): RecordDetails? {
             fact(FactKind.DATE, "date")
             value.positiveInt("sitting")?.let { facts += Fact(FactKind.SESSION, it.toString()) }
             option(FactKind.PRIORITY, "priority", settings::eventPriority)
-            fact(FactKind.CONSEQUENCE, "consequence")
+            link(FactKind.CONSEQUENCE, CampaignPage.EVENTS, "consequence")
             group(RelatedKind.CHARACTERS, value.textList("characters").mapNotNull { ref(CampaignPage.CHARACTERS, it) })
             group(RelatedKind.LOCATIONS, value.textList("locations").mapNotNull { ref(CampaignPage.LOCATIONS, it) })
         }

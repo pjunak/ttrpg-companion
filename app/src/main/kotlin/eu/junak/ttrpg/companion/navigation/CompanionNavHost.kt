@@ -19,6 +19,9 @@ import eu.junak.ttrpg.companion.ui.campaign.CollectionScreen
 import eu.junak.ttrpg.companion.ui.campaign.RecordScreen
 import eu.junak.ttrpg.companion.ui.campaign.SearchScreen
 import eu.junak.ttrpg.companion.ui.campaign.SiteScope
+import eu.junak.ttrpg.companion.ui.sessions.EventEditScreen
+import eu.junak.ttrpg.companion.ui.sessions.SessionScreen
+import eu.junak.ttrpg.companion.ui.sessions.SessionsScreen
 import eu.junak.ttrpg.companion.ui.settings.SettingsScreen
 import eu.junak.ttrpg.companion.ui.sites.AddSiteScreen
 import eu.junak.ttrpg.companion.ui.sites.SitesScreen
@@ -71,6 +74,8 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?) {
                     onBack = { navController.popBackStack(SitesRoute, inclusive = false) },
                     onOpenPage = { navController.navigate(CollectionRoute(siteId, it.id)) },
                     onOpenRecord = { page, key -> navController.navigate(RecordRoute(siteId, page.id, key)) },
+                    onOpenSession = { navController.navigate(SessionRoute(siteId, it)) },
+                    onOpenSessions = { navController.navigate(SessionsRoute(siteId)) },
                     onSearch = { navController.navigate(SearchRoute(siteId)) },
                     onOpenWebsite = { navController.navigate(WebRoute(siteId, it)) },
                     onSignIn = { navController.navigate(AddSiteRoute(siteId)) },
@@ -99,6 +104,7 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?) {
                     onBack = navController::popBackStack,
                     onOpenRecord = { target, key -> navController.navigate(RecordRoute(route.siteId, target.id, key)) },
                     onOpenWebsite = { navController.navigate(WebRoute(route.siteId, it)) },
+                    onEditEvent = { navController.navigate(EventEditRoute(route.siteId, it)) },
                 )
             }
         }
@@ -110,6 +116,31 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?) {
                     onOpenRecord = { page, key -> navController.navigate(RecordRoute(siteId, page.id, key)) },
                 )
             }
+        }
+        composable<SessionsRoute> { backStack ->
+            val siteId = backStack.toRoute<SessionsRoute>().siteId
+            SiteScope {
+                SessionsScreen(
+                    onBack = navController::popBackStack,
+                    onOpenSession = { navController.navigate(SessionRoute(siteId, it)) },
+                )
+            }
+        }
+        composable<SessionRoute> { backStack ->
+            val route = backStack.toRoute<SessionRoute>()
+            SiteScope {
+                SessionScreen(
+                    number = route.number,
+                    onBack = navController::popBackStack,
+                    onOpenEvent = { navController.navigate(RecordRoute(route.siteId, CampaignPage.EVENTS.id, it)) },
+                    onEditEvent = { navController.navigate(EventEditRoute(route.siteId, it)) },
+                    onFullEditor = { note -> navController.navigate(EventEditRoute(route.siteId, sitting = route.number, note = note)) },
+                    onSignIn = { navController.navigate(AddSiteRoute(route.siteId)) },
+                )
+            }
+        }
+        composable<EventEditRoute> {
+            SiteScope { EventEditScreen(onClose = navController::popBackStack) }
         }
         composable<WebRoute> { backStack ->
             SiteScope { WebScreen(path = backStack.toRoute<WebRoute>().path, onBack = navController::popBackStack) }

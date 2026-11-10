@@ -2,7 +2,9 @@ package eu.junak.ttrpg.companion.core.network.campaign
 
 import eu.junak.ttrpg.companion.core.model.AuthState
 import eu.junak.ttrpg.companion.core.model.CampaignDataset
+import eu.junak.ttrpg.companion.core.model.CampaignMutation
 import eu.junak.ttrpg.companion.core.network.CodexClient
+import eu.junak.ttrpg.companion.core.network.HostException
 import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
 import eu.junak.ttrpg.companion.core.network.site.Site
 import eu.junak.ttrpg.companion.core.network.site.SiteStore
@@ -37,6 +39,23 @@ sealed interface CampaignProblem {
 
     /** The saved session ended; the public campaign is shown until the user signs in again. */
     data object SessionExpired : CampaignProblem
+}
+
+/** The outcome of a campaign write. */
+sealed interface WriteResult {
+    data object Saved : WriteResult
+
+    /** The records changed since they were read; the campaign is refreshed so the change can be prepared again. */
+    data object Conflict : WriteResult
+
+    /** The site has no signed-in session for this app any more. */
+    data object SignedOut : WriteResult
+
+    /** The host refused the change for this role. */
+    data object Forbidden : WriteResult
+
+    /** Nothing was saved: no connection or another host error. */
+    data class Failed(val detail: String) : WriteResult
 }
 
 /** Loads each site's campaign from its cache, then keeps it fresh from the host. */
@@ -83,6 +102,30 @@ class CampaignRepository @Inject constructor(
                 }
             }
         }
+    }
+
+    /**
+     * Commits [mutations] as one transaction with the site's current session,
+     * then refreshes the campaign so the screens show the saved records and
+     * their new revisions.
+     */
+    suspend fun commit(site: Site, mutations: List<CampaignMutation>): WriteResult {
+        val result = try {
+            val session = client.auth(site.baseUrl) as? AuthState.SignedIn ?: return WriteResult.SignedOut
+            client.commit(site.baseUrl, session.csrfToken, mutations)
+            WriteResult.Saved
+        } catch (error: HostException) {
+            when {
+                error.kind == "WRITE_CONFLICT" -> WriteResult.Conflict
+                error.status == 401 -> WriteResult.SignedOut
+                error.status == 403 -> WriteResult.Forbidden
+                else -> WriteResult.Failed(error.message.orEmpty())
+            }
+        } catch (error: IOException) {
+            WriteResult.Failed(error.message.orEmpty())
+        }
+        if (result == WriteResult.Saved || result == WriteResult.Conflict) refresh(site)
+        return result
     }
 
     /**

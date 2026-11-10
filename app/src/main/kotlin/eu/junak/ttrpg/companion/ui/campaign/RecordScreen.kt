@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -97,6 +98,7 @@ fun RecordScreen(
     onBack: () -> Unit,
     onOpenRecord: (CampaignPage, String) -> Unit,
     onOpenWebsite: (path: String) -> Unit,
+    onEditEvent: (key: String) -> Unit,
     viewModel: CampaignViewModel = hiltViewModel(),
 ) {
     val spacing = LocalSpacing.current
@@ -116,6 +118,12 @@ fun RecordScreen(
                 title = { Text(pageLabel(page), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = { BackButton(onBack) },
                 actions = {
+                    // Events are the session notes the app edits; other records are edited on the website.
+                    if (page == CampaignPage.EVENTS && site?.role != null && details != null) {
+                        IconButton(onClick = { onEditEvent(key) }) {
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.event_edit))
+                        }
+                    }
                     IconButton(onClick = { onOpenWebsite(page.recordPath(key)) }) {
                         Icon(Icons.Default.Public, contentDescription = stringResource(R.string.record_open_website))
                     }
