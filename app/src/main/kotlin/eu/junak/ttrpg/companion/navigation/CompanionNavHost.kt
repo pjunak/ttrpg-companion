@@ -19,6 +19,7 @@ import eu.junak.ttrpg.companion.ui.campaign.CollectionScreen
 import eu.junak.ttrpg.companion.ui.campaign.RecordScreen
 import eu.junak.ttrpg.companion.ui.campaign.SearchScreen
 import eu.junak.ttrpg.companion.ui.campaign.SiteScope
+import eu.junak.ttrpg.companion.ui.map.MapScreen
 import eu.junak.ttrpg.companion.ui.sessions.EventEditScreen
 import eu.junak.ttrpg.companion.ui.sessions.SessionScreen
 import eu.junak.ttrpg.companion.ui.sessions.SessionsScreen
@@ -78,6 +79,7 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?, updatePen
                     onOpenRecord = { page, key -> navController.navigate(RecordRoute(siteId, page.id, key)) },
                     onOpenSession = { navController.navigate(SessionRoute(siteId, it)) },
                     onOpenSessions = { navController.navigate(SessionsRoute(siteId)) },
+                    onOpenMap = { navController.navigate(MapRoute(siteId)) },
                     onSearch = { navController.navigate(SearchRoute(siteId)) },
                     onOpenWebsite = { navController.navigate(WebRoute(siteId, it)) },
                     onSignIn = { navController.navigate(AddSiteRoute(siteId)) },
@@ -108,6 +110,7 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?, updatePen
                     onOpenRecord = { target, key -> navController.navigate(RecordRoute(route.siteId, target.id, key)) },
                     onOpenWebsite = { navController.navigate(WebRoute(route.siteId, it)) },
                     onEditEvent = { navController.navigate(EventEditRoute(route.siteId, it)) },
+                    onOpenMap = { parentId, focus -> navController.navigate(MapRoute(route.siteId, parentId, focus)) },
                 )
             }
         }
@@ -144,6 +147,16 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?, updatePen
         }
         composable<EventEditRoute> {
             SiteScope { EventEditScreen(onClose = navController::popBackStack) }
+        }
+        composable<MapRoute> { backStack ->
+            val siteId = backStack.toRoute<MapRoute>().siteId
+            SiteScope {
+                MapScreen(
+                    onBack = navController::popBackStack,
+                    onOpenRecord = { page, key -> navController.navigate(RecordRoute(siteId, page.id, key)) },
+                    onOpenWebsite = { navController.navigate(WebRoute(siteId, it)) },
+                )
+            }
         }
         composable<WebRoute> { backStack ->
             SiteScope { WebScreen(path = backStack.toRoute<WebRoute>().path, onBack = navController::popBackStack) }

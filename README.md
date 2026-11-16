@@ -12,9 +12,14 @@ An Android app for players and DMs of TTRPG Codex campaign sites.
 - **Reading:** every record page (characters, locations, events, mysteries,
   factions, pantheon, artifacts, history, companions) with its portrait,
   facts, Markdown article, known facts and questions, relationships, related
-  records, the records that mention it and a location's own map (zoomable).
+  records, the records that mention it and a preview of a location's own map.
   Wiki links open records natively; pages filter by name, party and status;
   search by name ignores accents.
+- **Maps:** the world map and each location's own map, panned and pinched
+  across the site's map tiles (or the original image when the site does not
+  tile it), with a marker for every placed location this session may see and,
+  on request, the story trail of events. Tapping a marker opens its page; a
+  location's page shows it on its map.
 - **Session notes:** sessions list the campaign's events by session; start
   the next session, write a note whose first line becomes the event's name,
   or open the full editor for its session, date, priority, summary,
@@ -24,18 +29,18 @@ An Android app for players and DMs of TTRPG Codex campaign sites.
   Classic or Moonlit colours in light or dark, and English or Czech following
   the site's language.
 - **Offline:** the last campaign copy stays on the phone; without a connection
-  the app shows it and says how old it is.
+  the app shows it and says how old it is. Maps and map tiles already viewed
+  stay viewable from a bounded cache.
 - **Live:** while a site is open, changes made on the website appear within
   seconds; reconnecting catches up on what was missed.
-- **Website:** anything without a native screen (the Builder, DM tools, maps,
-  add-ons) opens in an in-app web view that is already signed in.
+- **Website:** anything without a native screen (the Builder, DM tools, map
+  editing, add-ons) opens in an in-app web view that is already signed in.
 - **Updates:** at start the app checks GitHub quietly; when a newer release
   exists, the Settings button (or the menu on a site's home) shows a dot, and
   Settings → Updates downloads, verifies and installs it.
 
 Planned next (host backlog): the optional character sheet module, for sites
-running host 2.2.0 or newer with Character Sheets installed, and a native
-world map with location pins.
+running host 2.2.0 or newer with Character Sheets installed.
 
 ## Requirements
 

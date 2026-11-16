@@ -19,6 +19,10 @@ simple, clear code over extra hardening or process.
   [client API](https://github.com/pjunak/ttrpg-codex/blob/main/docs/reference/CLIENT_API.md)
   lists every route this app may use, including add-on services by contract
   (host 2.2.0 and newer).
+- Maps follow the host's `docs/reference/MAPS.md` and
+  `frontend/src/app/campaign-map.ts` (which pins a map shows, marker sizes,
+  the event trail); `core-model` `CampaignMap.kt`, `MapTiles.kt` and
+  `MapViewport.kt` mirror them.
 - Record pages, subtitle and article fields follow the host's
   `frontend/src/app/routes.ts` and `campaign-projection.ts`; the dashboard,
   facts and settings lists follow `campaign-projection.ts`,
@@ -39,8 +43,8 @@ $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
 
 ```text
 app/             Compose UI, navigation, ViewModels, theme, live updates
-core-model/      Pure Kotlin: host wire formats, record pages, wiki links, search
-core-network/    OkHttp client and per-site cookies, host client, sites, campaign cache, events
+core-model/      Pure Kotlin: host wire formats, record pages, wiki links, search, map math
+core-network/    OkHttp client and per-site cookies, host client, sites, campaign cache, maps, events
 feature-update/  GitHub release check, verified download, installer handoff
 ```
 
@@ -52,7 +56,9 @@ Dependencies point inward: `app` uses everything, `core-network` uses
 - Routes: `GET /api/version` (major version 2), `GET /api/auth`,
   `POST /api/login`, `POST /api/logout`, `GET /api/campaign`
   (`campaign-data.v1`), `GET /api/events` (SSE with `Last-Event-ID`),
-  `GET /api/media/{blob}` and, for session notes (events only),
+  `GET /api/media/{blob}`, for maps `GET /api/media/latest/world-map/main`,
+  `GET /api/media/{blob}/tiles/v1/manifest` (`map-tiles.v1`) and
+  `.../tiles/v1/{level}/{x}/{y}`, and, for session notes (events only),
   `POST /api/campaign/transactions`. Anything else opens in the signed-in web
   view.
 - Writes are online only. They change only the fields the editor shows,

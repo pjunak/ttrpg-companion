@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,7 +39,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,6 +66,8 @@ import eu.junak.ttrpg.companion.core.model.Question
 import eu.junak.ttrpg.companion.core.model.RecordDetails
 import eu.junak.ttrpg.companion.core.model.RecordRef
 import eu.junak.ttrpg.companion.core.model.details
+import eu.junak.ttrpg.companion.core.model.isPlaced
+import eu.junak.ttrpg.companion.core.model.mapParentOf
 import eu.junak.ttrpg.companion.core.model.text
 import eu.junak.ttrpg.companion.ui.components.BackButton
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
@@ -74,7 +76,6 @@ import eu.junak.ttrpg.companion.ui.components.RefRow
 import eu.junak.ttrpg.companion.ui.components.SectionCard
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
 import eu.junak.ttrpg.companion.ui.components.StatusDot
-import eu.junak.ttrpg.companion.ui.components.ZoomableImageDialog
 import eu.junak.ttrpg.companion.ui.components.factLabel
 import eu.junak.ttrpg.companion.ui.components.fieldLabel
 import eu.junak.ttrpg.companion.ui.components.pageLabel
@@ -99,6 +100,7 @@ fun RecordScreen(
     onOpenRecord: (CampaignPage, String) -> Unit,
     onOpenWebsite: (path: String) -> Unit,
     onEditEvent: (key: String) -> Unit,
+    onOpenMap: (parentId: String?, focus: String?) -> Unit,
     viewModel: CampaignViewModel = hiltViewModel(),
 ) {
     val spacing = LocalSpacing.current
@@ -109,6 +111,13 @@ fun RecordScreen(
     val details = remember(dataset, page, key) { dataset?.details(page, key) }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     LaunchedEffect(page, key, details != null) { if (details != null) viewModel.noteOpened(page, key) }
+    // A placed location can be shown on its map (its parent's, or the world map) when this session sees that map.
+    val shownOn = remember(dataset, page, key) {
+        val parent = dataset?.mapParentOf(key)
+        val visible = dataset != null && page == CampaignPage.LOCATIONS && dataset.isPlaced(key) &&
+            (parent == null || dataset.record(CampaignPage.LOCATIONS.collection, parent) != null)
+        if (visible) MapPlace(parent) else null
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -122,6 +131,11 @@ fun RecordScreen(
                     if (page == CampaignPage.EVENTS && site?.role != null && details != null) {
                         IconButton(onClick = { onEditEvent(key) }) {
                             Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.event_edit))
+                        }
+                    }
+                    if (shownOn != null) {
+                        IconButton(onClick = { onOpenMap(shownOn.parentId, key) }) {
+                            Icon(Icons.Default.Map, contentDescription = stringResource(R.string.map_show))
                         }
                     }
                     IconButton(onClick = { onOpenWebsite(page.recordPath(key)) }) {
@@ -187,7 +201,7 @@ fun RecordScreen(
                     )
                     details.questions.forEach { QuestionRow(it) }
                 }
-                details.localMap?.let { LocalMap(baseUrl + it, details.summary.name) }
+                details.localMap?.let { LocalMap(baseUrl + it, details.summary.name) { onOpenMap(key, null) } }
                 if (details.relations.isNotEmpty()) {
                     SectionHeader(stringResource(R.string.record_relationships))
                     SectionCard {
@@ -352,13 +366,15 @@ private fun QuestionRow(question: Question) {
     }
 }
 
+/** The map a location's pin is on: its parent's own map, or the world map when [parentId] is null. */
+private data class MapPlace(val parentId: String?)
+
 /**
- * A location's own map as a preview that opens full screen. A map this
+ * A location's own map as a preview that opens the map viewer. A map this
  * session may not load is left out rather than shown as an empty frame.
  */
 @Composable
-private fun LocalMap(url: String, name: String) {
-    var open by rememberSaveable { mutableStateOf(false) }
+private fun LocalMap(url: String, name: String, onOpen: () -> Unit) {
     var failed by remember(url) { mutableStateOf(false) }
     if (failed) return
     val description = stringResource(R.string.record_map_description, name)
@@ -373,9 +389,8 @@ private fun LocalMap(url: String, name: String) {
             .aspectRatio(4f / 3f)
             .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .clickable { open = true },
+            .clickable(onClick = onOpen),
     )
-    if (open) ZoomableImageDialog(url, description) { open = false }
 }
 
 @OptIn(ExperimentalLayoutApi::class)

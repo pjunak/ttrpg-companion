@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -44,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -85,6 +87,7 @@ fun CampaignHomeScreen(
     onOpenRecord: (CampaignPage, String) -> Unit,
     onOpenSession: (Int) -> Unit,
     onOpenSessions: () -> Unit,
+    onOpenMap: () -> Unit,
     onSearch: () -> Unit,
     onOpenWebsite: (path: String) -> Unit,
     onSignIn: () -> Unit,
@@ -207,7 +210,7 @@ fun CampaignHomeScreen(
                     if (recentlyOpened.isNotEmpty()) {
                         item { ContinueReading(baseUrl, recentlyOpened, onOpenRecord) }
                     }
-                    item { PageGrid(overview, onOpenPage) }
+                    item { PageGrid(overview, onOpenPage, onOpenMap) }
                     item {
                         OutlinedButton(
                             onClick = { onOpenWebsite("/") },
@@ -324,16 +327,23 @@ private fun ContinueReading(baseUrl: String, records: List<RecordRef>, onOpenRec
     }
 }
 
-/** Every page with records as a two-column grid of tiles with their counts. */
+/** The world map, then every page with records, as a two-column grid of tiles with their counts. */
 @Composable
-private fun PageGrid(overview: CampaignOverview, onOpenPage: (CampaignPage) -> Unit) {
+private fun PageGrid(overview: CampaignOverview, onOpenPage: (CampaignPage) -> Unit, onOpenMap: () -> Unit) {
     val spacing = LocalSpacing.current
-    val pages = CampaignPage.entries.filter { (overview.counts[it] ?: 0) > 0 }
+    // Null stands for the world map's tile.
+    val tiles = listOf<CampaignPage?>(null) + CampaignPage.entries.filter { (overview.counts[it] ?: 0) > 0 }
     Column(Modifier.padding(horizontal = spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
         SectionHeader(stringResource(R.string.home_browse))
-        pages.chunked(2).forEach { row ->
+        tiles.chunked(2).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
-                row.forEach { page -> PageTile(page, overview.counts[page] ?: 0, Modifier.weight(1f)) { onOpenPage(page) } }
+                row.forEach { page ->
+                    if (page == null) {
+                        PageTile(Icons.Outlined.Map, stringResource(R.string.map_world), null, Modifier.weight(1f), onOpenMap)
+                    } else {
+                        PageTile(pageIcon(page), pageLabel(page), overview.counts[page] ?: 0, Modifier.weight(1f)) { onOpenPage(page) }
+                    }
+                }
                 if (row.size == 1) Spacer(Modifier.weight(1f))
             }
         }
@@ -341,7 +351,7 @@ private fun PageGrid(overview: CampaignOverview, onOpenPage: (CampaignPage) -> U
 }
 
 @Composable
-private fun PageTile(page: CampaignPage, count: Int, modifier: Modifier, onClick: () -> Unit) {
+private fun PageTile(icon: ImageVector, label: String, count: Int?, modifier: Modifier, onClick: () -> Unit) {
     val spacing = LocalSpacing.current
     Surface(
         onClick = onClick,
@@ -351,11 +361,13 @@ private fun PageTile(page: CampaignPage, count: Int, modifier: Modifier, onClick
     ) {
         Column(Modifier.padding(spacing.md), verticalArrangement = Arrangement.SpaceBetween) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(pageIcon(page), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.weight(1f))
-                Text(count.toString(), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (count != null) {
+                    Text(count.toString(), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
-            Text(pageLabel(page), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

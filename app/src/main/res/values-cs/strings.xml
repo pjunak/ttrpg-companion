@@ -202,4 +202,27 @@
     <string name="problem_short_too_long">Krátké shrnutí může mít nejvýš 1 000 znaků.</string>
     <string name="problem_description_too_long">Popis je příliš dlouhý.</string>
     <string name="problem_session_invalid">Sezení musí být číslo od 1.</string>
+
+    <string name="map_world">Mapa světa</string>
+    <string name="map_local">Mapa: %1$s</string>
+    <string name="map_show">Ukázat na mapě</string>
+    <string name="map_unavailable">Toto místo není vidět, takže jeho mapu nelze ukázat.</string>
+    <string name="map_no_world">Tento web zatím nemá mapu světa.</string>
+    <string name="map_no_local">Toto místo nemá vlastní mapu.</string>
+    <string name="map_failed">Mapu se nepodařilo načíst: %1$s</string>
+    <string name="map_image_failed">Obrázek mapy se nepodařilo načíst.</string>
+    <string name="map_retry">Zkusit znovu</string>
+    <string name="map_offline">Offline: ukazuji uloženou mapu. Části, které ještě nebyly zobrazeny, zůstanou prázdné.</string>
+    <string name="map_event_paths">Cesty událostí</string>
+    <string name="map_zoom_in">Přiblížit</string>
+    <string name="map_zoom_out">Oddálit</string>
+    <string name="map_fit">Zobrazit celou mapu</string>
+    <string name="map_event_marker">Událost: %1$s</string>
+    <string name="map_event_in_session">Sezení %1$d · %2$s</string>
+    <plurals name="map_event_stop">
+        <item quantity="one">%1$d událost zde</item>
+        <item quantity="few">%1$d události zde</item>
+        <item quantity="many">%1$d události zde</item>
+        <item quantity="other">%1$d událostí zde</item>
+    </plurals>
 </resources>

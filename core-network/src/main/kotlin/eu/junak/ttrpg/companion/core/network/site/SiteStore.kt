@@ -4,6 +4,7 @@ import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import eu.junak.ttrpg.companion.core.model.HostJson
 import eu.junak.ttrpg.companion.core.model.Role
+import eu.junak.ttrpg.companion.core.network.maps.MapStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,9 +33,9 @@ data class Site(
     val role: Role? get() = Role.entries.firstOrNull { it.wire == roleWire }
 }
 
-/** The saved site list and each site's cached campaign, on this device only. */
+/** The saved site list and each site's cached campaign and map details, on this device only. */
 @Singleton
-class SiteStore @Inject constructor(@param:ApplicationContext private val context: Context) {
+class SiteStore @Inject constructor(@param:ApplicationContext private val context: Context) : MapStore {
 
     private val preferences = context.getSharedPreferences("sites", Context.MODE_PRIVATE)
     private val _sites = MutableStateFlow(readSites())
@@ -103,20 +104,28 @@ class SiteStore @Inject constructor(@param:ApplicationContext private val contex
     }
 
     /** Replaces the cached campaign atomically, so a crash never leaves half a file. */
-    fun writeCampaign(id: String, json: String) {
-        val file = campaignFile(id)
+    fun writeCampaign(id: String, json: String) = writeAtomically(campaignFile(id), json)
+
+    /** What the site's maps need offline (the world map's image and tile manifests), as JSON. */
+    override fun readMaps(id: String): String? = mapsFile(id).takeIf(File::isFile)?.readText()
+
+    override fun writeMaps(id: String, json: String) = writeAtomically(mapsFile(id), json)
+
+    private fun writeAtomically(file: File, text: String) {
         file.parentFile?.mkdirs()
         val temporary = File(file.parentFile, "${file.name}.tmp")
-        temporary.writeText(json)
+        temporary.writeText(text)
         if (!temporary.renameTo(file)) {
             file.delete()
-            check(temporary.renameTo(file)) { "Could not save the campaign cache" }
+            check(temporary.renameTo(file)) { "Could not save ${file.name}" }
         }
     }
 
     private fun siteDirectory(id: String) = File(context.filesDir, "sites/$id")
 
     private fun campaignFile(id: String) = File(siteDirectory(id), "campaign.json")
+
+    private fun mapsFile(id: String) = File(siteDirectory(id), "maps.json")
 
     private fun readSites(): List<Site> {
         val text = preferences.getString(KEY_SITES, null) ?: return emptyList()

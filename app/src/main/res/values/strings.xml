@@ -202,4 +202,25 @@
     <string name="problem_short_too_long">The short summary can have at most 1,000 characters.</string>
     <string name="problem_description_too_long">The description is too long.</string>
     <string name="problem_session_invalid">The session must be a number from 1.</string>
+
+    <string name="map_world">World map</string>
+    <string name="map_local">Map of %1$s</string>
+    <string name="map_show">Show on map</string>
+    <string name="map_unavailable">This place is not visible, so its map can’t be shown.</string>
+    <string name="map_no_world">This site has no world map yet.</string>
+    <string name="map_no_local">This place has no map of its own.</string>
+    <string name="map_failed">Couldn’t load the map: %1$s</string>
+    <string name="map_image_failed">Couldn’t load the map image.</string>
+    <string name="map_retry">Try again</string>
+    <string name="map_offline">Offline: showing the saved map. Parts you haven’t viewed before stay blank.</string>
+    <string name="map_event_paths">Event paths</string>
+    <string name="map_zoom_in">Zoom in</string>
+    <string name="map_zoom_out">Zoom out</string>
+    <string name="map_fit">Show the whole map</string>
+    <string name="map_event_marker">Event: %1$s</string>
+    <string name="map_event_in_session">Session %1$d · %2$s</string>
+    <plurals name="map_event_stop">
+        <item quantity="one">%1$d event here</item>
+        <item quantity="other">%1$d events here</item>
+    </plurals>
 </resources>

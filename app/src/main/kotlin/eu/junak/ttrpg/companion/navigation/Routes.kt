@@ -36,6 +36,13 @@ data class SessionRoute(val siteId: String, val number: Int)
 @Serializable
 data class EventEditRoute(val siteId: String, val key: String? = null, val sitting: Int = 1, val note: String = "")
 
+/**
+ * The world map ([parentId] null) or the location [parentId]'s own map,
+ * centred on the location [focus] when one is given.
+ */
+@Serializable
+data class MapRoute(val siteId: String, val parentId: String? = null, val focus: String? = null)
+
 /** A page of the site's own web app, at [path] (`/characters/kael`). */
 @Serializable
 data class WebRoute(val siteId: String, val path: String = "/")

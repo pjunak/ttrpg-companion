@@ -5,9 +5,11 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import eu.junak.ttrpg.companion.core.network.maps.MapStore
 import eu.junak.ttrpg.companion.core.network.session.EncryptedSessionVault
 import eu.junak.ttrpg.companion.core.network.session.SessionVault
 import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
+import eu.junak.ttrpg.companion.core.network.site.SiteStore
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
@@ -45,4 +47,11 @@ object NetworkModule {
 abstract class SessionModule {
     @Binds
     abstract fun bindSessionVault(vault: EncryptedSessionVault): SessionVault
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class MapModule {
+    @Binds
+    abstract fun bindMapStore(store: SiteStore): MapStore
 }

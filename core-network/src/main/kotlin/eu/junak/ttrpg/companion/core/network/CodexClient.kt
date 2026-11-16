@@ -5,6 +5,8 @@ import eu.junak.ttrpg.companion.core.model.CampaignMutation
 import eu.junak.ttrpg.companion.core.model.CampaignDataset
 import eu.junak.ttrpg.companion.core.model.HostFormatException
 import eu.junak.ttrpg.companion.core.model.HostJson
+import eu.junak.ttrpg.companion.core.model.MapTileManifest
+import eu.junak.ttrpg.companion.core.model.isMediaPath
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonElement
@@ -82,6 +84,33 @@ class CodexClient @Inject constructor(private val client: OkHttpClient) {
         return receipt["commitId"]?.jsonPrimitive?.longOrNull ?: throw HostException(null, "$boundary: commitId is missing")
     }
 
+    /**
+     * The opaque media path (`/api/media/b_…`) of the newest image in a
+     * logical slot, such as the world map (`world-map`, `main`). An empty slot
+     * raises [HostException] with status 404.
+     */
+    suspend fun latestMedia(baseUrl: String, kind: String, target: String): String {
+        require(mediaSlot.matches(kind) && mediaSlot.matches(target)) { "media slot is invalid" }
+        val boundary = "GET /api/media/latest/{kind}/{target}"
+        return hostFormat(boundary) { MapTileManifest.parseMediaPath(getJson(baseUrl, "/api/media/latest/$kind/$target", boundary), boundary) }
+    }
+
+    /**
+     * The tile pyramid of the map image at [mediaPath]. The host answers an
+     * error for images it does not tile, such as SVG or rotated JPEG maps.
+     */
+    suspend fun mapTiles(baseUrl: String, mediaPath: String): MapTileManifest {
+        require(isMediaPath(mediaPath)) { "map must use an opaque media path" }
+        val boundary = "GET /api/media/{id}/tiles/v1/manifest"
+        return hostFormat(boundary) { MapTileManifest.parse(getJson(baseUrl, MapTileManifest.manifestPath(mediaPath), boundary), mediaPath) }
+    }
+
+    private inline fun <T> hostFormat(boundary: String, read: () -> T): T = try {
+        read()
+    } catch (error: HostFormatException) {
+        throw HostException(null, error.message ?: "$boundary is malformed")
+    }
+
     private suspend fun getJson(baseUrl: String, path: String, boundary: String): JsonElement =
         parse(request(Request.Builder().url(baseUrl + path).get(), boundary), boundary)
 
@@ -127,6 +156,7 @@ class CodexClient @Inject constructor(private val client: OkHttpClient) {
         private const val MAX_ERROR_BYTES = 64L * 1024
         private const val CSRF_HEADER = "X-Codex-CSRF"
         private const val COMMIT_CONTRACT = "campaign-commit.v1"
+        private val mediaSlot = Regex("^[a-z][a-z0-9-]{0,63}$")
 
         /** Parses a campaign body, from the network or the cache. */
         fun parseCampaign(text: String): CampaignDataset = try {
