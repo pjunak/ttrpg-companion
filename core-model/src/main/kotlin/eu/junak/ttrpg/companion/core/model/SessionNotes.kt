@@ -33,6 +33,24 @@ fun CampaignDataset.sessions(): List<Session> {
     }
 }
 
+/** One event of a session's log: its row, its priority's colour and the characters and places it names. */
+data class SessionEntry(val summary: RecordSummary, val priorityColor: Long?, val linked: List<RecordRef>)
+
+/** The events of session [number] in order, as its log shows them. */
+fun CampaignDataset.sessionEntries(number: Int): List<SessionEntry> {
+    val settings = settings
+    val events = sessions().firstOrNull { it.number == number }?.events.orEmpty()
+    return events.mapNotNull { summary ->
+        val value = record(CampaignPage.EVENTS.collection, summary.key)?.value ?: return@mapNotNull null
+        SessionEntry(
+            summary = summary,
+            priorityColor = value.text("priority").takeIf(String::isNotEmpty)?.let { settings.eventPriority(it)?.color },
+            linked = value.textList("characters").mapNotNull { recordRef(CampaignPage.CHARACTERS, it) } +
+                value.textList("locations").mapNotNull { recordRef(CampaignPage.LOCATIONS, it) },
+        )
+    }
+}
+
 /** The newest session number with events, or 0 before the first event. */
 fun CampaignDataset.latestSession(): Int =
     groupedRecords(CampaignPage.EVENTS.collection).maxOfOrNull { sitting(it.value) } ?: 0

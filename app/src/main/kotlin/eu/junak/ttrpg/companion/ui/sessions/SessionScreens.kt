@@ -54,13 +54,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.junak.ttrpg.companion.R
-import eu.junak.ttrpg.companion.core.model.CampaignPage
 import eu.junak.ttrpg.companion.core.model.RecordRef
 import eu.junak.ttrpg.companion.core.model.RecordSummary
-import eu.junak.ttrpg.companion.core.model.details
 import eu.junak.ttrpg.companion.core.model.latestSession
+import eu.junak.ttrpg.companion.core.model.sessionEntries
 import eu.junak.ttrpg.companion.core.model.sessions
-import eu.junak.ttrpg.companion.core.model.text
 import eu.junak.ttrpg.companion.ui.campaign.CampaignMissing
 import eu.junak.ttrpg.companion.ui.campaign.CampaignStatus
 import eu.junak.ttrpg.companion.ui.campaign.CampaignViewModel
@@ -177,13 +175,12 @@ fun SessionScreen(
     val spacing = LocalSpacing.current
     val state by viewModel.state.collectAsStateWithLifecycle()
     val site by viewModel.site.collectAsStateWithLifecycle()
-    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val text = notes.text
     val sending by notes.sending.collectAsStateWithLifecycle()
     val problem by notes.problem.collectAsStateWithLifecycle()
     val leave by notes.leave.collectAsStateWithLifecycle()
     val dataset = state.dataset
-    val events = remember(dataset, number) { dataset?.sessions()?.firstOrNull { it.number == number }?.events.orEmpty() }
+    val events = remember(dataset, number) { dataset?.sessionEntries(number).orEmpty() }
     val canWrite = site?.role != null
     val list = rememberLazyListState()
     // The log opens at its end and follows events added while it is open, but keeps the
@@ -243,19 +240,15 @@ fun SessionScreen(
                     contentPadding = PaddingValues(spacing.md),
                     verticalArrangement = Arrangement.spacedBy(spacing.sm),
                 ) {
-                    items(events, key = { it.key }) { event ->
+                    items(events, key = { it.summary.key }) { entry ->
                         EventCard(
                             baseUrl = site?.baseUrl.orEmpty(),
-                            event = event,
-                            priorityColor = dataset.record(CampaignPage.EVENTS.collection, event.key)
-                                ?.value?.text("priority")
-                                ?.let { settings?.eventPriority(it)?.color },
-                            linked = remember(dataset, event.key) {
-                                dataset.details(CampaignPage.EVENTS, event.key)?.related?.flatMap { it.records }.orEmpty()
-                            },
+                            event = entry.summary,
+                            priorityColor = entry.priorityColor,
+                            linked = entry.linked,
                             canEdit = canWrite,
-                            onOpen = { onOpenEvent(event.key) },
-                            onEdit = { onEditEvent(event.key) },
+                            onOpen = { onOpenEvent(entry.summary.key) },
+                            onEdit = { onEditEvent(entry.summary.key) },
                         )
                     }
                 }

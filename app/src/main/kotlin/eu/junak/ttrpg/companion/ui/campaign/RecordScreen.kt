@@ -65,11 +65,13 @@ import eu.junak.ttrpg.companion.core.model.Fact
 import eu.junak.ttrpg.companion.core.model.FactKind
 import eu.junak.ttrpg.companion.core.model.Question
 import eu.junak.ttrpg.companion.core.model.RecordDetails
+import eu.junak.ttrpg.companion.core.model.ArticleLink
 import eu.junak.ttrpg.companion.core.model.RecordRef
+import eu.junak.ttrpg.companion.core.model.articleLink
+import eu.junak.ttrpg.companion.core.model.listedFacts
+import eu.junak.ttrpg.companion.core.model.mapPlace
 import eu.junak.ttrpg.companion.core.model.Role
 import eu.junak.ttrpg.companion.core.model.details
-import eu.junak.ttrpg.companion.core.model.isPlaced
-import eu.junak.ttrpg.companion.core.model.mapParentOf
 import eu.junak.ttrpg.companion.core.model.text
 import eu.junak.ttrpg.companion.ui.components.BackButton
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
@@ -115,13 +117,7 @@ fun RecordScreen(
     val details = remember(dataset, page, key, dm) { dataset?.details(page, key, dm) }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     LaunchedEffect(page, key, details != null) { if (details != null) viewModel.noteOpened(page, key) }
-    // A placed location can be shown on its map (its parent's, or the world map) when this session sees that map.
-    val shownOn = remember(dataset, page, key) {
-        val parent = dataset?.mapParentOf(key)
-        val visible = dataset != null && page == CampaignPage.LOCATIONS && dataset.isPlaced(key) &&
-            (parent == null || dataset.record(CampaignPage.LOCATIONS.collection, parent) != null)
-        if (visible) MapPlace(parent) else null
-    }
+    val shownOn = remember(dataset, page, key) { dataset?.mapPlace(page, key) }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -160,12 +156,10 @@ fun RecordScreen(
         val links = remember(baseUrl, browser) {
             object : UriHandler {
                 override fun openUri(uri: String) {
-                    val path = uri.takeIf { it.startsWith("$baseUrl/") }?.removePrefix(baseUrl)
-                    when {
-                        path == null -> browser.openUri(uri)
-                        else -> CampaignPage.parseRecordPath(path)
-                            ?.let { (target, targetKey) -> onOpenRecord(target, targetKey) }
-                            ?: onOpenWebsite(path)
+                    when (val link = articleLink(uri, baseUrl)) {
+                        is ArticleLink.Record -> onOpenRecord(link.page, link.key)
+                        is ArticleLink.SitePage -> onOpenWebsite(link.path)
+                        is ArticleLink.External -> browser.openUri(link.uri)
                     }
                 }
             }
@@ -176,10 +170,7 @@ fun RecordScreen(
                 CampaignStatus(state, onSignIn)
                 Column(Modifier.padding(horizontal = spacing.md).padding(bottom = spacing.xl)) {
                     Hero(baseUrl, details)
-                    // Status is a badge and the subtitle is under the name, so neither is repeated here.
-                    val facts = details.facts.filter {
-                        it.kind != FactKind.STATUS && !(it.link == null && it.text == details.summary.subtitle)
-                    }
+                    val facts = details.listedFacts
                     if (facts.isNotEmpty()) {
                         Spacer(Modifier.size(spacing.md))
                         SectionCard { facts.forEach { FactRow(it) { ref -> open(ref) } } }
@@ -389,8 +380,6 @@ private fun QuestionRow(question: Question) {
 }
 
 /** The map a location's pin is on: its parent's own map, or the world map when [parentId] is null. */
-private data class MapPlace(val parentId: String?)
-
 /**
  * A location's own map as a preview that opens the map viewer. A map this
  * session may not load is left out rather than shown as an empty frame.

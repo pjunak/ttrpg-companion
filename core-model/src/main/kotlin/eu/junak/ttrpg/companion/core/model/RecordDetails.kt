@@ -208,6 +208,13 @@ private fun solved(value: JsonObject): Boolean {
     return answers.isNotEmpty() && answers.all(String::isNotEmpty)
 }
 
+/**
+ * The facts a record's page lists under its header: the status shows as a
+ * badge and the subtitle under the name, so neither is repeated.
+ */
+val RecordDetails.listedFacts: List<Fact>
+    get() = facts.filter { it.kind != FactKind.STATUS && !(it.link == null && it.text == summary.subtitle) }
+
 /** Visible records whose article text links to the record [key] on [page], in page order. */
 fun CampaignDataset.mentionsOf(page: CampaignPage, key: String): List<RecordRef> =
     CampaignPage.entries.flatMap { source ->

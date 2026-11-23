@@ -62,6 +62,24 @@ enum class CampaignPage(
     }
 }
 
+/** Where a link in an article leads. */
+sealed interface ArticleLink {
+    /** A record of this site, shown natively. */
+    data class Record(val page: CampaignPage, val key: String) : ArticleLink
+
+    /** Another page of this site, such as the Builder, opened in the web view at [path]. */
+    data class SitePage(val path: String) : ArticleLink
+
+    /** Anywhere else, opened in the browser. */
+    data class External(val uri: String) : ArticleLink
+}
+
+/** Routes [uri], a link prepared against the site's [baseUrl] (see [CampaignMarkdown.prepare]). */
+fun articleLink(uri: String, baseUrl: String): ArticleLink {
+    val path = uri.takeIf { it.startsWith("$baseUrl/") }?.removePrefix(baseUrl) ?: return ArticleLink.External(uri)
+    return CampaignPage.parseRecordPath(path)?.let { (page, key) -> ArticleLink.Record(page, key) } ?: ArticleLink.SitePage(path)
+}
+
 /** What a list row shows for a record. */
 data class RecordSummary(
     val page: CampaignPage,

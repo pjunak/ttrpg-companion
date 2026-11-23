@@ -112,6 +112,20 @@ fun CampaignDataset.campaignMap(parentId: String?): CampaignMap? {
 fun CampaignDataset.mapParentOf(locationKey: String): String? =
     record(CampaignPage.LOCATIONS.collection, locationKey)?.value?.text("parentId")?.ifEmpty { null }
 
+/** The map a placed location can be shown on: its parent's, or the world map when [parentId] is null. */
+data class MapPlace(val parentId: String?)
+
+/**
+ * Where the record [key] on [page] can be shown on a map: a placed location,
+ * on its parent's map when this session sees that location, or on the world
+ * map; null for anything else.
+ */
+fun CampaignDataset.mapPlace(page: CampaignPage, key: String): MapPlace? {
+    if (page != CampaignPage.LOCATIONS || !isPlaced(key)) return null
+    val parent = mapParentOf(key)
+    return if (parent == null || record(CampaignPage.LOCATIONS.collection, parent) != null) MapPlace(parent) else null
+}
+
 /** Whether the location has a position on its map. */
 fun CampaignDataset.isPlaced(locationKey: String): Boolean {
     val value = record(CampaignPage.LOCATIONS.collection, locationKey)?.value ?: return false

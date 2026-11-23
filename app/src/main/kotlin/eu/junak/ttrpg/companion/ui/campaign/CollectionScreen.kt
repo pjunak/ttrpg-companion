@@ -39,9 +39,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.CampaignPage
-import eu.junak.ttrpg.companion.core.model.groupedRecords
+import eu.junak.ttrpg.companion.core.model.CollectionFilter
+import eu.junak.ttrpg.companion.core.model.collectionView
 import eu.junak.ttrpg.companion.core.model.Choice
-import eu.junak.ttrpg.companion.core.model.normalizeIdentity
 import eu.junak.ttrpg.companion.core.model.summary
 import eu.junak.ttrpg.companion.core.model.text
 import eu.junak.ttrpg.companion.ui.components.BackButton
@@ -54,8 +54,6 @@ import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import eu.junak.ttrpg.companion.ui.theme.optionColor
 
 /** A filter chip's choice: the party, or one character status. */
-private const val PARTY_FILTER = "party"
-private const val STATUS_FILTER = "status:"
 
 /**
  * The visible records of one page in the website's order, filtered by name
@@ -77,30 +75,11 @@ fun CollectionScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     var searching by rememberSaveable { mutableStateOf(false) }
-    // One row per public/DM twin pair, as the website lists them.
-    val records = remember(state.dataset, page) { state.dataset?.groupedRecords(page.collection).orEmpty() }
-    val shown = remember(records, query, filter) {
-        val needle = normalizeIdentity(query)
-        records.filter { record ->
-            val value = record.value
-            val nameMatches = needle.isEmpty() || needle in normalizeIdentity(value.text("name").ifEmpty { record.key })
-            val filterMatches = when {
-                filter == null -> true
-                filter == PARTY_FILTER -> value.text("faction") == "party"
-                else -> value.text("status") == filter!!.removePrefix(STATUS_FILTER)
-            }
-            nameMatches && filterMatches
-        }
-    }
-    val statuses = remember(records, settings) {
-        if (page != CampaignPage.CHARACTERS) {
-            emptyList()
-        } else {
-            val used = records.mapTo(HashSet()) { it.value.text("status") }
-            settings?.characterStatuses.orEmpty().filter { it.id in used }
-        }
-    }
-    val hasParty = page == CampaignPage.CHARACTERS && records.any { it.value.text("faction") == "party" }
+    val view = remember(state.dataset, page, query, filter) { state.dataset?.collectionView(page, query, filter) }
+    val records = view?.records.orEmpty()
+    val shown = view?.shown.orEmpty()
+    val statuses = view?.statuses.orEmpty()
+    val hasParty = view?.hasParty == true
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
@@ -139,7 +118,7 @@ fun CollectionScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.md, vertical = spacing.xs),
                 )
             }
-            if (hasParty || statuses.size > 1) {
+            if (hasParty || statuses.isNotEmpty()) {
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = spacing.md),
                     horizontalArrangement = Arrangement.spacedBy(spacing.sm),
@@ -147,15 +126,14 @@ fun CollectionScreen(
                     if (hasParty) {
                         item {
                             FilterChip(
-                                selected = filter == PARTY_FILTER,
-                                onClick = { filter = if (filter == PARTY_FILTER) null else PARTY_FILTER },
+                                selected = filter == CollectionFilter.PARTY,
+                                onClick = { filter = if (filter == CollectionFilter.PARTY) null else CollectionFilter.PARTY },
                                 label = { Text(partyName(settings?.party?.name.orEmpty())) },
                             )
                         }
                     }
-                    // One status alone filters nothing.
-                    items(if (statuses.size > 1) statuses else emptyList(), key = { it.id }) { status ->
-                        val id = STATUS_FILTER + status.id
+                    items(statuses, key = { it.id }) { status ->
+                        val id = CollectionFilter.status(status.id)
                         FilterChip(
                             selected = filter == id,
                             onClick = { filter = if (filter == id) null else id },
