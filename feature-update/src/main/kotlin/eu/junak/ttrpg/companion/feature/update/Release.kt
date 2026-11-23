@@ -51,6 +51,11 @@ internal fun releasedApk(release: GitHubRelease, repo: String, currentCode: Long
     return ReleasedApk(name, code, asset.downloadUrl, digest.removePrefix("sha256:"), asset.size)
 }
 
+/** Whether a downloaded archive is this app ([packageName]) at the offered [versionCode]. */
+internal fun isOfferedPackage(archivePackage: String?, archiveVersionCode: Long?, packageName: String, versionCode: Long): Boolean =
+    archivePackage == packageName && archiveVersionCode == versionCode
+
+/** Throws unless [file] has the offered size and SHA-256 digest. */
 internal fun verifyPackage(file: File, expectedSha256: String, expectedSize: Long) {
     require(file.length() == expectedSize) { "Package size mismatch" }
     val digest = MessageDigest.getInstance("SHA-256")

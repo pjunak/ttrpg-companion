@@ -20,6 +20,7 @@ import okhttp3.Request
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -51,7 +52,8 @@ class Updater @Inject constructor(@ApplicationContext private val context: Conte
         .build()
     private val json = Json { ignoreUnknownKeys = true }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var launchCheckDone = false
+    private val launchCheckDone = AtomicBoolean(false)
+    private val downloading = AtomicBoolean(false)
 
     private val _state = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val state: StateFlow<UpdateState> = _state.asStateFlow()
@@ -63,34 +65,43 @@ class Updater @Inject constructor(@ApplicationContext private val context: Conte
 
     /** Once per process and silently: publishes only an available update. */
     fun checkOnLaunch() {
-        if (launchCheckDone) return
-        launchCheckDone = true
+        if (!launchCheckDone.compareAndSet(false, true)) return
         scope.launch {
             val result = latest()
             if (result is UpdateState.Available && _state.value == UpdateState.Idle) _state.value = result
         }
     }
 
+    /** Downloads, verifies and installs [update]; a second call while one runs does nothing, as both would write one file. */
     fun download(update: UpdateState.Available) {
+        if (!downloading.compareAndSet(false, true)) return
         _state.value = UpdateState.Downloading(0f)
         scope.launch {
-            val apk = update.apk
-            val file = File(context.cacheDir, "updates/ttrpg-companion-${apk.versionCode}.apk")
-            file.parentFile?.listFiles()?.forEach { if (it != file) it.delete() }
-            runCatching {
-                downloadTo(apk.url, file, apk.size)
-                verifyPackage(file, apk.sha256, apk.size)
-                val info = context.packageManager.getPackageArchiveInfo(file.path, 0)
-                if (info?.packageName != context.packageName || PackageInfoCompat.getLongVersionCode(info) != apk.versionCode) {
-                    throw IOException(context.getString(R.string.update_error_package))
-                }
-            }.onSuccess {
-                _state.value = UpdateState.ReadyToInstall(file, update.version)
-                install(file)
-            }.onFailure {
-                file.delete()
-                _state.value = UpdateState.Error(context.getString(R.string.update_error_download, it.message))
+            try {
+                downloadAndInstall(update)
+            } finally {
+                downloading.set(false)
             }
+        }
+    }
+
+    private fun downloadAndInstall(update: UpdateState.Available) {
+        val apk = update.apk
+        val file = File(context.cacheDir, "updates/ttrpg-companion-${apk.versionCode}.apk")
+        file.parentFile?.listFiles()?.forEach { if (it != file) it.delete() }
+        runCatching {
+            downloadTo(apk.url, file, apk.size)
+            verifyPackage(file, apk.sha256, apk.size)
+            val info = context.packageManager.getPackageArchiveInfo(file.path, 0)
+            if (!isOfferedPackage(info?.packageName, info?.let(PackageInfoCompat::getLongVersionCode), context.packageName, apk.versionCode)) {
+                throw IOException(context.getString(R.string.update_error_package))
+            }
+        }.onSuccess {
+            _state.value = UpdateState.ReadyToInstall(file, update.version)
+            install(file)
+        }.onFailure {
+            file.delete()
+            _state.value = UpdateState.Error(context.getString(R.string.update_error_download, it.message))
         }
     }
 
