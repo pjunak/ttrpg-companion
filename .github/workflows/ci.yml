@@ -35,6 +35,14 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
+      # Robolectric downloads its Android SDK jar (about 210 MB) into ~/.m2 at
+      # test time, which the Gradle cache above does not cover.
+      - name: Cache Robolectric's Android jar
+        uses: actions/cache@v6
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('gradle/libs.versions.toml', 'app/src/test/resources/robolectric.properties') }}
+
       - name: Write the release keystore
         if: env.RELEASE == 'true'
         env:
