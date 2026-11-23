@@ -6,6 +6,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import eu.junak.ttrpg.companion.core.network.maps.MapStore
+import eu.junak.ttrpg.companion.core.network.session.CachedSessionVault
 import eu.junak.ttrpg.companion.core.network.session.EncryptedSessionVault
 import eu.junak.ttrpg.companion.core.network.session.SessionVault
 import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
@@ -58,9 +59,11 @@ object NetworkModule {
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class SessionModule {
-    @Binds
-    abstract fun bindSessionVault(vault: EncryptedSessionVault): SessionVault
+object SessionModule {
+    /** The Keystore-encrypted cookies, decrypted once per origin and process. */
+    @Provides
+    @Singleton
+    fun provideSessionVault(vault: EncryptedSessionVault): SessionVault = CachedSessionVault(vault)
 }
 
 @Module

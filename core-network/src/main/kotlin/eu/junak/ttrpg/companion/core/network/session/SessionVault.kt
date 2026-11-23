@@ -6,6 +6,7 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.security.KeyStore
+import java.util.concurrent.ConcurrentHashMap
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -18,6 +19,25 @@ interface SessionVault {
     fun read(origin: String): String?
 
     fun write(origin: String, value: String?)
+}
+
+/**
+ * Remembers each origin's cookie after the first read, so requests (map tiles
+ * come many at once) do not decrypt it through the Keystore every time. A
+ * write, including clearing, replaces the remembered value.
+ */
+class CachedSessionVault(private val stored: SessionVault) : SessionVault {
+    private val remembered = ConcurrentHashMap<String, Remembered>()
+
+    override fun read(origin: String): String? = remembered.getOrPut(origin) { Remembered(stored.read(origin)) }.value
+
+    override fun write(origin: String, value: String?) {
+        stored.write(origin, value)
+        remembered[origin] = Remembered(value)
+    }
+
+    /** A value or its absence, since the map cannot hold null. */
+    private data class Remembered(val value: String?)
 }
 
 /**
