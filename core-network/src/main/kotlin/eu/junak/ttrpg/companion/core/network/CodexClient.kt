@@ -49,13 +49,13 @@ class CodexClient @Inject constructor(private val client: OkHttpClient) {
     }
 
     suspend fun auth(baseUrl: String): AuthState =
-        AuthState.parse(getJson(baseUrl, "/api/auth", "GET /api/auth"))
+        hostFormat("GET /api/auth") { AuthState.parse(getJson(baseUrl, "/api/auth", "GET /api/auth")) }
 
     /** Signs in with a site password; a wrong password raises [HostException] with status 401. */
     suspend fun login(baseUrl: String, password: String): AuthState {
         val body = buildJsonObject { put("password", JsonPrimitive(password)) }.toString()
         val value = send(baseUrl, "/api/login", "POST /api/login", body.toRequestBody(JSON))
-        return AuthState.parse(value, "POST /api/login")
+        return hostFormat("POST /api/login") { AuthState.parse(value, "POST /api/login") }
     }
 
     suspend fun logout(baseUrl: String) {

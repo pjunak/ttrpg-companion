@@ -1,6 +1,7 @@
 package eu.junak.ttrpg.companion.core.network.site
 
 import android.content.Context
+import android.content.SharedPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
 import eu.junak.ttrpg.companion.core.model.HostJson
 import eu.junak.ttrpg.companion.core.model.Role
@@ -16,6 +17,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import java.io.File
+import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -33,11 +36,22 @@ data class Site(
     val role: Role? get() = Role.entries.firstOrNull { it.wire == roleWire }
 }
 
-/** The saved site list and each site's cached campaign and map details, on this device only. */
+/**
+ * The saved site list and each site's cached campaign and map details, on
+ * this device only. A site's files are written and removed under one lock per
+ * site, so writers never mix their files and nothing is written after removal.
+ */
 @Singleton
-class SiteStore @Inject constructor(@param:ApplicationContext private val context: Context) : MapStore {
+class SiteStore internal constructor(
+    private val preferences: SharedPreferences,
+    private val filesDir: File,
+) : MapStore {
 
-    private val preferences = context.getSharedPreferences("sites", Context.MODE_PRIVATE)
+    @Inject
+    constructor(@ApplicationContext context: Context) :
+        this(context.getSharedPreferences("sites", Context.MODE_PRIVATE), context.filesDir)
+
+    private val siteLocks = ConcurrentHashMap<String, Any>()
     private val _sites = MutableStateFlow(readSites())
     val sites: StateFlow<List<Site>> = _sites.asStateFlow()
     private val recent = MutableStateFlow<Map<String, List<String>>>(emptyMap())
@@ -90,11 +104,13 @@ class SiteStore @Inject constructor(@param:ApplicationContext private val contex
 
     @Synchronized
     fun remove(id: String) {
-        _sites.update { current -> current.filterNot { it.id == id } }
-        writeSites(_sites.value)
-        preferences.edit().remove(recentKey(id)).apply()
-        recent.update { it - id }
-        siteDirectory(id).deleteRecursively()
+        withSiteLock(id) {
+            _sites.update { current -> current.filterNot { it.id == id } }
+            writeSites(_sites.value)
+            preferences.edit().remove(recentKey(id)).apply()
+            recent.update { it - id }
+            siteDirectory(id).deleteRecursively()
+        }
     }
 
     fun readCampaign(id: String): CachedCampaign? {
@@ -104,24 +120,28 @@ class SiteStore @Inject constructor(@param:ApplicationContext private val contex
     }
 
     /** Replaces the cached campaign atomically, so a crash never leaves half a file. */
-    fun writeCampaign(id: String, json: String) = writeAtomically(campaignFile(id), json)
+    fun writeCampaign(id: String, json: String) = writeAtomically(id, campaignFile(id), json)
 
     /** What the site's maps need offline (the world map's image and tile manifests), as JSON. */
     override fun readMaps(id: String): String? = mapsFile(id).takeIf(File::isFile)?.readText()
 
-    override fun writeMaps(id: String, json: String) = writeAtomically(mapsFile(id), json)
+    override fun writeMaps(id: String, json: String) = writeAtomically(id, mapsFile(id), json)
 
-    private fun writeAtomically(file: File, text: String) {
+    /** Writes [file] of site [id] unless the site was removed meanwhile. */
+    private fun writeAtomically(id: String, file: File, text: String) = withSiteLock(id) {
+        if (site(id) == null) return@withSiteLock
         file.parentFile?.mkdirs()
         val temporary = File(file.parentFile, "${file.name}.tmp")
         temporary.writeText(text)
         if (!temporary.renameTo(file)) {
             file.delete()
-            check(temporary.renameTo(file)) { "Could not save ${file.name}" }
+            if (!temporary.renameTo(file)) throw IOException("Could not save ${file.name}")
         }
     }
 
-    private fun siteDirectory(id: String) = File(context.filesDir, "sites/$id")
+    private fun <T> withSiteLock(id: String, block: () -> T): T = synchronized(siteLocks.getOrPut(id) { Any() }, block)
+
+    private fun siteDirectory(id: String) = File(filesDir, "sites/$id")
 
     private fun campaignFile(id: String) = File(siteDirectory(id), "campaign.json")
 

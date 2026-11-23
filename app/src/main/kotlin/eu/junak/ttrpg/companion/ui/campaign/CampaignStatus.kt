@@ -10,7 +10,7 @@ import eu.junak.ttrpg.companion.core.network.campaign.CampaignState
 import eu.junak.ttrpg.companion.ui.components.Notice
 import eu.junak.ttrpg.companion.ui.components.relativeTime
 
-/** Says when the shown campaign is a cached copy or the public view after a lost session. */
+/** Says when the shown campaign is a cached copy, the public view after a lost session or from an unsupported host. */
 @Composable
 fun CampaignStatus(state: CampaignState, onSignIn: () -> Unit) {
     when (val problem = state.problem) {
@@ -21,6 +21,7 @@ fun CampaignStatus(state: CampaignState, onSignIn: () -> Unit) {
         CampaignProblem.SessionExpired -> Notice(stringResource(R.string.status_expired)) {
             TextButton(onClick = onSignIn) { Text(stringResource(R.string.action_sign_in_again)) }
         }
+        is CampaignProblem.UnsupportedHost -> Notice(stringResource(R.string.problem_unsupported, problem.version))
         null -> Unit
     }
 }

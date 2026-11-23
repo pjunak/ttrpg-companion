@@ -8,6 +8,8 @@ import eu.junak.ttrpg.companion.core.network.CodexClient
 import eu.junak.ttrpg.companion.core.network.HostException
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignRepository
 import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.util.UUID
 import javax.inject.Inject
@@ -44,8 +46,6 @@ class SiteRepository @Inject constructor(
             is SiteAddressResult.Valid -> address.baseUrl
             is SiteAddressResult.Invalid -> throw SiteException(SiteProblem.Address(address.reason))
         }
-        val version = hostCall { client.version(baseUrl) }
-        if (!HostVersion.isSupported(version)) throw SiteException(SiteProblem.UnsupportedHost(version))
         return signIn(baseUrl, password, existingId = null)
     }
 
@@ -65,6 +65,9 @@ class SiteRepository @Inject constructor(
     }
 
     private suspend fun signIn(baseUrl: String, password: String, existingId: String?): Site {
+        // The host may have been updated since the site was added.
+        val version = hostCall { client.version(baseUrl) }
+        if (!HostVersion.isSupported(version)) throw SiteException(SiteProblem.UnsupportedHost(version))
         val auth = if (password.isEmpty()) {
             if (cookies.hasSession(baseUrl)) hostCall { client.logout(baseUrl) }
             cookies.clear(baseUrl)
@@ -86,15 +89,16 @@ class SiteRepository @Inject constructor(
         }
         val (json, dataset) = hostCall { client.campaign(baseUrl) }
         val role = (auth as? AuthState.SignedIn)?.role
-        val site = store.save(
-            Site(
-                id = existingId ?: UUID.randomUUID().toString(),
-                baseUrl = baseUrl,
-                name = dataset.name.ifEmpty { baseUrl.substringAfter("://") },
-                roleWire = role?.wire,
-            ),
-        )
-        store.writeCampaign(site.id, json)
+        val site = withContext(Dispatchers.IO) {
+            store.save(
+                Site(
+                    id = existingId ?: UUID.randomUUID().toString(),
+                    baseUrl = baseUrl,
+                    name = dataset.name.ifEmpty { baseUrl.substringAfter("://") },
+                    roleWire = role?.wire,
+                ),
+            ).also { hostCall { store.writeCampaign(it.id, json) } }
+        }
         // The new role sees a different projection; reload it from the cache.
         campaigns.forget(site.id)
         return site

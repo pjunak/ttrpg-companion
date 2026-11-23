@@ -3,6 +3,7 @@ package eu.junak.ttrpg.companion.core.network.campaign
 import eu.junak.ttrpg.companion.core.model.AuthState
 import eu.junak.ttrpg.companion.core.model.CampaignDataset
 import eu.junak.ttrpg.companion.core.model.CampaignMutation
+import eu.junak.ttrpg.companion.core.model.HostVersion
 import eu.junak.ttrpg.companion.core.network.CodexClient
 import eu.junak.ttrpg.companion.core.network.HostException
 import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
@@ -39,13 +40,16 @@ sealed interface CampaignProblem {
 
     /** The saved session ended; the public campaign is shown until the user signs in again. */
     data object SessionExpired : CampaignProblem
+
+    /** The site now runs a host [version] this app does not support; the cached copy is shown. */
+    data class UnsupportedHost(val version: String) : CampaignProblem
 }
 
 /** The outcome of a campaign write. */
 sealed interface WriteResult {
     data object Saved : WriteResult
 
-    /** The records changed since they were read; the campaign is refreshed so the change can be prepared again. */
+    /** The records changed since they were read; the campaign was refreshed so the change can be prepared again. */
     data object Conflict : WriteResult
 
     /** The site has no signed-in session for this app any more. */
@@ -68,6 +72,9 @@ class CampaignRepository @Inject constructor(
     private val states = ConcurrentHashMap<String, MutableStateFlow<CampaignState>>()
     private val locks = ConcurrentHashMap<String, Mutex>()
 
+    /** Sites whose host version this process found supported. */
+    private val supported: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
     fun state(site: Site): StateFlow<CampaignState> = flow(site.id).asStateFlow()
 
     /** Shows the cached campaign at once (if there is one), then refreshes it. */
@@ -81,12 +88,26 @@ class CampaignRepository @Inject constructor(
         refresh(site)
     }
 
-    /** Fetches the campaign; concurrent refreshes of one site run one after another. */
+    /**
+     * Fetches the campaign; concurrent refreshes of one site run one after
+     * another. The first refresh of a site in this process checks its host
+     * version.
+     */
     suspend fun refresh(site: Site) {
+        reload(site)
+    }
+
+    /** [refresh], returning whether the campaign was fetched. */
+    private suspend fun reload(site: Site): Boolean {
         val state = flow(site.id)
-        locks.getOrPut(site.id) { Mutex() }.withLock {
+        return locks.getOrPut(site.id) { Mutex() }.withLock {
             state.update { it.copy(refreshing = true) }
             try {
+                val unsupported = unsupportedVersion(site)
+                if (unsupported != null) {
+                    state.update { it.copy(problem = CampaignProblem.UnsupportedHost(unsupported)) }
+                    return@withLock false
+                }
                 val expired = site.role != null && client.auth(site.baseUrl) == AuthState.Anonymous
                 if (expired) cookies.clear(site.baseUrl)
                 val (json, dataset) = client.campaign(site.baseUrl)
@@ -96,21 +117,43 @@ class CampaignRepository @Inject constructor(
                     fetchedAt = System.currentTimeMillis(),
                     problem = if (expired) CampaignProblem.SessionExpired else null,
                 )
+                true
             } catch (error: IOException) {
-                state.update {
-                    it.copy(refreshing = false, problem = CampaignProblem.Unavailable(error.message.orEmpty()))
-                }
+                state.update { it.copy(problem = CampaignProblem.Unavailable(error.message.orEmpty())) }
+                false
+            } finally {
+                state.update { it.copy(refreshing = false) }
             }
         }
+    }
+
+    /** The site's host version when this app does not support it, or null. */
+    private suspend fun unsupportedVersion(site: Site): String? {
+        if (site.id in supported) return null
+        val version = client.version(site.baseUrl)
+        if (!HostVersion.isSupported(version)) return version
+        supported += site.id
+        return null
     }
 
     /**
      * Commits [mutations] as one transaction with the site's current session,
      * then refreshes the campaign so the screens show the saved records and
-     * their new revisions.
+     * their new revisions. A committed write is [WriteResult.Saved] even when
+     * that refresh fails.
      */
     suspend fun commit(site: Site, mutations: List<CampaignMutation>): WriteResult {
-        val result = try {
+        val result = send(site, mutations)
+        if (result == WriteResult.Saved || result == WriteResult.Conflict) {
+            val refreshed = reload(site)
+            // Preparing again on a campaign that could not be refreshed would only conflict again.
+            if (result == WriteResult.Conflict && !refreshed) return WriteResult.Failed(problemDetail(site))
+        }
+        return result
+    }
+
+    private suspend fun send(site: Site, mutations: List<CampaignMutation>): WriteResult {
+        return try {
             val session = client.auth(site.baseUrl) as? AuthState.SignedIn ?: return WriteResult.SignedOut
             client.commit(site.baseUrl, session.csrfToken, mutations)
             WriteResult.Saved
@@ -118,14 +161,25 @@ class CampaignRepository @Inject constructor(
             when {
                 error.kind == "WRITE_CONFLICT" -> WriteResult.Conflict
                 error.status == 401 -> WriteResult.SignedOut
-                error.status == 403 -> WriteResult.Forbidden
+                // The host answers 403 both for a refused change and for a session that ended.
+                error.status == 403 -> refusal(site)
                 else -> WriteResult.Failed(error.message.orEmpty())
             }
         } catch (error: IOException) {
             WriteResult.Failed(error.message.orEmpty())
         }
-        if (result == WriteResult.Saved || result == WriteResult.Conflict) refresh(site)
-        return result
+    }
+
+    private suspend fun refusal(site: Site): WriteResult = try {
+        if (client.auth(site.baseUrl) is AuthState.SignedIn) WriteResult.Forbidden else WriteResult.SignedOut
+    } catch (error: IOException) {
+        WriteResult.Failed(error.message.orEmpty())
+    }
+
+    private fun problemDetail(site: Site): String = when (val problem = flow(site.id).value.problem) {
+        is CampaignProblem.Unavailable -> problem.detail
+        is CampaignProblem.UnsupportedHost -> "TTRPG Codex ${problem.version}"
+        CampaignProblem.SessionExpired, null -> ""
     }
 
     /**

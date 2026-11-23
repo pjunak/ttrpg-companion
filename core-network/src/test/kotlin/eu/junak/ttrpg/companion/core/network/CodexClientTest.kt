@@ -3,7 +3,6 @@ package eu.junak.ttrpg.companion.core.network
 import eu.junak.ttrpg.companion.core.model.AuthState
 import eu.junak.ttrpg.companion.core.model.CampaignMutation
 import eu.junak.ttrpg.companion.core.model.Role
-import eu.junak.ttrpg.companion.core.network.session.SessionVault
 import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
@@ -102,6 +101,14 @@ class CodexClientTest {
     }
 
     @Test
+    fun aMalformedSessionIsAHostError() = runTest {
+        server.enqueue(json("""{"ok":true,"role":"wizard","csrfToken":"$token","expiresAt":"2026-12-09T10:00:00Z"}"""))
+        server.enqueue(json("""{"ok":false,"role":"dm"}"""))
+        assertEquals(null, (runCatching { client.auth(base) }.exceptionOrNull() as HostException).status)
+        assertEquals(null, (runCatching { client.login(base, "secret") }.exceptionOrNull() as HostException).status)
+    }
+
+    @Test
     fun nonJsonAnswersAreRejected() = runTest {
         server.enqueue(MockResponse.Builder().body("<html>proxy error</html>").addHeader("Content-Type", "text/html").build())
         assertThrows(HostException::class.java) { kotlinx.coroutines.runBlocking { client.version(base) } }
@@ -109,12 +116,4 @@ class CodexClientTest {
 
     private fun json(body: String) =
         MockResponse.Builder().body(body).addHeader("Content-Type", "application/json; charset=utf-8").build()
-
-    private class MemoryVault : SessionVault {
-        private val values = mutableMapOf<String, String>()
-        override fun read(origin: String) = values[origin]
-        override fun write(origin: String, value: String?) {
-            if (value == null) values.remove(origin) else values[origin] = value
-        }
-    }
 }
