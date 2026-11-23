@@ -16,14 +16,15 @@ data class RecordRef(
 enum class FactKind {
     STATUS, TITLE, RANK, SPECIES, GENDER, AGE, FACTION, LOCATION,
     TYPE, REGION, PARENT, MARKER, DATE, SESSION, PRIORITY, CONSEQUENCE,
-    DOMAIN, ALIGNMENT, SYMBOL, START, END, OWNER,
+    DOMAIN, ALIGNMENT, SYMBOL, START, END, OWNER, SOLVED, HOLDER,
 }
 
 /**
  * One labelled value of a record. [link] makes it open another record;
  * [color] and [icon] come from the DM's option lists (statuses, priorities).
  * A [FactKind.FACTION] or [FactKind.OWNER] fact without a link and with an
- * empty [text] means the party, whose default name the app supplies.
+ * empty [text] means the party, whose default name the app supplies. A yes or
+ * no fact sets [flag] instead of [text], for the app to word.
  */
 data class Fact(
     val kind: FactKind,
@@ -31,6 +32,7 @@ data class Fact(
     val link: RecordRef? = null,
     val color: Long? = null,
     val icon: String = "",
+    val flag: Boolean? = null,
 )
 
 /** An open or answered question about a character or mystery. */
@@ -58,9 +60,18 @@ data class RecordDetails(
     val mentionedIn: List<RecordRef>,
     /** A host media path for a location's own map, or null. */
     val localMap: String?,
+    /** A location's private notes, shown to the DM only; empty otherwise. */
+    val privateNotes: String = "",
 )
 
-fun CampaignDataset.details(page: CampaignPage, key: String): RecordDetails? {
+/**
+ * What a record's page shows besides its article, following the website's
+ * record page (`factDefinitions` and `articleFacts` in the host's
+ * `codex-record-page.ts`, the character profile for characters). [dm] is
+ * whether the campaign was fetched for the DM, who also sees a location's
+ * private notes.
+ */
+fun CampaignDataset.details(page: CampaignPage, key: String, dm: Boolean = false): RecordDetails? {
     val record = record(page.collection, key) ?: return null
     val value = record.value
     val settings = settings
@@ -80,6 +91,9 @@ fun CampaignDataset.details(page: CampaignPage, key: String): RecordDetails? {
     fun group(kind: RelatedKind, refs: List<RecordRef>) {
         if (refs.isNotEmpty()) related += RelatedGroup(kind, refs)
     }
+    // `articleReferences`: one key or a list of keys, each once.
+    fun references(target: CampaignPage, field: String): List<RecordRef> =
+        (value.text(field).takeIf(String::isNotEmpty)?.let(::listOf) ?: value.textList(field)).distinct().mapNotNull { ref(target, it) }
     fun records(target: CampaignPage, matches: (JsonObject) -> Boolean): List<RecordRef> =
         records(target.collection).filter { it.key != key && matches(it.value) }.map { it.ref(target) }
 
@@ -87,7 +101,7 @@ fun CampaignDataset.details(page: CampaignPage, key: String): RecordDetails? {
         CampaignPage.CHARACTERS -> {
             option(FactKind.STATUS, "status", settings::characterStatus)
             fact(FactKind.TITLE, "title")
-            fact(FactKind.RANK, "rank")
+            rankLabel(value)?.let { facts += Fact(FactKind.RANK, it) }
             fact(FactKind.SPECIES, "species")
             option(FactKind.GENDER, "gender", settings::gender)
             fact(FactKind.AGE, "age")
@@ -118,8 +132,18 @@ fun CampaignDataset.details(page: CampaignPage, key: String): RecordDetails? {
             group(RelatedKind.CHARACTERS, value.textList("characters").mapNotNull { ref(CampaignPage.CHARACTERS, it) })
             group(RelatedKind.LOCATIONS, value.textList("locations").mapNotNull { ref(CampaignPage.LOCATIONS, it) })
         }
-        CampaignPage.MYSTERIES -> option(FactKind.PRIORITY, "priority", settings::eventPriority)
-        CampaignPage.FACTIONS, CampaignPage.ARTIFACTS -> Unit
+        CampaignPage.MYSTERIES -> {
+            // A mystery's priority is shown as written, unlike an event's option.
+            fact(FactKind.PRIORITY, "priority")
+            facts += Fact(FactKind.SOLVED, "", flag = solved(value))
+            group(RelatedKind.CHARACTERS, references(CampaignPage.CHARACTERS, "characters"))
+            group(RelatedKind.LOCATIONS, references(CampaignPage.LOCATIONS, "locations"))
+        }
+        CampaignPage.FACTIONS -> Unit
+        CampaignPage.ARTIFACTS -> {
+            link(FactKind.HOLDER, CampaignPage.CHARACTERS, "ownerCharacterId")
+            link(FactKind.LOCATION, CampaignPage.LOCATIONS, "locationId")
+        }
         CampaignPage.PANTHEON -> {
             fact(FactKind.TITLE, "title")
             fact(FactKind.DOMAIN, "domain")
@@ -129,12 +153,16 @@ fun CampaignDataset.details(page: CampaignPage, key: String): RecordDetails? {
         CampaignPage.HISTORY -> {
             fact(FactKind.START, "start")
             fact(FactKind.END, "end")
+            group(RelatedKind.CHARACTERS, references(CampaignPage.CHARACTERS, "characters"))
+            group(RelatedKind.LOCATIONS, references(CampaignPage.LOCATIONS, "locations"))
         }
         CampaignPage.COMPANIONS -> {
             fact(FactKind.SPECIES, "species")
+            // `articleOwner`: the party, a character or a faction.
             when (value.text("ownerType")) {
                 "party" -> facts += Fact(FactKind.OWNER, settings.party.name)
                 "character" -> link(FactKind.OWNER, CampaignPage.CHARACTERS, "ownerId")
+                "faction" -> link(FactKind.OWNER, CampaignPage.FACTIONS, "ownerId")
             }
         }
     }
@@ -152,7 +180,32 @@ fun CampaignDataset.details(page: CampaignPage, key: String): RecordDetails? {
         related = related,
         mentionedIn = mentionsOf(page, key),
         localMap = value.text("localMap").takeIf(::isMediaPath),
+        privateNotes = if (page == CampaignPage.LOCATIONS && dm) value.text("notes") else "",
     )
+}
+
+/**
+ * A character's rank as its profile shows it (`#rankLabel` in the host's
+ * `codex-character-profile.ts`): "chain — rank" when the rank chain is one of
+ * its faction's, otherwise the rank alone; null when that leaves nothing.
+ */
+private fun CampaignDataset.rankLabel(value: JsonObject): String? {
+    val chainId = value["rankChain"].stringOrNull()
+    val chain = (record(CampaignPage.FACTIONS.collection, value.text("faction"))?.value?.get("rankChains") as? JsonArray).orEmpty()
+        .filterIsInstance<JsonObject>()
+        .firstOrNull { it.text("id").isNotEmpty() && it.text("id") == chainId }
+    val rank = value.text("rank")
+    return (if (chain != null) "${chain.text("name")} — $rank" else rank).takeIf(String::isNotEmpty)
+}
+
+/** `investigationStatus(value).solved`: marked solved, or every question answered. */
+private fun solved(value: JsonObject): Boolean {
+    if (value["solved"].booleanOrNull() == true) return true
+    val answers = (value["questions"] as? JsonArray).orEmpty().mapNotNull { item ->
+        val question = item.stringOrNull() ?: (item as? JsonObject)?.get("text").stringOrNull()
+        if (question.isNullOrBlank()) null else (item as? JsonObject)?.get("answer").stringOrNull()?.trim().orEmpty()
+    }
+    return answers.isNotEmpty() && answers.all(String::isNotEmpty)
 }
 
 /** Visible records whose article text links to the record [key] on [page], in page order. */

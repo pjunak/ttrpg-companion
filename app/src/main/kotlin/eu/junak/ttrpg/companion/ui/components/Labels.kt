@@ -87,6 +87,8 @@ fun factLabel(kind: FactKind): String = stringResource(
         FactKind.START -> R.string.fact_start
         FactKind.END -> R.string.fact_end
         FactKind.OWNER -> R.string.fact_owner
+        FactKind.SOLVED -> R.string.fact_solved
+        FactKind.HOLDER -> R.string.fact_holder
     },
 )
 

@@ -108,6 +108,11 @@
     <string name="fact_start">Začátek</string>
     <string name="fact_end">Konec</string>
     <string name="fact_owner">Majitel</string>
+    <string name="fact_solved">Vyřešeno</string>
+    <string name="fact_holder">Drží</string>
+    <string name="fact_yes">Ano</string>
+    <string name="fact_no">Ne</string>
+    <string name="record_private_notes">Soukromé poznámky</string>
 
     <string name="field_description">Popis</string>
     <string name="field_circumstances">Okolnosti</string>

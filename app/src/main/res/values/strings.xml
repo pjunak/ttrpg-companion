@@ -111,6 +111,11 @@
     <string name="fact_start">Start</string>
     <string name="fact_end">End</string>
     <string name="fact_owner">Owner</string>
+    <string name="fact_solved">Solved</string>
+    <string name="fact_holder">Holder</string>
+    <string name="fact_yes">Yes</string>
+    <string name="fact_no">No</string>
+    <string name="record_private_notes">Private notes</string>
 
     <string name="field_description">Description</string>
     <string name="field_circumstances">Circumstances</string>

@@ -66,6 +66,7 @@ import eu.junak.ttrpg.companion.core.model.FactKind
 import eu.junak.ttrpg.companion.core.model.Question
 import eu.junak.ttrpg.companion.core.model.RecordDetails
 import eu.junak.ttrpg.companion.core.model.RecordRef
+import eu.junak.ttrpg.companion.core.model.Role
 import eu.junak.ttrpg.companion.core.model.details
 import eu.junak.ttrpg.companion.core.model.isPlaced
 import eu.junak.ttrpg.companion.core.model.mapParentOf
@@ -110,7 +111,8 @@ fun RecordScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val baseUrl = site?.baseUrl.orEmpty()
     val dataset = state.dataset
-    val details = remember(dataset, page, key) { dataset?.details(page, key) }
+    val dm = state.role == Role.DM
+    val details = remember(dataset, page, key, dm) { dataset?.details(page, key, dm) }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     LaunchedEffect(page, key, details != null) { if (details != null) viewModel.noteOpened(page, key) }
     // A placed location can be shown on its map (its parent's, or the world map) when this session sees that map.
@@ -184,6 +186,17 @@ fun RecordScreen(
                     }
                     CompositionLocalProvider(LocalUriHandler provides links) {
                         Article(page, details, dataset, baseUrl)
+                        if (details.privateNotes.isNotEmpty()) {
+                            SectionHeader(stringResource(R.string.record_private_notes))
+                            ArticleTheme {
+                                Markdown(
+                                    content = remember(details.privateNotes, dataset, baseUrl) {
+                                        CampaignMarkdown.prepare(details.privateNotes, dataset, baseUrl)
+                                    },
+                                    imageTransformer = Coil3ImageTransformerImpl,
+                                )
+                            }
+                        }
                     }
                     if (details.known.isNotEmpty()) {
                         SectionHeader(stringResource(R.string.record_known))
@@ -310,7 +323,12 @@ private fun FactRow(fact: Fact, onOpen: (RecordRef) -> Unit) {
         )
         Row(Modifier.weight(0.6f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
             if (fact.color != null) StatusDot(optionColor(fact.color, MaterialTheme.colorScheme.primary))
-            val text = if (fact.kind == FactKind.FACTION || fact.kind == FactKind.OWNER) partyName(fact.text) else fact.text
+            val flag = fact.flag
+            val text = when {
+                flag != null -> stringResource(if (flag) R.string.fact_yes else R.string.fact_no)
+                fact.kind == FactKind.FACTION || fact.kind == FactKind.OWNER -> partyName(fact.text)
+                else -> fact.text
+            }
             Text(
                 listOf(fact.icon.takeIf { fact.color == null }.orEmpty(), text).filter(String::isNotEmpty).joinToString(" "),
                 style = MaterialTheme.typography.bodyLarge,
