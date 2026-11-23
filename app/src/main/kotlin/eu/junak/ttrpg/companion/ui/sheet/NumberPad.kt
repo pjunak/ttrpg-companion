@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Backspace
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,7 +44,8 @@ private val padRows = listOf(
 /**
  * A bottom sheet with a number pad: an optional [title], the typed [number]
  * with [context] (such as the hit points now) beside it, the keys, then
- * [actions] that use the number. It opens fully: half open would hide the actions.
+ * [actions] that use the number. It opens fully, as half open would hide the
+ * actions, and scrolls where even that is too short (a phone held sideways).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,7 +60,10 @@ internal fun NumberPadSheet(
     val spacing = LocalSpacing.current
     val colors = MaterialTheme.colorScheme
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.padding(horizontal = spacing.md).padding(bottom = spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.md - spacing.xs)) {
+        Column(
+            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = spacing.md).padding(bottom = spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.md - spacing.xs),
+        ) {
             if (title != null) Text(title, style = MaterialTheme.typography.titleLarge, color = colors.primary)
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
                 Text(
