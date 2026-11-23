@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -44,7 +45,7 @@ import kotlinx.serialization.json.booleanOrNull
 @HiltViewModel
 class SheetViewModel @Inject constructor(
     savedState: SavedStateHandle,
-    sites: SiteStore,
+    private val sites: SiteStore,
     campaigns: CampaignRepository,
     sessions: CharacterSessions,
     events: EventStream,
@@ -63,6 +64,18 @@ class SheetViewModel @Inject constructor(
     val name: StateFlow<String?> = (site?.let(campaigns::state) ?: MutableStateFlow(CampaignState()))
         .map { campaign -> campaign.dataset?.record(CampaignPage.CHARACTERS.collection, route.key)?.value?.text("name")?.ifEmpty { null } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** Whether this character is the site's "My character". */
+    val myCharacter: StateFlow<Boolean> = sites.myCharacter(route.siteId)
+        .map { it == route.key }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /** Makes this the site's "My character" (replacing another) or, switched off, makes none. */
+    fun setMyCharacter(on: Boolean) {
+        viewModelScope.launch {
+            sites.setMyCharacter(route.siteId, myCharacterAfter(sites.myCharacter(route.siteId).first(), route.key, on))
+        }
+    }
 
     fun play(change: PlayChange) {
         session?.play(change)

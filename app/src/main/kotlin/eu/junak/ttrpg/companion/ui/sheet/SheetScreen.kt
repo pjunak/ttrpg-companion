@@ -121,6 +121,7 @@ fun SheetScreen(
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val name by viewModel.name.collectAsStateWithLifecycle()
+    val myCharacter by viewModel.myCharacter.collectAsStateWithLifecycle()
     val snackbars = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val resources = LocalResources.current
@@ -164,9 +165,16 @@ fun SheetScreen(
                     KeepScreenOn()
                     SheetBannerView(sheetBanner(state), name.orEmpty(), state.refreshing, viewModel, website)
                     Header(load.sheet.header, state, onHitPoints = { keypad = true }, onAddCondition = { picker = true }, viewModel)
-                    val actions = SheetActions(state.canWrite, viewModel::play, viewModel::edit, website) { message ->
-                        scope.launch { snackbars.showSnackbar(message) }
-                    }
+                    val actions = SheetActions(
+                        canWrite = state.canWrite,
+                        play = viewModel::play,
+                        edit = viewModel::edit,
+                        openWebsite = website,
+                        announce = { message -> scope.launch { snackbars.showSnackbar(message) } },
+                        characterName = name.orEmpty(),
+                        myCharacter = myCharacter,
+                        setMyCharacter = viewModel::setMyCharacter,
+                    )
                     Box(Modifier.weight(1f).fillMaxWidth()) { tabBody(tab, load.sheet, actions) }
                 }
                 SheetLoad.NoSheet -> NoSheet(name.orEmpty(), website)
@@ -207,13 +215,15 @@ fun SheetScreen(
     }
 }
 
-/** The body of [tab]; Spells, Gear and More follow. */
+/** The body of [tab]. */
 @Composable
 fun SheetTabBody(tab: SheetTab, sheet: CharacterSheet, actions: SheetActions) {
     when (tab) {
         SheetTab.COMBAT -> CombatTab(sheet, actions)
         SheetTab.ABILITIES -> AbilitiesTab(sheet)
-        SheetTab.SPELLS, SheetTab.GEAR, SheetTab.MORE -> Unit
+        SheetTab.SPELLS -> SpellsTab(sheet, actions)
+        SheetTab.GEAR -> GearTab(sheet, actions)
+        SheetTab.MORE -> MoreTab(sheet, actions)
     }
 }
 

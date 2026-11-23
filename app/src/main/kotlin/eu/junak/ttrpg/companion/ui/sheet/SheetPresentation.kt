@@ -15,7 +15,7 @@ import kotlinx.serialization.json.JsonObject
 enum class SheetTab { COMBAT, ABILITIES, SPELLS, GEAR, MORE }
 
 /**
- * What a tab can do to the sheet. Changes are refused while [canWrite] is
+ * What a tab can do. Changes to the sheet are refused while [canWrite] is
  * false; made while one is being saved, they simply wait their turn.
  */
 class SheetActions(
@@ -26,6 +26,11 @@ class SheetActions(
     val openWebsite: () -> Unit,
     /** Shows a short message, such as what the phone rolled. */
     val announce: (String) -> Unit,
+    /** The character's name, from its campaign record. */
+    val characterName: String = "",
+    /** Whether this is the site's "My character": a preference of this device, not part of the sheet. */
+    val myCharacter: Boolean = false,
+    val setMyCharacter: (Boolean) -> Unit = {},
 )
 
 /**
