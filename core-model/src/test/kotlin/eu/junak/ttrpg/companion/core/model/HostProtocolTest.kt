@@ -71,6 +71,16 @@ class HostProtocolTest {
         )
     }
 
+    /** As a second session received it while a character sheet was saved (`character/events-addon-data-changed.txt`). */
+    @Test
+    fun anAddOnDataChangeNamesItsAddOn() {
+        val data = """{"sequence":9,"topic":"addon-data-changed","resourceId":"dnd-sheets/record-extension/dnd-sheets","revision":"2","occurredAt":"2026-11-23T10:37:03.3430801Z","metadata":{}}"""
+        val event = HostEvent.parse("addon-data-changed", Json.parseToJsonElement(data), "9")
+        assertEquals(HostEvent.AddonDataChanged(9, "dnd-sheets/record-extension/dnd-sheets"), event)
+        assertEquals(true, (event as HostEvent.AddonDataChanged).isFrom("dnd-sheets"))
+        assertEquals(false, event.isFrom("dnd"))
+    }
+
     /** The host's recovery restore (`docs/reference/EVENT_STREAM.md`, "Campaign recovery"). */
     @Test
     fun aRestoreAsksForAReload() {

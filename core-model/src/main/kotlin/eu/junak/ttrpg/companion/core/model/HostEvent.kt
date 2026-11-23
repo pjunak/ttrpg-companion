@@ -20,7 +20,17 @@ sealed interface HostEvent {
     /** The campaign was restored from a recovery point: reload everything (`campaign-restored`). */
     data class CampaignRestored(override val cursor: Long) : HostEvent
 
-    /** Add-on and other topics the app does not act on, and events it cannot read; only their cursor counts. */
+    /**
+     * An add-on saved some of its data (`addon-data-changed`). [resourceId] is
+     * `<add-on ID>/<kind>/<data ID>`; the event names no record, so a reader
+     * of that data loads it again.
+     */
+    data class AddonDataChanged(override val cursor: Long, val resourceId: String) : HostEvent {
+        /** Whether add-on [addonId] (an ID the host returned) saved it. */
+        fun isFrom(addonId: String): Boolean = resourceId.startsWith("$addonId/")
+    }
+
+    /** Other topics the app does not act on, and events it cannot read; only their cursor counts. */
     data class Other(override val cursor: Long, val name: String) : HostEvent
 
     companion object {
@@ -38,6 +48,7 @@ sealed interface HostEvent {
                 "reset" -> Reset(cursor)
                 "campaign-data-changed" -> CampaignChanged(cursor, body.text("resourceId"))
                 "campaign-restored" -> CampaignRestored(cursor)
+                "addon-data-changed" -> AddonDataChanged(cursor, body.text("resourceId"))
                 else -> Other(cursor, name)
             }
         }

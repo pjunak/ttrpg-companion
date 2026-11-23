@@ -108,6 +108,21 @@ class LiveUpdatesTest {
     }
 
     @Test
+    fun addOnDataChangesLeaveTheCampaignAlone() = runTest {
+        val site = f.site()
+        f.host.failing.clear()
+        val events = Channel<HostEvent>(Channel.UNLIMITED)
+        events.trySend(HostEvent.Hello(1))
+        events.trySend(HostEvent.AddonDataChanged(2, "dnd-sheets/record-extension/dnd-sheets"))
+        events.trySend(HostEvent.AddonDataChanged(3, "dnd-sheets/record-extension/dnd-sheets"))
+        events.close()
+
+        live().follow(site.id, events.receiveAsFlow())
+
+        assertEquals("the hello only", 1, fetches)
+    }
+
+    @Test
     fun retryingStopsWhenTheSiteIsRemoved() = runTest {
         val site = f.site()
         onFetch { if (it == 2) f.store.remove(site.id) }

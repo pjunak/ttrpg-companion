@@ -34,7 +34,8 @@ class LiveUpdates @Inject constructor(
         // Only "reload now" matters, so any number of events waiting is one signal.
         val signals = Channel<Unit>(Channel.CONFLATED)
         launch {
-            events.collect { if (it !is HostEvent.Other) signals.send(Unit) }
+            // Add-on data (a character sheet) is not campaign data; its readers follow it themselves.
+            events.collect { if (it !is HostEvent.Other && it !is HostEvent.AddonDataChanged) signals.send(Unit) }
             signals.close()
         }
         for (signal in signals) reload(siteId, signals)
