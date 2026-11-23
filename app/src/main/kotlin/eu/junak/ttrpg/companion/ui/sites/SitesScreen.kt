@@ -55,6 +55,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.network.site.Site
 import eu.junak.ttrpg.companion.core.network.site.SiteRepository
+import eu.junak.ttrpg.companion.ui.components.TappableCard
 import eu.junak.ttrpg.companion.ui.components.UpdateBadge
 import eu.junak.ttrpg.companion.ui.components.roleLabel
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
@@ -168,12 +169,7 @@ private fun Welcome(modifier: Modifier, onAdd: () -> Unit) {
 private fun SiteCard(site: Site, onOpen: () -> Unit, onSignIn: () -> Unit, onRemove: () -> Unit) {
     val spacing = LocalSpacing.current
     var menuOpen by remember { mutableStateOf(false) }
-    Surface(
-        onClick = onOpen,
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
+    TappableCard(onClick = onOpen) {
         Row(Modifier.padding(start = spacing.md, top = spacing.md, bottom = spacing.md), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier.size(spacing.portrait).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),

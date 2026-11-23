@@ -61,6 +61,7 @@ import eu.junak.ttrpg.companion.core.model.RecordRef
 import eu.junak.ttrpg.companion.core.model.RecordSummary
 import eu.junak.ttrpg.companion.core.model.overview
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignProblem
+import eu.junak.ttrpg.companion.ui.components.TappableCard
 import eu.junak.ttrpg.companion.ui.components.BackButton
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.components.Portrait
@@ -348,12 +349,7 @@ private fun PageGrid(overview: CampaignOverview, onOpenPage: (CampaignPage) -> U
 @Composable
 private fun PageTile(icon: ImageVector, label: String, count: Int?, modifier: Modifier, onClick: () -> Unit) {
     val spacing = LocalSpacing.current
-    Surface(
-        onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = modifier.heightIn(min = spacing.tileHeight),
-    ) {
+    TappableCard(onClick = onClick, modifier = modifier.heightIn(min = spacing.tileHeight)) {
         Column(Modifier.padding(spacing.md), verticalArrangement = Arrangement.SpaceBetween) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)

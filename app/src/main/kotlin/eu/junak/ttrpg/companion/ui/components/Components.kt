@@ -221,6 +221,18 @@ fun Notice(text: String, action: (@Composable () -> Unit)? = null) {
 }
 
 /** A centred message for empty or loading screens. */
+/** A tappable card on the page background, as list entries such as sessions, events and sites show. */
+@Composable
+fun TappableCard(onClick: () -> Unit, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = modifier.fillMaxWidth(),
+        content = content,
+    )
+}
+
 @Composable
 fun CenteredMessage(text: String?, loading: Boolean = false, action: (@Composable () -> Unit)? = null) {
     val spacing = LocalSpacing.current

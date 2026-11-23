@@ -62,6 +62,7 @@ import eu.junak.ttrpg.companion.core.model.sessions
 import eu.junak.ttrpg.companion.ui.campaign.CampaignMissing
 import eu.junak.ttrpg.companion.ui.campaign.CampaignStatus
 import eu.junak.ttrpg.companion.ui.campaign.CampaignViewModel
+import eu.junak.ttrpg.companion.ui.components.TappableCard
 import eu.junak.ttrpg.companion.ui.components.BackButton
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.components.Notice
@@ -117,12 +118,7 @@ fun SessionsScreen(
                         verticalArrangement = Arrangement.spacedBy(spacing.sm),
                     ) {
                         items(sessions, key = { it.number }) { session ->
-                            Surface(
-                                onClick = { onOpenSession(session.number) },
-                                shape = MaterialTheme.shapes.medium,
-                                color = MaterialTheme.colorScheme.surfaceContainer,
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
+                            TappableCard(onClick = { onOpenSession(session.number) }) {
                                 Column(Modifier.padding(spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
@@ -276,12 +272,7 @@ private fun EventCard(
     onEdit: () -> Unit,
 ) {
     val spacing = LocalSpacing.current
-    Surface(
-        onClick = onOpen,
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
+    TappableCard(onClick = onOpen) {
         Column(Modifier.padding(start = spacing.md, bottom = spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (priorityColor != null) {
