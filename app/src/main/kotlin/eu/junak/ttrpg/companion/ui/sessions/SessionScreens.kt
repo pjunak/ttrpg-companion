@@ -40,7 +40,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -178,7 +181,17 @@ fun SessionScreen(
     val events = remember(dataset, number) { dataset?.sessions()?.firstOrNull { it.number == number }?.events.orEmpty() }
     val canWrite = site?.role != null
     val list = rememberLazyListState()
-    LaunchedEffect(events.size) { if (events.isNotEmpty()) list.animateScrollToItem(events.lastIndex) }
+    // The log opens at its end and follows events added while it is open, but keeps the
+    // position the user left on return and rotation.
+    var shownEvents by rememberSaveable(number) { mutableIntStateOf(-1) }
+    LaunchedEffect(dataset != null, events.size) {
+        if (dataset == null) return@LaunchedEffect
+        when {
+            shownEvents < 0 && events.isNotEmpty() -> list.scrollToItem(events.lastIndex)
+            shownEvents >= 0 && events.size > shownEvents -> list.animateScrollToItem(events.lastIndex)
+        }
+        shownEvents = events.size
+    }
     LaunchedEffect(leave) { if (leave == Leave.GO) onBack() }
     BackHandler(enabled = leave != Leave.GO, onBack = notes::requestLeave)
 

@@ -361,7 +361,7 @@ private fun RecordPicker(
 ) {
     val spacing = LocalSpacing.current
     var query by rememberSaveable { mutableStateOf("") }
-    var chosen by remember { mutableStateOf(options.map { it.key }.filter { it in selected }) }
+    var chosen by rememberSaveable { mutableStateOf(options.map { it.key }.filter { it in selected }) }
     val shown = remember(options, query) {
         val needle = normalizeIdentity(query)
         options.filter { needle.isEmpty() || needle in normalizeIdentity(it.name) }
