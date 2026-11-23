@@ -100,6 +100,9 @@ class AddonServices @Inject constructor(private val client: CodexClient) {
 
     private val connections = ConcurrentHashMap<String, Connection>()
 
+    /** The provider [site]'s calls of [contract] go to, if one is bound; asks nothing. */
+    fun binding(site: Site, contract: ServiceContract): ServiceBinding? = connections[site.baseUrl]?.bindings?.get(contract)
+
     /** Asks the host for [contract]'s providers again and keeps the first one for later calls. */
     suspend fun connect(site: Site, contract: ServiceContract): ServiceResult<ServiceBinding> =
         withSession(site) { connection, csrf -> connectNow(site, connection, csrf, contract) }
