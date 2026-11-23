@@ -431,4 +431,24 @@
     <string name="size_gargantuan">Gigantická</string>
     <string name="home_my_character">Moje postava</string>
     <string name="home_open_sheet">Otevřít deník postavy</string>
+    <!-- Values temporary effects change -->
+    <string name="mark_on_the_roll">%1$s na hod, není v čísle</string>
+    <string name="mark_set_to">Nastaveno na %1$s</string>
+    <string name="mark_advantage">Výhoda</string>
+    <string name="mark_disadvantage">Nevýhoda</string>
+    <string name="mark_changed">Změněno</string>
+    <string name="mark_sentence">%1$s %2$s, nyní mění %3$s</string>
+    <string name="mark_kind_condition">stav</string>
+    <string name="mark_kind_active_feature">aktivní schopnost</string>
+    <string name="mark_kind_timed_grant">dočasný dar</string>
+    <string name="mark_causes_title">Nyní mění</string>
+    <string name="mark_name_armor">Obranné číslo</string>
+    <string name="mark_name_initiative">Iniciativa</string>
+    <string name="mark_name_max_hp">Maximum životů</string>
+    <string name="mark_name_check">Ověření: %1$s</string>
+    <string name="mark_name_save">Záchranný hod: %1$s</string>
+    <string name="mark_name_attack">Hod na útok: %1$s</string>
+    <string name="mark_name_damage">Zranění: %1$s</string>
+    <string name="mark_name_spell_attack">Útok kouzlem: %1$s</string>
+    <string name="mark_name_save_dc">SO záchrany: %1$s</string>
 </resources>

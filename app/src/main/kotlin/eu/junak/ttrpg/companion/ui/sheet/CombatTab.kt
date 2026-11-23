@@ -37,7 +37,9 @@ import eu.junak.ttrpg.companion.core.model.character.HitDice
 import eu.junak.ttrpg.companion.core.model.character.LimitedUse
 import eu.junak.ttrpg.companion.core.model.character.PlayChange
 import eu.junak.ttrpg.companion.core.model.character.RestLength
+import eu.junak.ttrpg.companion.core.model.character.ValueMark
 import eu.junak.ttrpg.companion.ui.components.ListRow
+import eu.junak.ttrpg.companion.ui.components.MarkedText
 import eu.junak.ttrpg.companion.ui.components.PipRow
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
 import eu.junak.ttrpg.companion.ui.components.SwitchRow
@@ -63,10 +65,10 @@ fun CombatTab(sheet: CharacterSheet, actions: SheetActions) {
     var picker by rememberSaveable { mutableStateOf(false) }
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = spacing.md, end = spacing.md, bottom = spacing.lg)) {
-        item(key = "glance") { CombatGlance(sheet.header, actions, onHitPoints = { keypad = true }, onAddCondition = { picker = true }) }
+        item(key = "glance") { CombatGlance(sheet.header, sheet.marks, actions, onHitPoints = { keypad = true }, onAddCondition = { picker = true }) }
         if (combat.attacks.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.sheet_attacks)) }
-            items(combat.attacks) { AttackRow(it) }
+            items(combat.attacks) { AttackRow(it, sheet.marks) }
         }
         if (combat.limitedUses.isNotEmpty() || combat.toggles.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.sheet_limited_uses)) }
@@ -116,7 +118,7 @@ fun CombatTab(sheet: CharacterSheet, actions: SheetActions) {
 }
 
 @Composable
-private fun AttackRow(attack: Attack) {
+private fun AttackRow(attack: Attack, marks: List<ValueMark>) {
     val resources = LocalResources.current
     val summary = attackSummary(
         attack,
@@ -125,12 +127,16 @@ private fun AttackRow(attack: Attack) {
     )
     val toHit = signed(attack.toHit)
     val description = stringResource(R.string.sheet_to_hit, toHit)
+    val damage = marked(marks, Shown.Damage(attack.key), stringResource(R.string.mark_name_damage, attack.name), attack.damage)
+    val attackRoll = marked(marks, Shown.AttackBonus(attack.key), stringResource(R.string.mark_name_attack, attack.name), toHit)
     ListRow(attack.name, subtitle = summary) {
-        Text(
+        if (damage != null) MarkedText(attack.damage, damage, MaterialTheme.typography.bodyMedium)
+        MarkedText(
             toHit,
-            style = NumberStyles.Medium,
+            attackRoll,
+            NumberStyles.Medium,
+            modifier = if (attackRoll == null) Modifier.clearAndSetSemantics { contentDescription = description } else Modifier,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clearAndSetSemantics { contentDescription = description },
         )
     }
 }

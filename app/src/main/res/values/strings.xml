@@ -430,4 +430,24 @@
     <string name="size_gargantuan">Gargantuan</string>
     <string name="home_my_character">My character</string>
     <string name="home_open_sheet">Open the character sheet</string>
+    <!-- Values temporary effects change -->
+    <string name="mark_on_the_roll">%1$s on the roll, not in the number</string>
+    <string name="mark_set_to">Set to %1$s</string>
+    <string name="mark_advantage">Advantage</string>
+    <string name="mark_disadvantage">Disadvantage</string>
+    <string name="mark_changed">Changed</string>
+    <string name="mark_sentence">%1$s %2$s, changed for now by %3$s</string>
+    <string name="mark_kind_condition">condition</string>
+    <string name="mark_kind_active_feature">active feature</string>
+    <string name="mark_kind_timed_grant">timed boon</string>
+    <string name="mark_causes_title">Changed for now by</string>
+    <string name="mark_name_armor">Armor Class</string>
+    <string name="mark_name_initiative">Initiative</string>
+    <string name="mark_name_max_hp">Maximum hit points</string>
+    <string name="mark_name_check">%1$s check</string>
+    <string name="mark_name_save">%1$s saving throw</string>
+    <string name="mark_name_attack">%1$s attack roll</string>
+    <string name="mark_name_damage">%1$s damage</string>
+    <string name="mark_name_spell_attack">%1$s spell attack</string>
+    <string name="mark_name_save_dc">%1$s spell save DC</string>
 </resources>

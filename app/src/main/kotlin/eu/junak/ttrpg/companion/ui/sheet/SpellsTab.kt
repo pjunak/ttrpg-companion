@@ -35,6 +35,7 @@ import eu.junak.ttrpg.companion.core.model.character.CharacterSheet
 import eu.junak.ttrpg.companion.core.model.character.Concentration
 import eu.junak.ttrpg.companion.core.model.character.SpellCaster
 import eu.junak.ttrpg.companion.core.model.character.SpellSlot
+import eu.junak.ttrpg.companion.core.model.character.ValueMark
 import eu.junak.ttrpg.companion.ui.components.Banner
 import eu.junak.ttrpg.companion.ui.components.BannerTone
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
@@ -66,7 +67,7 @@ fun SpellsTab(sheet: CharacterSheet, actions: SheetActions) {
     var casting by rememberSaveable { mutableStateOf<String?>(null) }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = spacing.md, end = spacing.md, bottom = spacing.lg)) {
         if (spells.casters.isNotEmpty() || sheet.header.concentration != null) {
-            item(key = "glance") { SpellsGlance(spells.casters, sheet.header.concentration, actions) }
+            item(key = "glance") { SpellsGlance(spells.casters, sheet.header.concentration, sheet.marks, actions) }
         }
         items(spells.slots.filter { it.pact }, key = { "pact:" + it.key }) { slot ->
             ListRow(stringResource(R.string.sheet_pact_slots, romanLevel(slot.level)), subtitle = stringResource(R.string.sheet_left, slot.left, slot.maximum)) {
@@ -93,7 +94,7 @@ fun SpellsTab(sheet: CharacterSheet, actions: SheetActions) {
 
 /** One row of tiles per casting class, named when there are several, then the concentration chip. */
 @Composable
-private fun SpellsGlance(casters: List<SpellCaster>, concentration: Concentration?, actions: SheetActions) = GlanceCard {
+private fun SpellsGlance(casters: List<SpellCaster>, concentration: Concentration?, marks: List<ValueMark>, actions: SheetActions) = GlanceCard {
     casters.forEach { caster ->
         if (casters.size > 1) GlanceCaption(caster.name)
         val attack = signed(caster.attackBonus)
@@ -104,12 +105,14 @@ private fun SpellsGlance(casters: List<SpellCaster>, concentration: Concentratio
                 caster.saveDc.toString(),
                 stringResource(R.string.sheet_save_dc),
                 stringResource(R.string.sheet_save_dc_description, caster.saveDc),
+                marked(marks, Shown.SaveDc(caster.classId), stringResource(R.string.mark_name_save_dc, caster.name), caster.saveDc.toString()),
             ),
             GlanceValue(
                 Icons.Outlined.AutoFixHigh,
                 attack,
                 stringResource(R.string.sheet_spell_attack),
                 stringResource(R.string.sheet_spell_attack_description, attack),
+                marked(marks, Shown.SpellAttack(caster.classId), stringResource(R.string.mark_name_spell_attack, caster.name), attack),
             ),
             prepared?.let {
                 GlanceValue(

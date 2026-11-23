@@ -157,6 +157,8 @@ data class Spacing(
     val tileWidth: Dp = 80.dp,
     /** The big symbol a record without a portrait shows in its header. */
     val heroSymbol: Dp = 88.dp,
+    /** The marker before a value temporary effects change. */
+    val marker: Dp = 10.dp,
     /** An icon inside a line of small text, such as the shield beside a saving throw. */
     val iconInline: Dp = 14.dp,
     /** An icon inside a button or chip. */
@@ -192,6 +194,8 @@ data class Spacing(
     /** A use pip as drawn, and the area that takes a tap on it. */
     val pip: Dp = 16.dp,
     val pipTouch: Dp = 32.dp,
+    /** The least width, at the default text size, for a list in two columns such as the skills. */
+    val twoColumns: Dp = 360.dp,
     /** The widest a map marker's name label grows. */
     val markerLabelWidth: Dp = 160.dp,
 )
@@ -248,6 +252,21 @@ private val LightVitals = VitalColors(
 
 val LocalVitalColors = staticCompositionLocalOf { DarkVitals }
 
+/**
+ * The tones of a value that temporary effects change: a bonus, a penalty, and
+ * mixed (both, or neither). Penalty and mixed are the mockup's Classic dark;
+ * the bonus leans mint so it is not the hit point green, and light is darker
+ * for contrast.
+ */
+@Immutable
+data class MarkColors(val bonus: Color, val penalty: Color, val mixed: Color)
+
+private val DarkMarks = MarkColors(bonus = Color(0xFF8FD8B2), penalty = Color(0xFFF2A093), mixed = Color(0xFFCDB0F2))
+
+private val LightMarks = MarkColors(bonus = Color(0xFF1F6A52), penalty = Color(0xFFA1301F), mixed = Color(0xFF6E3FA3))
+
+val LocalMarkColors = staticCompositionLocalOf { DarkMarks }
+
 private val CompanionShapes = Shapes(
     extraSmall = RoundedCornerShape(4.dp),
     small = RoundedCornerShape(6.dp),
@@ -281,7 +300,11 @@ fun CompanionTheme(
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
     }
-    CompositionLocalProvider(LocalThemeMode provides mode, LocalVitalColors provides if (dark) DarkVitals else LightVitals) {
+    CompositionLocalProvider(
+        LocalThemeMode provides mode,
+        LocalVitalColors provides if (dark) DarkVitals else LightVitals,
+        LocalMarkColors provides if (dark) DarkMarks else LightMarks,
+    ) {
         MaterialTheme(
             colorScheme = colorScheme(siteTheme, dark),
             typography = CompanionTypography,

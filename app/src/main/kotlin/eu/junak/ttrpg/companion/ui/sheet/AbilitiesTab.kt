@@ -3,8 +3,10 @@ package eu.junak.ttrpg.companion.ui.sheet
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -31,7 +33,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -41,11 +45,15 @@ import eu.junak.ttrpg.companion.core.model.character.CharacterSheet
 import eu.junak.ttrpg.companion.core.model.character.Proficiency
 import eu.junak.ttrpg.companion.core.model.character.SheetAbilities
 import eu.junak.ttrpg.companion.core.model.character.SkillRow
+import eu.junak.ttrpg.companion.core.model.character.ValueMark
 import eu.junak.ttrpg.companion.ui.components.GlanceCard
 import eu.junak.ttrpg.companion.ui.components.GlanceTiles
 import eu.junak.ttrpg.companion.ui.components.GlanceValue
+import eu.junak.ttrpg.companion.ui.components.LocalMarkDetails
+import eu.junak.ttrpg.companion.ui.components.MarkedText
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
 import eu.junak.ttrpg.companion.ui.components.Tag
+import eu.junak.ttrpg.companion.ui.components.toneColor
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import eu.junak.ttrpg.companion.ui.theme.NumberStyles
 import eu.junak.ttrpg.companion.ui.theme.TitleFont
@@ -60,12 +68,12 @@ fun AbilitiesTab(sheet: CharacterSheet) {
     val spacing = LocalSpacing.current
     val abilities = sheet.abilities
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = spacing.md, end = spacing.md, bottom = spacing.lg)) {
-        item(key = "glance") { AbilitiesGlance(abilities) }
+        item(key = "glance") { AbilitiesGlance(abilities, sheet.marks) }
         item {
             Column(Modifier.padding(top = spacing.md - spacing.xs), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
                 abilities.abilities.chunked(TILES_PER_ROW).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
-                        row.forEach { AbilityTile(it, Modifier.weight(1f)) }
+                        row.forEach { AbilityTile(it, sheet.marks, Modifier.weight(1f)) }
                         repeat(TILES_PER_ROW - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
@@ -74,10 +82,17 @@ fun AbilitiesTab(sheet: CharacterSheet) {
         if (abilities.skills.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.sheet_skills)) }
             item {
-                val (left, right) = skillColumns(abilities.skills)
-                Row(horizontalArrangement = Arrangement.spacedBy(spacing.md)) {
-                    Column(Modifier.weight(1f)) { left.forEach { SkillLine(it) } }
-                    Column(Modifier.weight(1f)) { right.forEach { SkillLine(it) } }
+                // Two columns while a name, its tag and the marked bonus fit side by side; one on a narrow screen or with large text.
+                BoxWithConstraints {
+                    if (maxWidth / LocalDensity.current.fontScale < spacing.twoColumns) {
+                        Column { abilities.skills.forEach { SkillLine(it, sheet.marks) } }
+                    } else {
+                        val (left, right) = skillColumns(abilities.skills)
+                        Row(horizontalArrangement = Arrangement.spacedBy(spacing.md)) {
+                            Column(Modifier.weight(1f)) { left.forEach { SkillLine(it, sheet.marks) } }
+                            Column(Modifier.weight(1f)) { right.forEach { SkillLine(it, sheet.marks) } }
+                        }
+                    }
                 }
             }
         }
@@ -87,7 +102,7 @@ fun AbilitiesTab(sheet: CharacterSheet) {
 private const val TILES_PER_ROW = 3
 
 @Composable
-private fun AbilitiesGlance(abilities: SheetAbilities) {
+private fun AbilitiesGlance(abilities: SheetAbilities, marks: List<ValueMark>) {
     val proficiency = signed(abilities.proficiencyBonus)
     val values = listOf(
         GlanceValue(
@@ -101,32 +116,52 @@ private fun AbilitiesGlance(abilities: SheetAbilities) {
             abilities.passivePerception.toString(),
             stringResource(R.string.sheet_passive_perception),
             stringResource(R.string.sheet_passive_perception_description, abilities.passivePerception),
+            marked(marks, Shown.PassivePerception, stringResource(R.string.sheet_passive_perception), abilities.passivePerception.toString()),
         ),
     ) + abilities.senses.map { sense ->
         val name = senseName(sense.id)?.let { stringResource(it) } ?: readableId(sense.id)
-        GlanceValue(Icons.Outlined.DarkMode, sense.range.toString(), name, stringResource(R.string.sheet_sense_description, name, sense.range))
+        GlanceValue(
+            Icons.Outlined.DarkMode,
+            sense.range.toString(),
+            name,
+            stringResource(R.string.sheet_sense_description, name, sense.range),
+            marked(marks, Shown.Sense(sense.id), name, sense.range.toString()),
+        )
     }
     GlanceCard { GlanceTiles(values, TILES_PER_ROW) }
 }
 
 @Composable
-private fun AbilityTile(row: AbilityRow, modifier: Modifier) {
+private fun AbilityTile(row: AbilityRow, marks: List<ValueMark>, modifier: Modifier) {
     val spacing = LocalSpacing.current
     val colors = MaterialTheme.colorScheme
     val name = row.ability?.let { stringResource(abilityName(it)) } ?: row.id
     val save = signed(row.save)
     val described = stringResource(R.string.sheet_ability_description, name, signed(row.modifier), row.score.toString(), save)
-    val description = if (row.saveProficient) stringResource(R.string.sheet_ability_save_proficient, described) else described
+    val check = marked(marks, Shown.Check(row.id), stringResource(R.string.mark_name_check, name), signed(row.modifier))
+    val saving = marked(marks, Shown.Save(row.id), stringResource(R.string.mark_name_save, name), save)
+    // The card is read as one; a marked check or save adds its sentence.
+    val description = listOfNotNull(
+        if (row.saveProficient) stringResource(R.string.sheet_ability_save_proficient, described) else described,
+        check?.sentence,
+        saving?.sentence,
+    ).joinToString(". ")
     Surface(
         color = colors.surfaceContainer,
         border = BorderStroke(spacing.hairline, colors.outlineVariant),
         shape = MaterialTheme.shapes.medium,
         modifier = modifier.clearAndSetSemantics { contentDescription = description },
     ) {
-        Column(Modifier.padding(vertical = spacing.xs + spacing.xxs, horizontal = spacing.sm), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(row.id, style = MaterialTheme.typography.labelLarge.copy(fontFamily = TitleFont), color = colors.primary)
-            Text(signed(row.modifier), style = NumberStyles.Large)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        // Two full-width tap areas: the check above, the save row below, so the card keeps its size.
+        val open = LocalMarkDetails.current
+        val checkTap = check?.let { Modifier.clickable(role = Role.Button) { open(it) } } ?: Modifier
+        val saveTap = saving?.let { Modifier.heightIn(min = spacing.control).clickable(role = Role.Button) { open(it) } } ?: Modifier
+        Column(Modifier.padding(vertical = spacing.xs + spacing.xxs), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.fillMaxWidth().then(checkTap), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(row.id, style = MaterialTheme.typography.labelLarge.copy(fontFamily = TitleFont), color = colors.primary)
+                MarkedText(signed(row.modifier), check, NumberStyles.Large, touch = false)
+            }
+            Row(Modifier.fillMaxWidth().then(saveTap).padding(horizontal = spacing.sm), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(row.score.toString(), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing.xxs), verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -135,10 +170,12 @@ private fun AbilityTile(row: AbilityRow, modifier: Modifier) {
                         tint = if (row.saveProficient) colors.primary else colors.onSurfaceVariant,
                         modifier = Modifier.size(spacing.iconInline),
                     )
-                    Text(
+                    MarkedText(
                         save,
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = if (row.saveProficient) FontWeight.SemiBold else FontWeight.Normal),
+                        saving,
+                        MaterialTheme.typography.bodySmall.copy(fontWeight = if (row.saveProficient) FontWeight.SemiBold else FontWeight.Normal),
                         color = if (row.saveProficient) colors.primary else colors.onSurfaceVariant,
+                        touch = false,
                     )
                 }
             }
@@ -147,15 +184,20 @@ private fun AbilityTile(row: AbilityRow, modifier: Modifier) {
 }
 
 @Composable
-private fun SkillLine(skill: SkillRow) {
+private fun SkillLine(skill: SkillRow, marks: List<ValueMark>) {
     val spacing = LocalSpacing.current
     val colors = MaterialTheme.colorScheme
     val trained = skill.proficiency != Proficiency.NONE
     val name = skill.skill?.let { stringResource(skillName(it)) } ?: skill.id
     val training = stringResource(proficiencyName(skill.proficiency))
     val disadvantage = stringResource(R.string.sheet_disadvantage)
-    val description = listOfNotNull(name, training, signed(skill.bonus), disadvantage.takeIf { skill.disadvantage }).joinToString(", ")
-    Column(Modifier.clearAndSetSemantics { contentDescription = description }) {
+    val marked = marked(marks, Shown.Skill(skill.id), name, signed(skill.bonus))
+    val open = LocalMarkDetails.current
+    val described = listOfNotNull(name, training, signed(skill.bonus), disadvantage.takeIf { skill.disadvantage }).joinToString(", ")
+    val description = marked?.let { described + ". " + it.sentence } ?: described
+    // A marked skill opens its causes from the whole line, which keeps the list's rhythm.
+    val tap = if (marked != null) Modifier.clickable(role = Role.Button) { open(marked) } else Modifier
+    Column(tap.clearAndSetSemantics { contentDescription = description }) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = spacing.xl),
             horizontalArrangement = Arrangement.spacedBy(spacing.sm),
@@ -170,12 +212,14 @@ private fun SkillLine(skill: SkillRow) {
                     color = if (trained) colors.onSurface else colors.onSurfaceVariant,
                     modifier = Modifier.weight(1f, fill = false),
                 )
-                if (skill.disadvantage) Tag(stringResource(R.string.sheet_disadvantage_tag))
+                if (skill.disadvantage) Tag(stringResource(R.string.sheet_disadvantage_tag), tone = tagTone(marked?.mark, disadvantage = true)?.let { toneColor(it) })
             }
-            Text(
+            MarkedText(
                 signed(skill.bonus),
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = if (trained) FontWeight.SemiBold else FontWeight.Medium),
+                marked,
+                MaterialTheme.typography.bodyMedium.copy(fontWeight = if (trained) FontWeight.SemiBold else FontWeight.Medium),
                 color = if (trained) colors.primary else colors.onSurface,
+                touch = false,
             )
         }
         HorizontalDivider(color = colors.outlineVariant)

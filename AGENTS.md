@@ -108,6 +108,13 @@ Dependencies point inward: `app` uses everything, `core-network` uses
   badge. Each tab starts with its glance card, built from `ui/components`
   `Glance.kt`; a glance shows only values the answer carries and leaves out a
   box or row it lacks, never looking it up elsewhere.
+- Temporary effect marks come only from the answer's own
+  `evaluation.sheet.temporaryEffects` (Sheets 6.5.0, Engine 6.6.0); the saved
+  projection never has them, and an older site simply shows none.
+  `TemporaryEffects` skips a mark it cannot read. `ui/sheet/MarkPresentation.kt`
+  maps what a screen shows to the Engine's path and row; screens never derive
+  a tone from conditions or roll marks. Tones are `MarkColors` in the theme,
+  shown by `ui/components/Marked.kt`.
 - Before changing the sheet, read the Character Sheets add-on's `contracts/`
   (`character.service.json` and the schemas) and `docs/`; Czech names that
   its `locales/cs.json` has are taken from there, so the phone and the website

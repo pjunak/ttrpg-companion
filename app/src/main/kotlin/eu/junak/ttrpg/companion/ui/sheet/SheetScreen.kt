@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -64,6 +65,8 @@ import eu.junak.ttrpg.companion.ui.components.Banner
 import eu.junak.ttrpg.companion.ui.components.BannerButton
 import eu.junak.ttrpg.companion.ui.components.BannerTone
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
+import eu.junak.ttrpg.companion.ui.components.LocalMarkDetails
+import eu.junak.ttrpg.companion.ui.components.MarkedValue
 import eu.junak.ttrpg.companion.ui.components.WholeWordText
 import eu.junak.ttrpg.companion.ui.components.relativeTime
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
@@ -98,6 +101,8 @@ fun SheetScreen(
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.screenStopped() }
     LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.screenStarted() }
     var tab by rememberSaveable { mutableStateOf(SheetTab.COMBAT) }
+    // The marked value whose causes are open; tapping a marked value sets it.
+    var causes by remember { mutableStateOf<MarkedValue?>(null) }
     val website = { onOpenWebsite(CampaignPage.CHARACTERS.recordPath(viewModel.key)) }
     val sheet = (state.load as? SheetLoad.Sheet)?.sheet
 
@@ -142,7 +147,9 @@ fun SheetScreen(
                         myCharacter = myCharacter,
                         setMyCharacter = viewModel::setMyCharacter,
                     )
-                    Box(Modifier.weight(1f).fillMaxWidth()) { tabBody(tab, load.sheet, actions) }
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
+                        CompositionLocalProvider(LocalMarkDetails provides { causes = it }) { tabBody(tab, load.sheet, actions) }
+                    }
                 }
                 SheetLoad.NoSheet -> NoSheet(name.orEmpty(), website)
                 SheetLoad.SignedOut -> CenteredMessage(stringResource(R.string.sheet_signed_out)) {
@@ -158,6 +165,7 @@ fun SheetScreen(
             }
         }
     }
+    causes?.let { MarkCausesSheet(it) { causes = null } }
 }
 
 /** The body of [tab]. */

@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -86,15 +87,15 @@ fun LinkRow(title: String, onClick: () -> Unit, modifier: Modifier = Modifier, s
 
 /** A small outlined label after a name, such as "C" for concentration or "Dis" for disadvantage. */
 @Composable
-fun Tag(text: String, modifier: Modifier = Modifier) {
+fun Tag(text: String, modifier: Modifier = Modifier, tone: Color? = null) {
     val spacing = LocalSpacing.current
     val colors = MaterialTheme.colorScheme
     Text(
         text,
         style = MaterialTheme.typography.labelSmall,
-        color = colors.onSurfaceVariant,
+        color = tone ?: colors.onSurfaceVariant,
         modifier = modifier
-            .border(spacing.hairline, colors.outline, MaterialTheme.shapes.extraSmall)
+            .border(spacing.hairline, tone ?: colors.outline, MaterialTheme.shapes.extraSmall)
             .padding(horizontal = spacing.xs + spacing.xxs, vertical = spacing.xxs),
     )
 }

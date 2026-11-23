@@ -42,7 +42,11 @@ An Android app for players and DMs of TTRPG Codex campaign sites.
   attack and prepared spells per casting class, concentration, slots and every
   way to cast. Gear: carried weight, attunement and coins, then quick use,
   hands, worn and carried items. More: class, species and size, background
-  and languages, then features. Building the character, equipment, import and export open the
+  and languages, then features. A value that something temporary changes
+  right now (a condition, a feature switched on, a DM grant that expires)
+  takes a colour, green for a bonus, red for a penalty, violet for both or
+  neither, with a soft glow and a small marker; tapping it lists what changes
+  it. Building the character, equipment, import and export open the
   website. Every sheet the app has shown stays on the phone and opens without
   a connection, read-only and marked as the phone's copy; changes need the
   site, are saved one at a time, and a change that could not be saved waits

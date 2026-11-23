@@ -1,10 +1,12 @@
 package eu.junak.ttrpg.companion.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -79,7 +81,8 @@ fun GlanceCaption(text: String) = Text(
 /**
  * A boxed value with its icon, above a short label: Armor 18. [value] may be
  * null for a box that is only an icon and a label. With [onToggle] it is a
- * switch, lit while [checked], such as Inspired.
+ * switch, lit while [checked], such as Inspired. A [marked] value takes its
+ * tone on the border and the number, and tapping the tile opens its causes.
  */
 @Composable
 fun GlanceTile(
@@ -91,11 +94,18 @@ fun GlanceTile(
     checked: Boolean = false,
     onToggle: ((Boolean) -> Unit)? = null,
     enabled: Boolean = true,
+    marked: MarkedValue? = null,
 ) {
     val spacing = LocalSpacing.current
     val colors = MaterialTheme.colorScheme
     val lit = checked && onToggle != null
-    val toggle = if (onToggle != null) Modifier.toggleable(checked, enabled = enabled, role = Role.Switch, onValueChange = onToggle) else Modifier
+    val open = LocalMarkDetails.current
+    val tone = marked?.let { toneColor(it.mark.tone) }
+    val toggle = when {
+        onToggle != null -> Modifier.toggleable(checked, enabled = enabled, role = Role.Switch, onValueChange = onToggle)
+        marked != null -> Modifier.clickable(role = Role.Button) { open(marked) }
+        else -> Modifier
+    }
     val dimmed = onToggle != null && !enabled
     Column(
         modifier
@@ -106,31 +116,40 @@ fun GlanceTile(
             .glanceBox(
                 MaterialTheme.shapes.medium,
                 if (lit) colors.primaryContainer else colors.surfaceContainer,
-                if (lit) colors.primary else colors.outlineVariant,
+                tone ?: if (lit) colors.primary else colors.outlineVariant,
                 spacing.hairline,
             )
             .then(toggle)
-            .clearAndSetSemantics { contentDescription = description }
+            .clearAndSetSemantics { contentDescription = marked?.sentence ?: description }
             .padding(horizontal = spacing.xs + spacing.xxs, vertical = spacing.sm),
         verticalArrangement = Arrangement.spacedBy(spacing.xs + spacing.xxs, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs + spacing.xxs), verticalAlignment = Alignment.CenterVertically) {
+        // The number, with its marker, moves below the icon when a narrow tile cannot hold both.
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(spacing.xs + spacing.xxs, Alignment.CenterHorizontally),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(icon, contentDescription = null, tint = if (lit) colors.onPrimaryContainer else colors.primary, modifier = Modifier.size(spacing.iconMedium))
-            if (value != null) Text(value, style = NumberStyles.Medium, color = colors.onSurface, maxLines = 1)
+            if (value != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(spacing.xxs), verticalAlignment = Alignment.CenterVertically) {
+                    if (marked != null && tone != null) ToneMarker(marked.mark.tone)
+                    Text(value, style = tone?.let { NumberStyles.Medium.glowing(it) } ?: NumberStyles.Medium, color = tone ?: colors.onSurface, maxLines = 1)
+                }
+            }
         }
         GlanceLabel(label, if (lit) colors.onPrimaryContainer else colors.onSurfaceVariant, TextAlign.Center)
     }
 }
 
 /** A read-only value for [GlanceTiles]. */
-data class GlanceValue(val icon: ImageVector, val value: String?, val label: String, val description: String)
+data class GlanceValue(val icon: ImageVector, val value: String?, val label: String, val description: String, val marked: MarkedValue? = null)
 
 /** Read-only tiles in rows of at most [perRow]; the tiles of a row share its width and height. */
 @Composable
 fun GlanceTiles(values: List<GlanceValue>, perRow: Int) {
     values.chunked(perRow).forEach { row ->
-        GlanceRow { row.forEach { GlanceTile(it.icon, it.value, it.label, it.description, Modifier.weight(1f).fillMaxHeight()) } }
+        GlanceRow { row.forEach { GlanceTile(it.icon, it.value, it.label, it.description, Modifier.weight(1f).fillMaxHeight(), marked = it.marked) } }
     }
 }
 

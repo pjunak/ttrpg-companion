@@ -53,11 +53,14 @@ import eu.junak.ttrpg.companion.core.model.character.CharacterInputs
 import eu.junak.ttrpg.companion.core.model.character.Concentration
 import eu.junak.ttrpg.companion.core.model.character.PlayChange
 import eu.junak.ttrpg.companion.core.model.character.SheetHeader
+import eu.junak.ttrpg.companion.core.model.character.ValueMark
 import eu.junak.ttrpg.companion.ui.components.AddChip
 import eu.junak.ttrpg.companion.ui.components.ChipTone
 import eu.junak.ttrpg.companion.ui.components.GlanceCard
 import eu.junak.ttrpg.companion.ui.components.GlanceRow
 import eu.junak.ttrpg.companion.ui.components.GlanceTile
+import eu.junak.ttrpg.companion.ui.components.MarkedText
+import eu.junak.ttrpg.companion.ui.components.MarkedValue
 import eu.junak.ttrpg.companion.ui.components.RemovableChip
 import eu.junak.ttrpg.companion.ui.theme.Emphasis
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
@@ -69,10 +72,16 @@ import eu.junak.ttrpg.companion.ui.theme.LocalVitalColors
  * It is dimmed while the rules changed or are unavailable: readable, not usable.
  */
 @Composable
-internal fun CombatGlance(header: SheetHeader, actions: SheetActions, onHitPoints: () -> Unit, onAddCondition: () -> Unit) {
+internal fun CombatGlance(
+    header: SheetHeader,
+    marks: List<ValueMark>,
+    actions: SheetActions,
+    onHitPoints: () -> Unit,
+    onAddCondition: () -> Unit,
+) {
     val canWrite = actions.canWrite
     GlanceCard(Modifier.alpha(if (actions.dimmed) Emphasis.DIMMED else 1f)) {
-        HitPoints(header, canWrite, onHitPoints)
+        HitPoints(header, marked(marks, Shown.MaxHitPoints, stringResource(R.string.mark_name_max_hp), header.maxHitPoints.toString()), canWrite, onHitPoints)
         GlanceRow {
             val tile = Modifier.weight(1f).fillMaxHeight()
             GlanceTile(
@@ -81,6 +90,7 @@ internal fun CombatGlance(header: SheetHeader, actions: SheetActions, onHitPoint
                 stringResource(R.string.sheet_ac),
                 stringResource(R.string.sheet_ac_description, header.armorClass),
                 tile,
+                marked = marked(marks, Shown.Armor, stringResource(R.string.mark_name_armor), header.armorClass.toString()),
             )
             GlanceTile(
                 Icons.Outlined.DoubleArrow,
@@ -88,6 +98,7 @@ internal fun CombatGlance(header: SheetHeader, actions: SheetActions, onHitPoint
                 stringResource(R.string.sheet_speed),
                 stringResource(R.string.sheet_speed_description, header.speed),
                 tile,
+                marked = marked(marks, Shown.Speed, stringResource(R.string.sheet_speed), header.speed.toString()),
             )
             GlanceTile(
                 Icons.Outlined.Bolt,
@@ -95,6 +106,7 @@ internal fun CombatGlance(header: SheetHeader, actions: SheetActions, onHitPoint
                 stringResource(R.string.sheet_initiative),
                 stringResource(R.string.sheet_initiative_description, signed(header.initiative)),
                 tile,
+                marked = marked(marks, Shown.Initiative, stringResource(R.string.mark_name_initiative), signed(header.initiative)),
             )
             GlanceTile(
                 if (header.inspiration) Icons.Filled.Star else Icons.Outlined.StarBorder,
@@ -141,7 +153,7 @@ private fun conditionLabel(condition: ActiveCondition): String =
     if (condition.level > 1) stringResource(R.string.sheet_condition_level, condition.name, condition.level) else condition.name
 
 @Composable
-private fun HitPoints(header: SheetHeader, canWrite: Boolean, onChange: () -> Unit) {
+private fun HitPoints(header: SheetHeader, maximum: MarkedValue?, canWrite: Boolean, onChange: () -> Unit) {
     val spacing = LocalSpacing.current
     val colors = MaterialTheme.colorScheme
     val vitals = LocalVitalColors.current
@@ -158,7 +170,8 @@ private fun HitPoints(header: SheetHeader, canWrite: Boolean, onChange: () -> Un
         ) {
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(header.hitPoints.toString(), style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold))
-                Text(" / ${header.maxHitPoints}", style = MaterialTheme.typography.titleLarge, color = colors.onSurfaceVariant)
+                Text(" / ", style = MaterialTheme.typography.titleLarge, color = colors.onSurfaceVariant)
+                MarkedText(header.maxHitPoints.toString(), maximum, MaterialTheme.typography.titleLarge, color = colors.onSurfaceVariant)
                 if (header.temporaryHitPoints > 0) {
                     Text("  +${header.temporaryHitPoints}", style = MaterialTheme.typography.titleMedium, color = vitals.temporary)
                 }
