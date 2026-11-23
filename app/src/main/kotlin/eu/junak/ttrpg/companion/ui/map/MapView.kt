@@ -44,6 +44,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Constraints
@@ -52,6 +53,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import coil3.SingletonImageLoader
 import coil3.request.ImageRequest
+import coil3.request.allowRgb565
+import coil3.request.CachePolicy
 import coil3.request.SuccessResult
 import coil3.toBitmap
 import eu.junak.ttrpg.companion.R
@@ -125,9 +128,16 @@ internal fun MapView(
         }
         is MapImage.Original -> {
             val context = LocalContext.current
-            val original by produceState<OriginalImage>(OriginalImage.Loading, image.mediaPath, baseUrl) {
-                // Decode beyond the screen size so zooming in keeps detail, within memory limits.
-                val request = ImageRequest.Builder(context).data(baseUrl + image.mediaPath).size(MAX_ORIGINAL_SIZE).build()
+            val configuration = LocalConfiguration.current
+            // Sharp up to twice the fitted zoom: the screen's long side twice over, within the memory cap.
+            val screenLongSide = (maxOf(configuration.screenWidthDp, configuration.screenHeightDp) * LocalDensity.current.density).roundToInt()
+            val decodeSize = (screenLongSide * ORIGINAL_DETAIL).coerceAtMost(MAX_ORIGINAL_SIZE)
+            val original by produceState<OriginalImage>(OriginalImage.Loading, image.mediaPath, baseUrl, decodeSize) {
+                // The screen keeps the decoded image; Coil's memory cache would only hold a second large copy alive.
+                val request = ImageRequest.Builder(context).data(baseUrl + image.mediaPath).size(decodeSize)
+                    .allowRgb565(true)
+                    .memoryCachePolicy(CachePolicy.DISABLED)
+                    .build()
                 val result = SingletonImageLoader.get(context).execute(request)
                 value = if (result is SuccessResult) OriginalImage.Ready(result.image.toBitmap().asImageBitmap()) else OriginalImage.Failed
             }
@@ -397,7 +407,11 @@ private class TileStore(private val images: MapTileImages) {
 private const val MAX_TILES = 160
 private const val PARALLEL_LOADS = 6
 private const val OVERVIEW_LEVEL = 2
+/** The decoded original's long side never exceeds this: 64 MB in full colour. */
 private const val MAX_ORIGINAL_SIZE = 4096
+
+/** How many times the screen's long side an original is decoded at, so zooming in to twice the fit stays sharp. */
+private const val ORIGINAL_DETAIL = 2
 private const val DOUBLE_TAP_ZOOM = 2.0
 private const val BUTTON_ZOOM = 1.6
 private const val FEW_PINS = 12
