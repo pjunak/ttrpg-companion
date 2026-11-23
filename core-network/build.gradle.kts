@@ -19,6 +19,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    // FakeHost and the repository fixture, shared with the app's tests.
+    testFixtures {
+        enable = true
+    }
 }
 
 kotlin {
@@ -38,6 +43,9 @@ dependencies {
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    testFixturesApi(libs.okhttp.mockwebserver)
+    testFixturesImplementation(libs.kotlinx.coroutines.core)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
