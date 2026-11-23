@@ -30,6 +30,19 @@ An Android app for players and DMs of TTRPG Codex campaign sites.
   with an unsent note or unsaved changes asks first, leaving while a save is
   on its way offers to wait for it, and a save keeps going if the screen is
   left anyway.
+- **Character sheet:** on sites running host 2.2.0 or newer with the Character
+  Sheets add-on (6.0.0 or newer) and the Rules Engine, a character's page
+  offers "Open sheet". The sheet is native: hit points with a keypad for
+  damage, healing and temporary hit points, AC, speed, initiative, inspiration,
+  concentration and conditions above five tabs: Combat (attacks, limited uses,
+  feature switches, hit dice, rests), Abilities, Spells (slots and every way
+  to cast), Gear (quick use, hands, worn and carried items, coins) and More
+  (features). Building the character, equipment, import and export open the
+  website. Every sheet the app has shown stays on the phone and opens without
+  a connection, read-only and marked as the phone's copy; changes need the
+  site, are saved one at a time, and a change that could not be saved waits
+  with "Try again" and "Discard". "My character" puts one character on the
+  site's home screen.
 - **Look and language:** the website's fonts (Cinzel and Lora), the site's
   Classic or Moonlit colours in light or dark, and English or Czech following
   the site's language.
@@ -48,11 +61,6 @@ An Android app for players and DMs of TTRPG Codex campaign sites.
 - **Updates:** at start the app checks GitHub quietly; when a newer release
   exists, the Settings button (or the menu on a site's home) shows a dot, and
   Settings → Updates downloads, verifies and installs it.
-
-Planned next (host backlog): the optional character sheet module, for sites
-running host 2.2.0 or newer with Character Sheets installed. Like the
-campaign, each sheet it has shown stays on the phone for reading without a
-connection; changes to a sheet need the site.
 
 ## Requirements
 
@@ -81,6 +89,12 @@ local hosts.
 ```powershell
 adb reverse tcp:3077 tcp:3077
 ```
+
+For the character sheet, sign in to that host as DM, install the D&D 2024
+Compendium, Rules Engine and Character Sheets release ZIPs under Settings →
+Add-ons, and build a character on its page; its sheet then opens in the app.
+The recorded answers in `core-model/src/test/resources/character/` come from
+such a host; their README names the versions.
 
 ## Releases
 

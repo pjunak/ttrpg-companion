@@ -80,6 +80,35 @@ Dependencies point inward: `app` uses everything, `core-network` uses
 - A wire change needs both sides checked: the host's tests and this app's
   model and client tests.
 
+## Character sheet
+
+- Service `dnd5e.character` 4.x (requests `character.v3`, answers
+  `character-response.v3`), found by contract through `CharacterService`,
+  never by the Character Sheets add-on's ID; the sheet hides itself without a
+  provider.
+- The readers are hand-written: `core-model` `character/`
+  (`CharacterAnswer`, `CharacterSheet`, `CharacterRequest`,
+  `CharacterInputs`). Their tests check requests and readers against pinned
+  copies of the contract's schemas and recorded answers in
+  `core-model/src/test/resources/character/` (its README says from which
+  versions and how they were recorded).
+- `core-network` `CharacterSession` owns the rules. Saves go one at a time on
+  the newest revision. A save whose answer was lost is sent again unchanged,
+  with the same operation ID, and later changes wait behind it. A conflict
+  drops a play change; an edit is made once more on the inputs saved
+  elsewhere. The app never adopts rules: changed or unavailable rules make the
+  sheet read-only and send the player to the website. The sheet loads again
+  when the add-on's data changes and when its screen returns.
+- The device copy (`SiteStore`, `character-copy.v1`) is the newest answer,
+  kept with the role it was received under, shown only to that role and only
+  until the host answers. An answer that the sheet is not for this session
+  (signed out, forbidden, not found, not offered) ends its showing, and
+  forbidden or not found removes it.
+- Before changing the sheet, read the Character Sheets add-on's `contracts/`
+  (`character.service.json` and the schemas) and `docs/`; Czech names that
+  its `locales/cs.json` has are taken from there, so the phone and the website
+  agree.
+
 ## Conventions
 
 - Kotlin, Compose Material 3, Hilt, coroutines and Flow, versions from
@@ -95,11 +124,8 @@ Dependencies point inward: `app` uses everything, `core-network` uses
 - One OkHttp client and cookie jar serve REST, images and the event stream.
   Session cookies are stored encrypted per site origin; passwords are never
   stored.
-- Each site keeps its campaign copy, map details and character sheet copies
-  in the app's files (`SiteStore`); removing the site removes them. A sheet
-  copy is the newest answer the character session took, kept with the role it
-  was received under and shown only to that role, until the host answers
-  (`CharacterSession`).
+- Each site keeps its campaign copy, map details, character sheet copies and
+  "My character" on the device (`SiteStore`); removing the site removes them.
 - HTTPS only. Debug builds also accept plain HTTP to local development hosts.
 
 ## Release
@@ -115,8 +141,9 @@ need the owner's explicit approval.
 
 ## Testing
 
-Models, wire parsing, the host client, the repositories, `EventWriter` and the
-session-note ViewModels have JVM tests. Network and ViewModel tests run against
+Models, wire parsing, the host client, the repositories, `EventWriter`, the
+character session, the sheet's presentation rules and the session-note
+ViewModels have JVM tests. Network and ViewModel tests run against
 `FakeHost` (MockWebServer), shared as `core-network` test fixtures; app tests
 use Robolectric for Android classes such as navigation routes. For UI or
 protocol changes, also run the app on an emulator against a throwaway local
