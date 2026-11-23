@@ -26,13 +26,20 @@ class SheetActions(
     val openWebsite: () -> Unit,
 )
 
-/** The top bar's save badge. */
-enum class SaveBadge { SAVED, SAVING, NOT_SAVED }
+/**
+ * The top bar's badge. While the phone's copy is shown it says the sheet is
+ * being updated, or, once a load failed, that the site is offline.
+ */
+enum class SaveBadge { SAVED, SAVING, NOT_SAVED, UPDATING, OFFLINE }
 
-fun saveBadge(state: CharacterSessionState): SaveBadge = when {
-    state.save is SaveState.NotSaved -> SaveBadge.NOT_SAVED
-    state.save == SaveState.Saving || state.pending > 0 -> SaveBadge.SAVING
-    else -> SaveBadge.SAVED
+fun saveBadge(state: CharacterSessionState): SaveBadge {
+    val copy = state.copy
+    return when {
+        state.save is SaveState.NotSaved -> SaveBadge.NOT_SAVED
+        copy != null -> if (copy.failure == null) SaveBadge.UPDATING else SaveBadge.OFFLINE
+        state.save == SaveState.Saving || state.pending > 0 -> SaveBadge.SAVING
+        else -> SaveBadge.SAVED
+    }
 }
 
 /** The one banner above the header, the most urgent first. */
@@ -40,20 +47,23 @@ sealed interface SheetBanner {
     /** A change's answer was lost; it waits with everything behind it. */
     data class NotSaved(val failure: ServiceFailure, val retrying: Boolean) : SheetBanner
 
-    /** The sheet is the phone's copy, from [receivedAt]; [failure] once the site could not be reached. */
-    data class DeviceCopy(val receivedAt: Long, val failure: ServiceFailure?) : SheetBanner
+    /** The sheet is the phone's copy, from [receivedAt], and loading the live one failed. */
+    data class DeviceCopy(val receivedAt: Long, val failure: ServiceFailure) : SheetBanner
 
     data object RulesChanged : SheetBanner
 
     data object RulesUnavailable : SheetBanner
 }
 
+/** The phone's copy gets a banner only once a load failed; before that the badge says it is updating. */
 fun sheetBanner(state: CharacterSessionState): SheetBanner? {
     val save = state.save
     val copy = state.copy
+    val copyFailure = copy?.failure
     return when {
         save is SaveState.NotSaved -> SheetBanner.NotSaved(save.failure, save.retrying)
-        copy != null -> SheetBanner.DeviceCopy(copy.receivedAt, copy.failure)
+        copy != null && copyFailure != null -> SheetBanner.DeviceCopy(copy.receivedAt, copyFailure)
+        copy != null -> null
         state.answer?.rulesChanged == true -> SheetBanner.RulesChanged
         state.answer?.status == CharacterStatus.UNAVAILABLE -> SheetBanner.RulesUnavailable
         else -> null
@@ -102,8 +112,36 @@ fun pressKey(number: String, key: KeypadKey): String = when (key) {
     }
 }
 
-/** The amount Damage, Heal and Temp HP send; null (they are off) while nothing is typed. */
+/** The amount the keypad's actions send; null while nothing is typed. */
 fun keypadAmount(number: String): Int? = number.toIntOrNull()
+
+/** The keypad's three actions. */
+enum class HitPointAction { DAMAGE, HEAL, TEMPORARY }
+
+/** Damage and healing need an amount above zero; temporary hit points take zero, which clears them. */
+fun keypadAllows(action: HitPointAction, amount: Int?): Boolean =
+    amount != null && (amount > 0 || action == HitPointAction.TEMPORARY)
+
+fun hitPointChange(action: HitPointAction, amount: Int): PlayChange = when (action) {
+    HitPointAction.DAMAGE -> PlayChange.Damage(amount)
+    HitPointAction.HEAL -> PlayChange.Heal(amount)
+    HitPointAction.TEMPORARY -> PlayChange.SetTemporaryHp(amount)
+}
+
+/**
+ * Tells a screen's return to the foreground (after another screen or app)
+ * from its first start, so the sheet loads again only on a return.
+ */
+class ReturnWatch {
+    private var away = false
+
+    fun stopped() {
+        away = true
+    }
+
+    /** True when this start follows a stop. */
+    fun started(): Boolean = away.also { away = false }
+}
 
 /** One row of the condition picker; [level] is the level the character has it at now. */
 data class ConditionChoice(val id: String, val name: String, val maximumLevel: Int, val enabled: Boolean, val level: Int?) {

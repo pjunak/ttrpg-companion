@@ -97,6 +97,15 @@ class SheetViewModel @Inject constructor(
         session?.reload()
     }
 
+    private val returns = ReturnWatch()
+
+    fun screenStopped() = returns.stopped()
+
+    /** Back from another screen or app (signing in again, say), the sheet loads again; not on the first open. */
+    fun screenStarted() {
+        if (returns.started()) reload()
+    }
+
     override fun onCleared() {
         session?.close()
     }

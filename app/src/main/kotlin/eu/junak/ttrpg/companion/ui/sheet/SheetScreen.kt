@@ -71,6 +71,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.CampaignPage
@@ -122,6 +124,8 @@ fun SheetScreen(
     val snackbars = remember { SnackbarHostState() }
     val resources = LocalResources.current
     LaunchedEffect(viewModel, resources) { viewModel.notices.collect { snackbars.showSnackbar(noticeText(resources, it)) } }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.screenStopped() }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.screenStarted() }
     var tab by rememberSaveable { mutableStateOf(SheetTab.COMBAT) }
     var keypad by rememberSaveable { mutableStateOf(false) }
     var picker by rememberSaveable { mutableStateOf(false) }
@@ -218,6 +222,8 @@ private fun SaveBadgeView(badge: SaveBadge) {
         SaveBadge.SAVED -> Icons.Outlined.CloudDone to R.string.sheet_saved
         SaveBadge.SAVING -> Icons.Outlined.CloudSync to R.string.sheet_saving
         SaveBadge.NOT_SAVED -> Icons.Outlined.CloudOff to R.string.sheet_not_saved
+        SaveBadge.UPDATING -> Icons.Outlined.CloudSync to R.string.sheet_updating
+        SaveBadge.OFFLINE -> Icons.Outlined.CloudOff to R.string.sheet_offline
     }
     val color = if (badge == SaveBadge.NOT_SAVED) colors.error else colors.onSurfaceVariant
     Row(
@@ -244,13 +250,7 @@ private fun SheetBannerView(banner: SheetBanner?, name: String, refreshing: Bool
             BannerButton(stringResource(R.string.action_discard), viewModel::discard)
         }
         is SheetBanner.DeviceCopy -> {
-            val time = relativeTime(banner.receivedAt)
-            val text = if (banner.failure == null) {
-                stringResource(R.string.sheet_banner_copy, time)
-            } else {
-                stringResource(R.string.sheet_banner_copy_unreachable, time)
-            }
-            Banner(text, BannerTone.ALERT, place) {
+            Banner(stringResource(R.string.sheet_banner_copy_unreachable, relativeTime(banner.receivedAt)), BannerTone.ALERT, place) {
                 if (refreshing) {
                     CircularProgressIndicator(Modifier.size(LocalSpacing.current.progressInline))
                 } else {
@@ -454,16 +454,14 @@ private fun HitPointKeypad(header: SheetHeader, enabled: Boolean, onChange: (Pla
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
-                val ready = enabled && amount != null
-                ActionKey(R.string.sheet_damage, colors.tertiaryContainer, colors.onTertiaryContainer, colors.tertiary, ready, Modifier.weight(1f)) {
-                    onChange(PlayChange.Damage(amount ?: 0))
-                }
-                ActionKey(R.string.sheet_heal, vitals.healContainer, vitals.onHealContainer, vitals.health, ready, Modifier.weight(1f)) {
-                    onChange(PlayChange.Heal(amount ?: 0))
-                }
-                ActionKey(R.string.sheet_temporary, vitals.temporaryContainer, vitals.onTemporaryContainer, vitals.temporary, ready, Modifier.weight(1f)) {
-                    onChange(PlayChange.SetTemporaryHp(amount ?: 0))
-                }
+                @Composable
+                fun Action(action: HitPointAction, label: Int, container: Color, content: Color, border: Color) =
+                    ActionKey(label, container, content, border, enabled && keypadAllows(action, amount), Modifier.weight(1f)) {
+                        amount?.let { onChange(hitPointChange(action, it)) }
+                    }
+                Action(HitPointAction.DAMAGE, R.string.sheet_damage, colors.tertiaryContainer, colors.onTertiaryContainer, colors.tertiary)
+                Action(HitPointAction.HEAL, R.string.sheet_heal, vitals.healContainer, vitals.onHealContainer, vitals.health)
+                Action(HitPointAction.TEMPORARY, R.string.sheet_temporary, vitals.temporaryContainer, vitals.onTemporaryContainer, vitals.temporary)
             }
         }
     }

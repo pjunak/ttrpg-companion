@@ -247,9 +247,10 @@
     <string name="record_open_sheet">Otevřít deník</string>
     <string name="sheet_saved">Uloženo</string>
     <string name="sheet_saving">Ukládá se…</string>
+    <string name="sheet_updating">Aktualizuje se</string>
+    <string name="sheet_offline">Offline</string>
     <string name="sheet_not_saved">Neuloženo</string>
     <string name="sheet_banner_not_saved">Změna není uložená. Zkontrolujte připojení; dokud se neuloží, nic dalšího se změnit nedá.</string>
-    <string name="sheet_banner_copy">Toto je kopie deníku v telefonu z %1$s. Dokud web neodpoví, nedá se měnit.</string>
     <string name="sheet_banner_copy_unreachable">Toto je kopie deníku v telefonu z %1$s. Web není dostupný, takže se nedá měnit.</string>
     <string name="sheet_banner_rules_changed">Pravidla na tomto webu se změnila. Než začnete hrát, zkontrolujte postavu %1$s na webu.</string>
     <string name="sheet_banner_rules_unavailable">Pravidla teď na tomto webu nejsou dostupná. Deník lze číst, ale ne měnit.</string>

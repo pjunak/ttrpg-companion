@@ -7,6 +7,7 @@ import eu.junak.ttrpg.companion.core.model.character.CharacterAnswer
 import eu.junak.ttrpg.companion.core.model.character.CharacterStatus
 import eu.junak.ttrpg.companion.core.model.character.ClassLevel
 import eu.junak.ttrpg.companion.core.model.character.ConditionOption
+import eu.junak.ttrpg.companion.core.model.character.PlayChange
 import eu.junak.ttrpg.companion.core.model.character.SheetHeader
 import eu.junak.ttrpg.companion.core.network.HostFailure
 import eu.junak.ttrpg.companion.core.network.character.CharacterSessionState
@@ -40,6 +41,8 @@ class SheetPresentationTest {
         assertEquals(SaveBadge.SAVING, saveBadge(CharacterSessionState(save = SaveState.Saving)))
         assertEquals("changes waiting count as saving", SaveBadge.SAVING, saveBadge(CharacterSessionState(pending = 2)))
         assertEquals(SaveBadge.NOT_SAVED, saveBadge(CharacterSessionState(save = SaveState.NotSaved(offline, retrying = true), pending = 2)))
+        assertEquals("the copy while the live sheet loads", SaveBadge.UPDATING, saveBadge(CharacterSessionState(copy = DeviceCopy(1L))))
+        assertEquals("the copy after a failed load", SaveBadge.OFFLINE, saveBadge(CharacterSessionState(copy = DeviceCopy(1L, offline))))
     }
 
     @Test
@@ -49,6 +52,7 @@ class SheetPresentationTest {
         val changed = answer(rulesChanged = true)
         assertEquals(SheetBanner.NotSaved(offline, false), sheetBanner(CharacterSessionState(save = held, copy = copy, answer = changed)))
         assertEquals(SheetBanner.DeviceCopy(5_000L, offline), sheetBanner(CharacterSessionState(copy = copy, answer = changed)))
+        assertNull("before a load failed the copy has no banner", sheetBanner(CharacterSessionState(copy = DeviceCopy(5_000L), answer = changed)))
         assertEquals(SheetBanner.RulesChanged, sheetBanner(CharacterSessionState(answer = changed)))
         assertEquals(SheetBanner.RulesUnavailable, sheetBanner(CharacterSessionState(answer = answer(CharacterStatus.UNAVAILABLE))))
         assertNull(sheetBanner(CharacterSessionState(answer = answer())))
@@ -99,9 +103,30 @@ class SheetPresentationTest {
         assertEquals("", pressKey(number, KeypadKey.Clear))
         assertEquals("", pressKey("", KeypadKey.Delete))
 
-        assertNull("nothing typed: the actions are off", keypadAmount(""))
+        assertNull("nothing typed", keypadAmount(""))
         assertEquals(0, keypadAmount("0"))
         assertEquals(7123, keypadAmount("7123"))
+    }
+
+    @Test
+    fun damageAndHealingNeedAnAmountTemporaryHitPointsTakeZero() {
+        for (action in HitPointAction.entries) assertFalse("$action without a number", keypadAllows(action, null))
+        assertFalse(keypadAllows(HitPointAction.DAMAGE, 0))
+        assertFalse(keypadAllows(HitPointAction.HEAL, 0))
+        assertTrue("zero clears them", keypadAllows(HitPointAction.TEMPORARY, 0))
+        for (action in HitPointAction.entries) assertTrue(keypadAllows(action, 5))
+        assertEquals(PlayChange.Damage(5), hitPointChange(HitPointAction.DAMAGE, 5))
+        assertEquals(PlayChange.Heal(5), hitPointChange(HitPointAction.HEAL, 5))
+        assertEquals(PlayChange.SetTemporaryHp(0), hitPointChange(HitPointAction.TEMPORARY, 0))
+    }
+
+    @Test
+    fun theSheetLoadsAgainOnlyWhenTheScreenComesBack() {
+        val returns = ReturnWatch()
+        assertFalse("first open", returns.started())
+        returns.stopped()
+        assertTrue("back from another screen", returns.started())
+        assertFalse("started again without leaving", returns.started())
     }
 
     @Test
