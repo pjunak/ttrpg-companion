@@ -1,5 +1,6 @@
 package eu.junak.ttrpg.companion.ui.sessions
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -172,17 +173,20 @@ fun SessionScreen(
     val text = notes.text
     val sending by notes.sending.collectAsStateWithLifecycle()
     val problem by notes.problem.collectAsStateWithLifecycle()
+    val leave by notes.leave.collectAsStateWithLifecycle()
     val dataset = state.dataset
     val events = remember(dataset, number) { dataset?.sessions()?.firstOrNull { it.number == number }?.events.orEmpty() }
     val canWrite = site?.role != null
     val list = rememberLazyListState()
     LaunchedEffect(events.size) { if (events.isNotEmpty()) list.animateScrollToItem(events.lastIndex) }
+    LaunchedEffect(leave) { if (leave == Leave.GO) onBack() }
+    BackHandler(enabled = leave != Leave.GO, onBack = notes::requestLeave)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.session_title, number)) },
-                navigationIcon = { BackButton(onBack) },
+                navigationIcon = { BackButton(notes::requestLeave) },
             )
         },
         bottomBar = {
@@ -193,10 +197,7 @@ fun SessionScreen(
                     problem = problem,
                     onText = notes::setText,
                     onSend = notes::send,
-                    onFullEditor = {
-                        onFullEditor(text)
-                        notes.setText("")
-                    },
+                    onFullEditor = { notes.handOver()?.let(onFullEditor) },
                 )
             } else {
                 Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.navigationBarsPadding()) {
@@ -240,6 +241,13 @@ fun SessionScreen(
             }
         }
     }
+    LeaveDialog(
+        leave = leave,
+        discardTitle = stringResource(R.string.discard_note_title),
+        discardText = stringResource(R.string.discard_note_text),
+        onLeave = notes::leaveAnyway,
+        onStay = notes::stay,
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)

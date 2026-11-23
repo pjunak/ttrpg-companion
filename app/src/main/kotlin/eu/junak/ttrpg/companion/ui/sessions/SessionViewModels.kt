@@ -41,6 +41,21 @@ sealed interface SaveProblem {
     data class NotSaved(val reason: WriteResult) : SaveProblem
 }
 
+/** Where a request to leave a note or event screen stands. */
+enum class Leave {
+    /** Nothing asked: the screen stays. */
+    STAY,
+
+    /** Unsaved text would be lost; ask before discarding it. */
+    CONFIRM_DISCARD,
+
+    /** A save is on its way; leaving now would hide whether it worked. Settles itself when the save answers. */
+    SAVING,
+
+    /** Nothing would be lost: leave now. */
+    GO,
+}
+
 /**
  * The quick note composer of one session. The text survives rotation and
  * process death; a note keeps one record key while its text is unchanged, so
@@ -63,6 +78,8 @@ class SessionNotesViewModel @Inject constructor(
     val sending: StateFlow<Boolean> = _sending.asStateFlow()
     private val _problem = MutableStateFlow<SaveProblem?>(null)
     val problem: StateFlow<SaveProblem?> = _problem.asStateFlow()
+    private val _leave = MutableStateFlow(Leave.STAY)
+    val leave: StateFlow<Leave> = _leave.asStateFlow()
 
     fun setText(value: String) {
         keep(value)
@@ -78,6 +95,7 @@ class SessionNotesViewModel @Inject constructor(
             ?: newRecordKey(fields.name, UUID.randomUUID().toString())
         savedState[KEY_PENDING] = key
         savedState[KEY_PENDING_TEXT] = note
+        _problem.value = null
         viewModelScope.launch {
             _sending.value = true
             val result = writer.save(site, EventBase(key, JsonObject(emptyMap()), 0), fields)
@@ -89,7 +107,44 @@ class SessionNotesViewModel @Inject constructor(
             } else {
                 _problem.value = result.problem()
             }
+            if (_leave.value == Leave.SAVING) {
+                // The user wanted to leave: go once the note is saved, stay to show a problem.
+                _leave.value = when {
+                    result != EventSaveResult.Saved -> Leave.STAY
+                    text.isBlank() -> Leave.GO
+                    else -> Leave.CONFIRM_DISCARD
+                }
+            }
         }
+    }
+
+    /**
+     * Hands the note to the full editor: returns its text and empties the
+     * composer, or null while it is being sent.
+     */
+    fun handOver(): String? {
+        if (_sending.value) return null
+        val handed = text
+        setText("")
+        return handed
+    }
+
+    /** Leaving the session: at once, unless a note would be lost or is still being sent. */
+    fun requestLeave() {
+        _leave.value = when {
+            _sending.value -> Leave.SAVING
+            text.isNotBlank() -> Leave.CONFIRM_DISCARD
+            else -> Leave.GO
+        }
+    }
+
+    /** Leaves although a note would be lost or its save not seen. */
+    fun leaveAnyway() {
+        _leave.value = Leave.GO
+    }
+
+    fun stay() {
+        _leave.value = Leave.STAY
     }
 
     private fun keep(value: String) {
@@ -145,6 +200,8 @@ class EventEditorViewModel @Inject constructor(
         private set
     private val _status = MutableStateFlow<EditorStatus>(EditorStatus.Loading)
     val status: StateFlow<EditorStatus> = _status.asStateFlow()
+    private val _leave = MutableStateFlow(Leave.STAY)
+    val leave: StateFlow<Leave> = _leave.asStateFlow()
 
     init {
         viewModelScope.launch { open() }
@@ -215,6 +272,7 @@ class EventEditorViewModel @Inject constructor(
             _status.value = EditorStatus.Saving
             val result = writer.save(site, opening, fields, overwrite)
             _status.value = if (result == EventSaveResult.Saved) EditorStatus.Done else EditorStatus.Problem(result.problem())
+            settleLeave(result)
         }
     }
 
@@ -225,11 +283,35 @@ class EventEditorViewModel @Inject constructor(
             _status.value = EditorStatus.Saving
             val result = writer.delete(site, opening)
             _status.value = if (result == EventSaveResult.Saved) EditorStatus.Done else EditorStatus.Problem(result.problem())
+            settleLeave(result)
         }
     }
 
     fun dismissProblem() {
         if (_status.value is EditorStatus.Problem) _status.value = EditorStatus.Editing
+    }
+
+    /** Leaving the editor: at once, unless changes would be lost or a save is still on its way. */
+    fun requestLeave() {
+        _leave.value = when {
+            _status.value == EditorStatus.Saving -> Leave.SAVING
+            dirty -> Leave.CONFIRM_DISCARD
+            else -> Leave.GO
+        }
+    }
+
+    /** Leaves although changes would be lost or a save not seen. */
+    fun leaveAnyway() {
+        _leave.value = Leave.GO
+    }
+
+    fun stay() {
+        _leave.value = Leave.STAY
+    }
+
+    /** The user wanted to leave while saving: go once it is done, stay to show a problem. */
+    private fun settleLeave(result: EventSaveResult) {
+        if (_leave.value == Leave.SAVING) _leave.value = if (result == EventSaveResult.Saved) Leave.GO else Leave.STAY
     }
 
     private fun remember(opening: EventBase) {

@@ -190,6 +190,12 @@
     <string name="action_remove_item">Odebrat %1$s</string>
     <string name="discard_title">Zahodit změny?</string>
     <string name="discard_text">Změny této události ještě nejsou uložené.</string>
+    <string name="discard_note_title">Zahodit poznámku?</string>
+    <string name="discard_note_text">Ještě není přidaná do sezení.</string>
+    <string name="leave_saving_title">Ještě se ukládá</string>
+    <string name="leave_saving_text">Když teď odejdeš, neuvidíš, jestli se uložení povedlo.</string>
+    <string name="action_leave">Odejít</string>
+    <string name="action_wait">Počkat</string>
     <string name="save_conflict_title">Změněno jinde</string>
     <string name="save_conflict_text">Během úprav někdo změnil: %1$s. Přepsat to tvou verzí?</string>
     <string name="save_gone">Tato událost byla mezitím smazána.</string>

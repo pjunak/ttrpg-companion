@@ -92,18 +92,18 @@ fun EventEditScreen(onClose: () -> Unit, viewModel: EventEditorViewModel = hiltV
     val draft = viewModel.fields
     val campaign by viewModel.campaign.collectAsStateWithLifecycle()
     val saving = status == EditorStatus.Saving
-    var confirmLeave by rememberSaveable { mutableStateOf(false) }
+    val leaving by viewModel.leave.collectAsStateWithLifecycle()
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
-    val leave = { if (viewModel.dirty) confirmLeave = true else onClose() }
-    LaunchedEffect(status) { if (status == EditorStatus.Done) onClose() }
-    BackHandler(enabled = status != EditorStatus.Done, onBack = leave)
+    val closing = status == EditorStatus.Done || leaving == Leave.GO
+    LaunchedEffect(closing) { if (closing) onClose() }
+    BackHandler(enabled = !closing, onBack = viewModel::requestLeave)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(if (viewModel.creating) R.string.event_new else R.string.event_edit)) },
                 navigationIcon = {
-                    IconButton(onClick = leave) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_close)) }
+                    IconButton(onClick = viewModel::requestLeave) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_close)) }
                 },
                 actions = {
                     if (!viewModel.creating && draft != null) {
@@ -159,15 +159,13 @@ fun EventEditScreen(onClose: () -> Unit, viewModel: EventEditorViewModel = hiltV
             )
         }
     }
-    if (confirmLeave) {
-        AlertDialog(
-            onDismissRequest = { confirmLeave = false },
-            title = { Text(stringResource(R.string.discard_title)) },
-            text = { Text(stringResource(R.string.discard_text)) },
-            confirmButton = { TextButton(onClick = { confirmLeave = false; onClose() }) { Text(stringResource(R.string.action_discard)) } },
-            dismissButton = { TextButton(onClick = { confirmLeave = false }) { Text(stringResource(R.string.action_keep_editing)) } },
-        )
-    }
+    LeaveDialog(
+        leave = leaving,
+        discardTitle = stringResource(R.string.discard_title),
+        discardText = stringResource(R.string.discard_text),
+        onLeave = viewModel::leaveAnyway,
+        onStay = viewModel::stay,
+    )
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },

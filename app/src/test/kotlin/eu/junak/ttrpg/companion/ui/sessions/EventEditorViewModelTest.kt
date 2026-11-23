@@ -218,4 +218,44 @@ class EventEditorViewModelTest {
         f.campaigns.refresh(site)
         assertTrue(asPlayer.canManageVisibility)
     }
+
+    @Test
+    fun leavingAsksOnlyWhenChangesWouldBeLost() = runTest {
+        val editor = editor(handle("key" to "arrival"))
+        editor.requestLeave()
+        assertEquals(Leave.GO, editor.leave.value)
+
+        editor.stay()
+        editor.update(editor.fields!!.copy(name = "Arrival at night"))
+        editor.requestLeave()
+        assertEquals(Leave.CONFIRM_DISCARD, editor.leave.value)
+        editor.leaveAnyway()
+        assertEquals(Leave.GO, editor.leave.value)
+    }
+
+    @Test
+    fun leavingWhileSavingWaitsForTheAnswer() = runTest {
+        val editor = editor(handle("key" to "arrival"))
+        editor.update(editor.fields!!.copy(description = "Rain and fog."))
+        f.host.commitAnswers += FakeHost.error(500, "CAMPAIGN_UNAVAILABLE")
+        val arrived = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        f.host.onCommit = {
+            arrived.countDown()
+            release.await(5, TimeUnit.SECONDS)
+        }
+        editor.save()
+        runCurrent()
+        assertTrue(arrived.await(5, TimeUnit.SECONDS))
+
+        editor.requestLeave()
+        assertEquals(Leave.SAVING, editor.leave.value)
+        release.countDown()
+
+        assertTrue(editor.status.first { it != EditorStatus.Saving } is EditorStatus.Problem)
+        assertEquals("a failed save keeps the editor open to show why", Leave.STAY, editor.leave.value)
+        f.host.onCommit = {}
+        editor.requestLeave()
+        assertEquals(Leave.CONFIRM_DISCARD, editor.leave.value)
+    }
 }

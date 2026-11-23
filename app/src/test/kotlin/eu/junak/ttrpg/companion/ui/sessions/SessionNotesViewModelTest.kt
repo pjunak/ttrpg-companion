@@ -142,4 +142,103 @@ class SessionNotesViewModelTest {
         assertTrue(problem.reason is WriteResult.Failed)
         assertEquals("Met the mayor", composer.text)
     }
+
+    @Test
+    fun aSuccessfulRetryClearsTheEarlierProblem() = runTest {
+        val composer = composer()
+        composer.setText("Met the mayor")
+        f.host.commitAnswers += FakeHost.error(500, "CAMPAIGN_UNAVAILABLE")
+        send(composer)
+        assertTrue(composer.problem.value is SaveProblem.NotSaved)
+
+        send(composer)
+
+        assertNull(composer.problem.value)
+        assertEquals("", composer.text)
+    }
+
+    @Test
+    fun leavingAsksOnlyWhenANoteWouldBeLost() = runTest {
+        val composer = composer()
+        composer.requestLeave()
+        assertEquals(Leave.GO, composer.leave.value)
+
+        composer.stay()
+        composer.setText("Met the mayor")
+        composer.requestLeave()
+        assertEquals(Leave.CONFIRM_DISCARD, composer.leave.value)
+        composer.stay()
+        assertEquals(Leave.STAY, composer.leave.value)
+        composer.requestLeave()
+        composer.leaveAnyway()
+        assertEquals(Leave.GO, composer.leave.value)
+    }
+
+    @Test
+    fun leavingWhileSendingWaitsForTheAnswer() = runTest {
+        val composer = composer()
+        composer.setText("Met the mayor")
+        val release = holdNextCommit(composer)
+
+        composer.requestLeave()
+        assertEquals(Leave.SAVING, composer.leave.value)
+        release.countDown()
+        composer.sending.first { !it }
+
+        assertEquals("the note was saved, so the screen goes", Leave.GO, composer.leave.value)
+    }
+
+    @Test
+    fun aFailedSaveKeepsTheScreenToShowWhy() = runTest {
+        val composer = composer()
+        composer.setText("Met the mayor")
+        f.host.commitAnswers += FakeHost.error(500, "CAMPAIGN_UNAVAILABLE")
+        val release = holdNextCommit(composer)
+
+        composer.requestLeave()
+        release.countDown()
+        composer.sending.first { !it }
+
+        assertEquals(Leave.STAY, composer.leave.value)
+        assertTrue(composer.problem.value is SaveProblem.NotSaved)
+        assertEquals("Met the mayor", composer.text)
+    }
+
+    @Test
+    fun theFullEditorTakesTheNote() = runTest {
+        val state = SavedStateHandle(mapOf("siteId" to f.site("player").id, "number" to 3))
+        val composer = SessionNotesViewModel(state, f.store, f.writer)
+        composer.setText("Met the mayor\nHe lied.")
+
+        assertEquals("Met the mayor\nHe lied.", composer.handOver())
+
+        assertEquals("", composer.text)
+        assertEquals("the composer stays empty after process death", "", SessionNotesViewModel(state, f.store, f.writer).text)
+    }
+
+    @Test
+    fun aNoteBeingSentIsNotHandedOver() = runTest {
+        val composer = composer()
+        composer.setText("Met the mayor")
+        val release = holdNextCommit(composer)
+
+        assertNull(composer.handOver())
+        assertEquals("Met the mayor", composer.text)
+        release.countDown()
+        composer.sending.first { !it }
+    }
+
+    /** Sends the note and holds its transaction at the host until the returned latch is released. */
+    private fun TestScope.holdNextCommit(composer: SessionNotesViewModel): CountDownLatch {
+        val arrived = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        f.host.onCommit = {
+            arrived.countDown()
+            release.await(5, TimeUnit.SECONDS)
+        }
+        composer.send()
+        runCurrent()
+        assertTrue(arrived.await(5, TimeUnit.SECONDS))
+        return release
+    }
 }
