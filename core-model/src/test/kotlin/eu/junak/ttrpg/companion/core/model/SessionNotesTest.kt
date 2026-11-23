@@ -43,6 +43,36 @@ class SessionNotesTest {
         assertEquals(0, dataset("").latestSession())
     }
 
+    /** `timelineSessions`: session 1 is listed even before the first event. */
+    @Test
+    fun anEmptyCampaignListsSessionOne() {
+        assertEquals(listOf(Session(1, emptyList())), dataset("").sessions())
+    }
+
+    /** `timelineColumns` sorts by order alone, so equal orders keep the record order. */
+    @Test
+    fun equalOrdersKeepTheRecordOrder() {
+        val tied = dataset(
+            """{"key": "zed", "revision": 1, "value": {"name": "Zed", "sitting": 1, "order": 1}},
+               {"key": "amy", "revision": 1, "value": {"name": "Amy", "sitting": 1, "order": 1}}""",
+        )
+        assertEquals(listOf("Zed", "Amy"), tied.sessions().single().events.map { it.name })
+    }
+
+    /** `placeTimelineEvent` counts one event per twin pair, and the DM half stands for it. */
+    @Test
+    fun aNewEventGoesAfterTheGroupedTwins() {
+        val dm = dataset(
+            """{"key": "fight", "revision": 1, "value": {"name": "Fight", "sitting": 4, "order": 9, "linkedTwinId": "fight-dm"}},
+               {"key": "fight-dm", "revision": 1, "value": {"name": "Fight (truth)", "sitting": 4, "order": 2, "visibility": "dm", "linkedTwinId": "fight"}}""",
+        )
+        val put = (dm.prepareEventSave(EventBase.new("Next"), EventFields(name = "Next", sitting = 4), true) as EventSave.Ready).mutation
+        assertEquals(3L, put.value["order"]?.jsonPrimitive?.content?.toLong())
+        val negative = dataset("""{"key": "odd", "revision": 1, "value": {"name": "Odd", "sitting": 2, "order": -5}}""")
+        val first = (negative.prepareEventSave(EventBase.new("New"), EventFields(name = "New", sitting = 2), true) as EventSave.Ready).mutation
+        assertEquals("orders start at 1", 1L, first.value["order"]?.jsonPrimitive?.content?.toLong())
+    }
+
     @Test
     fun turnsAQuickNoteIntoAnEvent() {
         assertEquals(EventFields(name = "Met the mayor", description = "He lied.\nTwice.", sitting = 4), EventFields.note(" Met the mayor\nHe lied.\nTwice. ", 4))

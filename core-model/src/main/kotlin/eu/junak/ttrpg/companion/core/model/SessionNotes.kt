@@ -15,11 +15,17 @@ import java.util.UUID
  */
 data class Session(val number: Int, val events: List<RecordSummary>)
 
-/** The campaign's sessions, newest first; empty sessions between occupied ones are kept, as the website shows them. */
+/**
+ * The campaign's sessions, newest first, as the website's timeline lists them
+ * (`timelineColumns` and `timelineSessions` in the host's
+ * `campaign-timeline.ts`): one event per twin pair, ordered by `order` with
+ * ties in record order, empty sessions between occupied ones kept, and
+ * session 1 even before the first event.
+ */
 fun CampaignDataset.sessions(): List<Session> {
     val events = groupedRecords(CampaignPage.EVENTS.collection)
     val bySession = events.groupBy { sitting(it.value) }
-    val latest = bySession.keys.maxOrNull() ?: return emptyList()
+    val latest = bySession.keys.maxOrNull() ?: 1
     // Keep corrupt or very sparse session numbers from listing millions of empty sessions.
     val numbers = if (latest <= MAX_LISTED_SESSIONS) (1..latest).toList() else (bySession.keys + 1).sorted()
     return numbers.reversed().map { number ->
@@ -34,8 +40,8 @@ fun CampaignDataset.latestSession(): Int =
 /** A session number as the website reads it: a missing or invalid one counts as session 1. */
 fun sitting(value: JsonObject): Int = value.positiveInt("sitting") ?: 1
 
+/** A stable sort by this keeps equal orders in record order, as the website's does. */
 private val eventOrder = compareBy<CampaignRecord> { it.value.number("order") ?: 0.0 }
-    .thenBy { it.value.text("name") }
 
 private const val MAX_LISTED_SESSIONS = 200
 
@@ -182,11 +188,15 @@ fun CampaignDataset.prepareEventSave(
     return EventSave.Ready(CampaignMutation.Put(collection, base.key, latest?.revision ?: 0, JsonObject(value)))
 }
 
-/** The events of session [sitting] other than [key] end before this order. */
+/**
+ * The events of session [sitting] other than [key] end before this order
+ * (`placeTimelineEvent`): one event per twin pair counts, and the order
+ * never starts below 1.
+ */
 private fun CampaignDataset.nextOrder(sitting: Int, key: String): Long {
-    val last = records(CampaignPage.EVENTS.collection)
+    val last = groupedRecords(CampaignPage.EVENTS.collection)
         .filter { it.key != key && sitting(it.value) == sitting }
-        .maxOfOrNull { it.value.number("order") ?: 0.0 } ?: 0.0
+        .fold(0.0) { highest, event -> maxOf(highest, event.value.number("order") ?: 0.0) }
     return kotlin.math.floor(last).toLong() + 1
 }
 
