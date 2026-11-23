@@ -3,6 +3,7 @@ package eu.junak.ttrpg.companion.core.network
 import eu.junak.ttrpg.companion.core.model.ClientServiceProvider
 import eu.junak.ttrpg.companion.core.model.HostEvent
 import eu.junak.ttrpg.companion.core.model.character.CharacterInputs
+import eu.junak.ttrpg.companion.core.model.character.CharacterSheet
 import eu.junak.ttrpg.companion.core.model.character.PlayChange
 import eu.junak.ttrpg.companion.core.model.character.RestLength
 import eu.junak.ttrpg.companion.core.network.FakeHost.Companion.error
@@ -85,7 +86,9 @@ class CharacterSessionTest {
 
     private suspend fun CharacterSession.until(what: (CharacterSessionState) -> Boolean) = state.first(what)
 
-    private suspend fun CharacterSession.loaded() = until { it.load == SheetLoad.Sheet }
+    private suspend fun CharacterSession.loaded() = until { it.load is SheetLoad.Sheet }
+
+    private val CharacterSessionState.sheet get() = (load as SheetLoad.Sheet).sheet
 
     /** Every `POST /api/services/call` body the host received, in order. */
     private fun calls(): List<JsonObject> =
@@ -102,6 +105,42 @@ class CharacterSessionTest {
         assertEquals(1L, state.answer!!.revision)
         assertTrue(state.canWrite)
         assertEquals(params("load-sheet"), sent(0))
+    }
+
+    @Test
+    fun theSheetCarriesItsViewAndKeepsOptionsThroughAnswersWithoutEvaluation() = runTest {
+        ids += "mira-play-twice-01"
+        val session = open(answer("load-sheet"), answer("save-play-repeat-second"), answer("save-play-repeat-first"))
+        val loaded = session.loaded().sheet
+        assertEquals(32, loaded.header.maxHitPoints)
+        assertTrue(loaded.spells.spells.isNotEmpty() && loaded.conditionOptions.isNotEmpty())
+        session.play(PlayChange.Damage(2))
+
+        // The repeated operation's answer has a state but no evaluation.
+        val repeated = session.until { it.answer?.revision == 14L }
+        assertEquals(null, repeated.answer!!.evaluation)
+        // Spells and their ways to cast come from the last evaluation (the trimmed recording has no spell evidence).
+        val castings = { sheet: CharacterSheet -> sheet.spells.spells.map { Triple(it.ref, it.classes, it.ritualClasses) }.sortedBy { it.first } }
+        assertEquals(castings(loaded), castings(repeated.sheet))
+        assertEquals(loaded.conditionOptions, repeated.sheet.conditionOptions)
+        assertEquals(CharacterSheet.read(repeated.answer, session.state.value.evaluation), repeated.sheet)
+    }
+
+    @Test
+    fun anUnreadableSheetFailsTheLoadAndStopsWriting() = runTest {
+        val result = result("load-sheet")
+        val state = result.getValue("state").jsonObject
+        val projection = state.getValue("projection").jsonObject
+        val sheet = JsonObject(projection.getValue("sheet").jsonObject + ("weapons" to JsonPrimitive("sword")))
+        val broken = JsonObject(result + ("state" to JsonObject(state + ("projection" to JsonObject(projection + ("sheet" to sheet))))))
+        val session = open(wrap(broken))
+
+        val failed = session.until { it.load != SheetLoad.Loading }
+        val failure = ((failed.load as SheetLoad.Failed).failure as ServiceFailure.Failed).failure
+        assertEquals(HostFailure.Reason.MALFORMED, failure.reason)
+        assertTrue(failure.detail.contains("weapons"))
+        assertFalse(failed.canWrite)
+        assertFalse(session.play(PlayChange.Damage(1)))
     }
 
     @Test
@@ -325,7 +364,7 @@ class CharacterSessionTest {
 
         val after = session.until { it.signedOut }
         assertFalse(after.canWrite)
-        assertEquals(SheetLoad.Sheet, after.load)
+        assertTrue(after.load is SheetLoad.Sheet)
         assertFalse(session.play(PlayChange.Damage(1)))
     }
 

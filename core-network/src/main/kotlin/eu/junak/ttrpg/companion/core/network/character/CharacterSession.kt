@@ -5,6 +5,7 @@ import eu.junak.ttrpg.companion.core.model.HostFormatException
 import eu.junak.ttrpg.companion.core.model.character.CharacterAnswer
 import eu.junak.ttrpg.companion.core.model.character.CharacterEvaluation
 import eu.junak.ttrpg.companion.core.model.character.CharacterRequest
+import eu.junak.ttrpg.companion.core.model.character.CharacterSheet
 import eu.junak.ttrpg.companion.core.model.character.CharacterStatus
 import eu.junak.ttrpg.companion.core.model.character.PlayChange
 import eu.junak.ttrpg.companion.core.network.HostFailure
@@ -14,6 +15,7 @@ import eu.junak.ttrpg.companion.core.network.services.ServiceFailure
 import eu.junak.ttrpg.companion.core.network.services.ServiceResult
 import eu.junak.ttrpg.companion.core.network.site.Site
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -24,6 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import java.util.UUID
 import javax.inject.Inject
@@ -33,8 +36,12 @@ import javax.inject.Singleton
 sealed interface SheetLoad {
     data object Loading : SheetLoad
 
-    /** The character has a sheet: [CharacterSessionState.answer] holds it. */
-    data object Sheet : SheetLoad
+    /**
+     * The character has a sheet: [sheet] is what the screens show, read from
+     * [CharacterSessionState.answer] (and the last evaluation when the answer
+     * has none). A sheet that cannot be read is [Failed] instead.
+     */
+    data class Sheet(val sheet: CharacterSheet) : SheetLoad
 
     /** The character exists but has no sheet yet. */
     data object NoSheet : SheetLoad
@@ -116,7 +123,7 @@ data class CharacterSessionState(
     /** Whether changes can be sent: a saved sheet that the current rules evaluate as ready. */
     val canWrite: Boolean
         get() = answer?.state != null && evaluation?.ready == true && !answer.rulesChanged &&
-            answer.status != CharacterStatus.UNAVAILABLE && !signedOut && !reloading
+            answer.status != CharacterStatus.UNAVAILABLE && !signedOut && !reloading && load is SheetLoad.Sheet
 }
 
 /** The pauses of a session; delays run on its coroutines' clock. */
@@ -392,17 +399,11 @@ class CharacterSession internal constructor(
     private suspend fun attempt(attempt: Attempt, scope: CoroutineScope) {
         val save = _state.value.save
         _state.update { it.copy(save = if (attempt.resent && save is SaveState.NotSaved) save.copy(retrying = true) else SaveState.Saving) }
-        val result = services.call(site, CharacterService.CONTRACT, attempt.request.method, attempt.request.params)
-        val answer = when (result) {
-            is ServiceResult.Failure -> return failed(attempt, result.failure, scope)
-            is ServiceResult.Success -> try {
-                CharacterAnswer.parse(result.value, key)
-            } catch (error: HostFormatException) {
-                // The change may have been saved; keep it.
-                return failed(attempt, ServiceFailure.Failed(HostFailure(HostFailure.Reason.MALFORMED, error.message.orEmpty())), scope)
-            }
+        // An unreadable answer is an uncertain failure: the change may have been saved, so it is kept.
+        when (val result = ask(attempt.request)) {
+            is ServiceResult.Failure -> failed(attempt, result.failure, scope)
+            is ServiceResult.Success -> answered(attempt, result.value, scope)
         }
-        answered(attempt, answer, scope)
     }
 
     private suspend fun answered(attempt: Attempt, answer: CharacterAnswer, scope: CoroutineScope) {
@@ -420,7 +421,7 @@ class CharacterSession internal constructor(
                 val edit = attempt.change as? Change.Edit
                 when {
                     attempt.resent -> notice(CharacterNotice.CouldNotConfirm)
-                    edit != null && !attempt.reapplied && answer.state != null -> {
+                    edit != null && !attempt.reapplied && answer.state != null && _state.value.load is SheetLoad.Sheet -> {
                         // Nothing was saved: make the same edit on the inputs saved elsewhere.
                         val request = try {
                             build(edit, answer)
@@ -502,18 +503,12 @@ class CharacterSession internal constructor(
     private suspend fun load(mode: LoadMode) {
         if (mode == LoadMode.FIRST) _state.update { it.copy(load = SheetLoad.Loading) }
         val load = CharacterRequest.load(key)
-        var result = services.call(site, CharacterService.CONTRACT, load.method, load.params)
+        var result = ask(load)
         // A load changes nothing, so after a provider update it is simply asked again on the new binding.
-        if (result is ServiceResult.Failure && result.failure == ServiceFailure.StaleBinding) {
-            result = services.call(site, CharacterService.CONTRACT, load.method, load.params)
-        }
+        if (result is ServiceResult.Failure && result.failure == ServiceFailure.StaleBinding) result = ask(load)
         val answer = when (result) {
             is ServiceResult.Failure -> return loadFailed(result.failure)
-            is ServiceResult.Success -> try {
-                CharacterAnswer.parse(result.value, key)
-            } catch (error: HostFormatException) {
-                return loadFailed(ServiceFailure.Failed(HostFailure(HostFailure.Reason.MALFORMED, error.message.orEmpty())))
-            }
+            is ServiceResult.Success -> result.value
         }
         val current = _state.value.answer
         val differs = current == null || answer.revision != current.revision || answer.status != current.status ||
@@ -541,11 +536,36 @@ class CharacterSession internal constructor(
         _state.update { it.copy(load = outcome) }
     }
 
-    /** Takes [answer]'s saved state as the sheet; its evaluation, or the last one until a load brings a new one. */
-    private fun adopt(answer: CharacterAnswer) {
+    /**
+     * Takes [answer]'s saved state as the sheet, with its evaluation or the
+     * last one until a load brings a new one. The screens' view is read here,
+     * once per answer and off the main thread; a sheet that cannot be read
+     * fails the load and so stops writing.
+     */
+    private suspend fun adopt(answer: CharacterAnswer) {
         evaluationStale = answer.evaluation == null
-        _state.update { it.copy(load = SheetLoad.Sheet, answer = answer, evaluation = answer.evaluation ?: it.evaluation) }
+        val evaluation = answer.evaluation ?: _state.value.evaluation
+        val load = try {
+            SheetLoad.Sheet(withContext(Dispatchers.Default) { CharacterSheet.read(answer, evaluation) })
+        } catch (error: HostFormatException) {
+            SheetLoad.Failed(malformed(error))
+        }
+        _state.update { it.copy(load = load, answer = answer, evaluation = evaluation) }
     }
+
+    /** One call, with its answer read off the main thread: answers are large. */
+    private suspend fun ask(request: CharacterRequest): ServiceResult<CharacterAnswer> = withContext(Dispatchers.Default) {
+        when (val result = services.call(site, CharacterService.CONTRACT, request.method, request.params)) {
+            is ServiceResult.Failure -> result
+            is ServiceResult.Success -> try {
+                ServiceResult.Success(CharacterAnswer.parse(result.value, key))
+            } catch (error: HostFormatException) {
+                ServiceResult.Failure(malformed(error))
+            }
+        }
+    }
+
+    private fun malformed(error: HostFormatException) = ServiceFailure.Failed(HostFailure(HostFailure.Reason.MALFORMED, error.message.orEmpty()))
 
     /** One change is settled (saved, refused or dropped). */
     private fun finish() {
