@@ -49,6 +49,18 @@ object CharacterInputs {
         }
     }
 
+    /** How many uses of resource [key] are spent in [inputs]; a resource without an entry has spent none. */
+    fun resourceSpent(inputs: JsonObject, key: String): Int =
+        ((play(inputs)["resourceUses"] as? JsonObject)?.get(key) as? JsonPrimitive)?.content?.toIntOrNull() ?: 0
+
+    /**
+     * Spends [count] more uses of resource [key] (a negative count gives uses
+     * back), counted from [inputs] so that taps in a row add up, and kept
+     * between none and [maximum].
+     */
+    fun spendResource(inputs: JsonObject, key: String, count: Int, maximum: Int): JsonObject =
+        setResourceSpent(inputs, key, (resourceSpent(inputs, key) + count).coerceIn(0, maximum.coerceAtLeast(0)))
+
     private fun play(inputs: JsonObject): JsonObject =
         inputs["play"] as? JsonObject ?: throw IllegalArgumentException("inputs.play is missing")
 

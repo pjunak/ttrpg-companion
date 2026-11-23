@@ -49,6 +49,23 @@ class CharacterInputsTest {
     }
 
     @Test
+    fun spendingCountsFromTheNewestInputsWithinTheMaximum() {
+        val inputs = savedBefore("save-build-inspiration")
+        assertEquals(0, CharacterInputs.resourceSpent(inputs, "arcane-recovery"))
+        assertEquals("a resource without an entry", 0, CharacterInputs.resourceSpent(inputs, "no-such-resource"))
+        val twice = CharacterInputs.spendResource(CharacterInputs.spendResource(inputs, "lay-on-hands", 5, 25), "lay-on-hands", 5, 25)
+        assertEquals(10, CharacterInputs.resourceSpent(twice, "lay-on-hands"))
+        assertEquals("never more than the maximum", 25, CharacterInputs.resourceSpent(CharacterInputs.spendResource(twice, "lay-on-hands", 30, 25), "lay-on-hands"))
+        assertEquals("given back", 7, CharacterInputs.resourceSpent(CharacterInputs.spendResource(twice, "lay-on-hands", -3, 25), "lay-on-hands"))
+        assertEquals("never below none", 0, CharacterInputs.resourceSpent(CharacterInputs.spendResource(twice, "lay-on-hands", -30, 25), "lay-on-hands"))
+        assertEquals(
+            "the recorded spend",
+            Recordings.read("save-build-spend-use").inputs,
+            CharacterInputs.spendResource(inputs, "arcane-recovery", 1, 1),
+        )
+    }
+
+    @Test
     fun impossibleEditsAreRefused() {
         val inputs = savedBefore("save-play-repeat-first")
         assertThrows(IllegalArgumentException::class.java) { CharacterInputs.setCondition(inputs, "exhaustion", 0) }
