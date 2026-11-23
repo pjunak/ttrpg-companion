@@ -33,6 +33,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -149,7 +150,7 @@ fun RecordScreen(
     ) { padding ->
         if (dataset == null || details == null) {
             Column(Modifier.padding(padding)) {
-                CenteredMessage(stringResource(if (dataset == null) R.string.campaign_loading else R.string.record_missing))
+                if (dataset == null) CampaignMissing(state, viewModel::refresh) else CenteredMessage(stringResource(R.string.record_missing))
             }
             return@Scaffold
         }
@@ -168,65 +169,67 @@ fun RecordScreen(
             }
         }
         val open = { ref: RecordRef -> onOpenRecord(ref.page, ref.key) }
-        Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
-            CampaignStatus(state, onSignIn)
-            Column(Modifier.padding(horizontal = spacing.md).padding(bottom = spacing.xl)) {
-                Hero(baseUrl, details)
-                // Status is a badge and the subtitle is under the name, so neither is repeated here.
-                val facts = details.facts.filter {
-                    it.kind != FactKind.STATUS && !(it.link == null && it.text == details.summary.subtitle)
-                }
-                if (facts.isNotEmpty()) {
-                    Spacer(Modifier.size(spacing.md))
-                    SectionCard { facts.forEach { FactRow(it) { ref -> open(ref) } } }
-                }
-                CompositionLocalProvider(LocalUriHandler provides links) {
-                    Article(page, details, dataset, baseUrl)
-                }
-                if (details.known.isNotEmpty()) {
-                    SectionHeader(stringResource(R.string.record_known))
-                    ArticleTheme {
-                        details.known.forEach { fact ->
-                            Row(Modifier.padding(vertical = spacing.xs)) {
-                                Text("•", color = MaterialTheme.colorScheme.primary, modifier = Modifier.width(spacing.md))
-                                Text(fact, style = MaterialTheme.typography.bodyLarge)
+        PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = viewModel::refresh, modifier = Modifier.padding(padding)) {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                CampaignStatus(state, onSignIn)
+                Column(Modifier.padding(horizontal = spacing.md).padding(bottom = spacing.xl)) {
+                    Hero(baseUrl, details)
+                    // Status is a badge and the subtitle is under the name, so neither is repeated here.
+                    val facts = details.facts.filter {
+                        it.kind != FactKind.STATUS && !(it.link == null && it.text == details.summary.subtitle)
+                    }
+                    if (facts.isNotEmpty()) {
+                        Spacer(Modifier.size(spacing.md))
+                        SectionCard { facts.forEach { FactRow(it) { ref -> open(ref) } } }
+                    }
+                    CompositionLocalProvider(LocalUriHandler provides links) {
+                        Article(page, details, dataset, baseUrl)
+                    }
+                    if (details.known.isNotEmpty()) {
+                        SectionHeader(stringResource(R.string.record_known))
+                        ArticleTheme {
+                            details.known.forEach { fact ->
+                                Row(Modifier.padding(vertical = spacing.xs)) {
+                                    Text("•", color = MaterialTheme.colorScheme.primary, modifier = Modifier.width(spacing.md))
+                                    Text(fact, style = MaterialTheme.typography.bodyLarge)
+                                }
                             }
                         }
                     }
-                }
-                if (details.questions.isNotEmpty()) {
-                    val unanswered = details.questions.count { it.answer.isEmpty() }
-                    SectionHeader(
-                        stringResource(R.string.record_questions),
-                        trailing = pluralStringResource(R.plurals.record_questions_open, unanswered, unanswered, details.questions.size),
-                    )
-                    details.questions.forEach { QuestionRow(it) }
-                }
-                details.localMap?.let { LocalMap(baseUrl + it, details.summary.name) { onOpenMap(key, null) } }
-                if (details.relations.isNotEmpty()) {
-                    SectionHeader(stringResource(R.string.record_relationships))
-                    SectionCard {
-                        details.relations.forEach { relation ->
-                            val type = relation.type?.label ?: relation.typeId
-                            RefRow(
-                                baseUrl,
-                                relation.other,
-                                supporting = listOf(
-                                    stringResource(if (relation.outgoing) R.string.relation_to else R.string.relation_from, type),
-                                    relation.label,
-                                ).filter(String::isNotEmpty).joinToString(" · "),
-                            ) { open(relation.other) }
+                    if (details.questions.isNotEmpty()) {
+                        val unanswered = details.questions.count { it.answer.isEmpty() }
+                        SectionHeader(
+                            stringResource(R.string.record_questions),
+                            trailing = pluralStringResource(R.plurals.record_questions_open, unanswered, unanswered, details.questions.size),
+                        )
+                        details.questions.forEach { QuestionRow(it) }
+                    }
+                    details.localMap?.let { LocalMap(baseUrl + it, details.summary.name) { onOpenMap(key, null) } }
+                    if (details.relations.isNotEmpty()) {
+                        SectionHeader(stringResource(R.string.record_relationships))
+                        SectionCard {
+                            details.relations.forEach { relation ->
+                                val type = relation.type?.label ?: relation.typeId
+                                RefRow(
+                                    baseUrl,
+                                    relation.other,
+                                    supporting = listOf(
+                                        stringResource(if (relation.outgoing) R.string.relation_to else R.string.relation_from, type),
+                                        relation.label,
+                                    ).filter(String::isNotEmpty).joinToString(" · "),
+                                ) { open(relation.other) }
+                            }
                         }
                     }
-                }
-                details.related.forEach { group ->
-                    SectionHeader(relatedLabel(group.kind), trailing = group.records.size.toString())
-                    SectionCard { group.records.forEach { ref -> RefRow(baseUrl, ref) { open(ref) } } }
-                }
-                if (details.tags.isNotEmpty()) Tags(details.tags)
-                if (details.mentionedIn.isNotEmpty()) {
-                    SectionHeader(stringResource(R.string.record_mentioned_in), trailing = details.mentionedIn.size.toString())
-                    SectionCard { details.mentionedIn.forEach { ref -> RefRow(baseUrl, ref, supporting = pageLabel(ref.page)) { open(ref) } } }
+                    details.related.forEach { group ->
+                        SectionHeader(relatedLabel(group.kind), trailing = group.records.size.toString())
+                        SectionCard { group.records.forEach { ref -> RefRow(baseUrl, ref) { open(ref) } } }
+                    }
+                    if (details.tags.isNotEmpty()) Tags(details.tags)
+                    if (details.mentionedIn.isNotEmpty()) {
+                        SectionHeader(stringResource(R.string.record_mentioned_in), trailing = details.mentionedIn.size.toString())
+                        SectionCard { details.mentionedIn.forEach { ref -> RefRow(baseUrl, ref, supporting = pageLabel(ref.page)) { open(ref) } } }
+                    }
                 }
             }
         }

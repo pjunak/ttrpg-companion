@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,6 +61,7 @@ import eu.junak.ttrpg.companion.core.model.details
 import eu.junak.ttrpg.companion.core.model.latestSession
 import eu.junak.ttrpg.companion.core.model.sessions
 import eu.junak.ttrpg.companion.core.model.text
+import eu.junak.ttrpg.companion.ui.campaign.CampaignMissing
 import eu.junak.ttrpg.companion.ui.campaign.CampaignStatus
 import eu.junak.ttrpg.companion.ui.campaign.CampaignViewModel
 import eu.junak.ttrpg.companion.ui.components.BackButton
@@ -108,41 +110,43 @@ fun SessionsScreen(
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             CampaignStatus(state, onSignIn)
-            when {
-                state.dataset == null -> CenteredMessage(stringResource(R.string.campaign_loading), loading = state.refreshing)
-                sessions.isEmpty() -> CenteredMessage(stringResource(R.string.sessions_empty))
-                else -> LazyColumn(
-                    contentPadding = PaddingValues(start = spacing.md, end = spacing.md, bottom = spacing.xl * 3),
-                    verticalArrangement = Arrangement.spacedBy(spacing.sm),
-                ) {
-                    items(sessions, key = { it.number }) { session ->
-                        Surface(
-                            onClick = { onOpenSession(session.number) },
-                            shape = MaterialTheme.shapes.medium,
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Column(Modifier.padding(spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        stringResource(R.string.session_title, session.number),
-                                        style = MaterialTheme.typography.titleLarge,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    Text(
-                                        pluralStringResource(R.plurals.session_events, session.events.size, session.events.size),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                if (session.events.isNotEmpty()) {
-                                    Text(
-                                        session.events.joinToString(" · ") { it.name },
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
+            PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = viewModel::refresh) {
+                when {
+                    state.dataset == null -> CampaignMissing(state, viewModel::refresh)
+                    sessions.isEmpty() -> CenteredMessage(stringResource(R.string.sessions_empty))
+                    else -> LazyColumn(
+                        contentPadding = PaddingValues(start = spacing.md, end = spacing.md, bottom = spacing.xl * 3),
+                        verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                    ) {
+                        items(sessions, key = { it.number }) { session ->
+                            Surface(
+                                onClick = { onOpenSession(session.number) },
+                                shape = MaterialTheme.shapes.medium,
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(Modifier.padding(spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            stringResource(R.string.session_title, session.number),
+                                            style = MaterialTheme.typography.titleLarge,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        Text(
+                                            pluralStringResource(R.plurals.session_events, session.events.size, session.events.size),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                    if (session.events.isNotEmpty()) {
+                                        Text(
+                                            session.events.joinToString(" · ") { it.name },
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -225,32 +229,34 @@ fun SessionScreen(
         Column(Modifier.padding(padding).fillMaxSize()) {
             CampaignStatus(state, onSignIn)
             if (dataset == null) {
-                CenteredMessage(stringResource(R.string.campaign_loading), loading = state.refreshing)
+                CampaignMissing(state, viewModel::refresh)
                 return@Column
             }
             if (events.isEmpty()) {
                 CenteredMessage(stringResource(if (canWrite) R.string.session_empty else R.string.session_empty_reader))
                 return@Column
             }
-            LazyColumn(
-                state = list,
-                contentPadding = PaddingValues(spacing.md),
-                verticalArrangement = Arrangement.spacedBy(spacing.sm),
-            ) {
-                items(events, key = { it.key }) { event ->
-                    EventCard(
-                        baseUrl = site?.baseUrl.orEmpty(),
-                        event = event,
-                        priorityColor = dataset.record(CampaignPage.EVENTS.collection, event.key)
-                            ?.value?.text("priority")
-                            ?.let { settings?.eventPriority(it)?.color },
-                        linked = remember(dataset, event.key) {
-                            dataset.details(CampaignPage.EVENTS, event.key)?.related?.flatMap { it.records }.orEmpty()
-                        },
-                        canEdit = canWrite,
-                        onOpen = { onOpenEvent(event.key) },
-                        onEdit = { onEditEvent(event.key) },
-                    )
+            PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = viewModel::refresh) {
+                LazyColumn(
+                    state = list,
+                    contentPadding = PaddingValues(spacing.md),
+                    verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                ) {
+                    items(events, key = { it.key }) { event ->
+                        EventCard(
+                            baseUrl = site?.baseUrl.orEmpty(),
+                            event = event,
+                            priorityColor = dataset.record(CampaignPage.EVENTS.collection, event.key)
+                                ?.value?.text("priority")
+                                ?.let { settings?.eventPriority(it)?.color },
+                            linked = remember(dataset, event.key) {
+                                dataset.details(CampaignPage.EVENTS, event.key)?.related?.flatMap { it.records }.orEmpty()
+                            },
+                            canEdit = canWrite,
+                            onOpen = { onOpenEvent(event.key) },
+                            onEdit = { onEditEvent(event.key) },
+                        )
+                    }
                 }
             }
         }

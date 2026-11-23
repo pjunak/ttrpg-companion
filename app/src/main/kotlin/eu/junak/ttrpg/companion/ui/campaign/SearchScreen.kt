@@ -65,6 +65,7 @@ fun SearchScreen(
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             when {
+                state.dataset == null -> CampaignMissing(state, viewModel::refresh)
                 query.isBlank() -> Unit
                 results.isEmpty() -> CenteredMessage(stringResource(R.string.search_empty))
                 else -> LazyColumn(Modifier.fillMaxSize()) {

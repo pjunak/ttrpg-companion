@@ -164,7 +164,9 @@ fun CollectionScreen(
                 }
             }
             PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = viewModel::refresh) {
-                if (shown.isEmpty()) {
+                if (state.dataset == null) {
+                    CampaignMissing(state, viewModel::refresh)
+                } else if (shown.isEmpty()) {
                     CenteredMessage(stringResource(if (records.isEmpty()) R.string.collection_empty else R.string.collection_no_match))
                 } else {
                     val baseUrl = site?.baseUrl.orEmpty()

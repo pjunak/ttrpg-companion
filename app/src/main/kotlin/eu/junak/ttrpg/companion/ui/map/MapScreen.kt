@@ -30,6 +30,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.CampaignPage
+import eu.junak.ttrpg.companion.ui.campaign.CampaignMissing
 import eu.junak.ttrpg.companion.ui.campaign.CampaignStatus
 import eu.junak.ttrpg.companion.ui.campaign.CampaignViewModel
 import eu.junak.ttrpg.companion.ui.components.BackButton
@@ -84,6 +85,10 @@ fun MapScreen(
         },
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
+            if (parentId != null && state.dataset == null && state.problem != null && !state.refreshing) {
+                CampaignMissing(state, campaign::refresh)
+                return@Box
+            }
             when (val shown = background) {
                 MapBackground.Loading -> CenteredMessage(null, loading = true)
                 MapBackground.Unavailable -> CenteredMessage(stringResource(R.string.map_unavailable))

@@ -151,16 +151,7 @@ fun CampaignHomeScreen(
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             if (overview == null) {
-                CampaignStatus(state, onSignIn)
-                val problem = state.problem
-                CenteredMessage(
-                    text = if (problem is CampaignProblem.Unavailable) {
-                        campaignProblemText(problem)
-                    } else {
-                        stringResource(R.string.campaign_loading)
-                    },
-                    loading = state.refreshing,
-                )
+                CampaignMissing(state, viewModel::refresh)
                 return@Column
             }
             PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = viewModel::refresh) {

@@ -222,7 +222,7 @@ fun Notice(text: String, action: (@Composable () -> Unit)? = null) {
 
 /** A centred message for empty or loading screens. */
 @Composable
-fun CenteredMessage(text: String?, loading: Boolean = false) {
+fun CenteredMessage(text: String?, loading: Boolean = false, action: (@Composable () -> Unit)? = null) {
     val spacing = LocalSpacing.current
     Column(
         Modifier.fillMaxSize().padding(spacing.lg),
@@ -233,5 +233,6 @@ fun CenteredMessage(text: String?, loading: Boolean = false) {
         if (text != null) {
             Text(text, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        action?.invoke()
     }
 }

@@ -8,6 +8,7 @@ import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.network.HostFailure
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignProblem
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignState
+import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.components.Notice
 import eu.junak.ttrpg.companion.ui.components.relativeTime
 
@@ -43,4 +44,20 @@ fun campaignProblemText(problem: CampaignProblem): String = when (problem) {
     is CampaignProblem.Unavailable -> stringResource(R.string.campaign_failed, hostFailureText(problem.failure))
     is CampaignProblem.UnsupportedHost -> stringResource(R.string.problem_unsupported, problem.version)
     CampaignProblem.SessionExpired -> stringResource(R.string.status_expired)
+}
+
+/**
+ * A site screen's whole content while it has no campaign to show: a spinner
+ * while it loads, otherwise why it could not be loaded and a way to try again.
+ */
+@Composable
+fun CampaignMissing(state: CampaignState, onRetry: () -> Unit) {
+    val problem = state.problem
+    if (problem == null || state.refreshing) {
+        CenteredMessage(stringResource(R.string.campaign_loading), loading = true)
+    } else {
+        CenteredMessage(campaignProblemText(problem)) {
+            TextButton(onClick = onRetry) { Text(stringResource(R.string.action_retry)) }
+        }
+    }
 }
