@@ -2,10 +2,17 @@ package eu.junak.ttrpg.companion.core.network.site
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import eu.junak.ttrpg.companion.core.model.HostJson
 import eu.junak.ttrpg.companion.core.model.Role
 import eu.junak.ttrpg.companion.core.network.maps.MapStore
+import java.io.File
+import java.io.IOException
+import java.net.URLEncoder
+import java.util.concurrent.ConcurrentHashMap
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,12 +23,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
-import java.io.File
-import java.io.IOException
-import java.net.URLEncoder
-import java.util.concurrent.ConcurrentHashMap
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * A campaign site the user added. [role] is the role of the last sign-in, or
@@ -63,7 +64,7 @@ class SiteStore internal constructor(
     /** The site opened last, which the app reopens on launch. */
     var lastOpenedId: String?
         get() = preferences.getString(KEY_LAST_OPENED, null)?.takeIf { site(it) != null }
-        set(value) = preferences.edit().putString(KEY_LAST_OPENED, value).apply()
+        set(value) = preferences.edit { putString(KEY_LAST_OPENED, value) }
 
     /**
      * The records the user opened on [siteId], newest first, as
@@ -78,7 +79,7 @@ class SiteStore internal constructor(
     fun noteRecordOpened(siteId: String, address: String) {
         val current = recent.value[siteId] ?: readRecent(siteId)
         val list = (listOf(address) + current.filterNot { it == address }).take(MAX_RECENT)
-        preferences.edit().putString(recentKey(siteId), HostJson.encodeToString(ListSerializer(String.serializer()), list)).apply()
+        preferences.edit { putString(recentKey(siteId), HostJson.encodeToString(ListSerializer(String.serializer()), list)) }
         recent.update { it + (siteId to list) }
     }
 
@@ -92,7 +93,7 @@ class SiteStore internal constructor(
     /** Marks [key] as the user's character on [siteId], replacing any other; null marks none. */
     @Synchronized
     fun setMyCharacter(siteId: String, key: String?) {
-        preferences.edit().apply { if (key == null) remove(myCharacterKey(siteId)) else putString(myCharacterKey(siteId), key) }.apply()
+        preferences.edit { if (key == null) remove(myCharacterKey(siteId)) else putString(myCharacterKey(siteId), key) }
         mine.update { it + (siteId to key) }
     }
 
@@ -123,7 +124,10 @@ class SiteStore internal constructor(
         withSiteLock(id) {
             _sites.update { current -> current.filterNot { it.id == id } }
             writeSites(_sites.value)
-            preferences.edit().remove(recentKey(id)).remove(myCharacterKey(id)).apply()
+            preferences.edit {
+                remove(recentKey(id))
+                remove(myCharacterKey(id))
+            }
             recent.update { it - id }
             mine.update { it - id }
             siteDirectory(id).deleteRecursively()
@@ -188,7 +192,7 @@ class SiteStore internal constructor(
     }
 
     private fun writeSites(sites: List<Site>) {
-        preferences.edit().putString(KEY_SITES, HostJson.encodeToString(ListSerializer(Site.serializer()), sites)).apply()
+        preferences.edit { putString(KEY_SITES, HostJson.encodeToString(ListSerializer(Site.serializer()), sites)) }
     }
 
     private fun recentKey(siteId: String) = "recent:$siteId"

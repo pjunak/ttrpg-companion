@@ -4,6 +4,7 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.security.KeyStore
 import java.util.concurrent.ConcurrentHashMap
@@ -61,9 +62,9 @@ class EncryptedSessionVault @Inject constructor(
     @Synchronized
     override fun write(origin: String, value: String?) {
         val encrypted = value?.let(::encrypt)
-        preferences.edit().apply {
+        preferences.edit {
             if (encrypted == null) remove(origin) else putString(origin, encrypted)
-        }.apply()
+        }
     }
 
     private fun secretKey(): SecretKey {

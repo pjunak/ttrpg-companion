@@ -37,6 +37,7 @@ dependencies {
 
     api(libs.okhttp)
     implementation(libs.okhttp.sse)
+    implementation(libs.androidx.core.ktx)
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
