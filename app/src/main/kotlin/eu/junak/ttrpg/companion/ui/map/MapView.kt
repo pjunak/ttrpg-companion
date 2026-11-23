@@ -44,7 +44,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Constraints
@@ -128,9 +128,9 @@ internal fun MapView(
         }
         is MapImage.Original -> {
             val context = LocalContext.current
-            val configuration = LocalConfiguration.current
-            // Sharp up to twice the fitted zoom: the screen's long side twice over, within the memory cap.
-            val screenLongSide = (maxOf(configuration.screenWidthDp, configuration.screenHeightDp) * LocalDensity.current.density).roundToInt()
+            // Sharp up to twice the fitted zoom: the window's long side twice over, within the memory cap.
+            val window = LocalWindowInfo.current.containerSize
+            val screenLongSide = maxOf(window.width, window.height)
             val decodeSize = (screenLongSide * ORIGINAL_DETAIL).coerceAtMost(MAX_ORIGINAL_SIZE)
             val original by produceState<OriginalImage>(OriginalImage.Loading, image.mediaPath, baseUrl, decodeSize) {
                 // The screen keeps the decoded image; Coil's memory cache would only hold a second large copy alive.
