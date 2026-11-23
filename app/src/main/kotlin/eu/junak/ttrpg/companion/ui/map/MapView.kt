@@ -21,7 +21,6 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -32,22 +31,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -59,8 +52,6 @@ import coil3.request.SuccessResult
 import coil3.toBitmap
 import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.CampaignMap
-import eu.junak.ttrpg.companion.core.model.MapTile
-import eu.junak.ttrpg.companion.core.model.MapTileManifest
 import eu.junak.ttrpg.companion.core.model.MapViewport
 import eu.junak.ttrpg.companion.core.model.RecordRef
 import eu.junak.ttrpg.companion.core.model.markerScale
@@ -69,17 +60,10 @@ import eu.junak.ttrpg.companion.core.model.trail
 import eu.junak.ttrpg.companion.core.network.maps.MapImage
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.roundToInt
 
 /** Where a map view looks, owned by its screen's view model so it survives rotation. */
@@ -288,125 +272,6 @@ private fun MapCamera.zoomBy(factor: Double, point: Offset) {
     viewport = viewport?.transformed(0.0, 0.0, factor, point.x.toDouble(), point.y.toDouble())
 }
 
-/** A marker's map position and how far down its own top its touch area's centre lies, in pixels. */
-private data class MarkerSpot(val x: Double, val y: Double, val anchorY: Float)
-
-/**
- * Places each child, horizontally centred, with its touch area's centre on
- * its map spot. Positions are read while placing, so panning and zooming
- * move markers without recomposing them.
- */
-@Composable
-private fun MarkerLayer(camera: MapCamera, spots: List<MarkerSpot>, content: @Composable () -> Unit) {
-    Layout(content, Modifier.fillMaxSize()) { measurables, constraints ->
-        val placeables = measurables.map { it.measure(Constraints()) }
-        layout(constraints.maxWidth, constraints.maxHeight) {
-            val viewport = camera.viewport ?: return@layout
-            placeables.forEachIndexed { index, placeable ->
-                val spot = spots.getOrNull(index) ?: return@forEachIndexed
-                val x = viewport.screenX(spot.x).roundToInt() - placeable.width / 2
-                val y = (viewport.screenY(spot.y) - spot.anchorY).roundToInt()
-                // A marker outside the view stays unplaced, which also keeps it out of TalkBack.
-                val visible = x + placeable.width > 0 && y + placeable.height > 0 && x < constraints.maxWidth && y < constraints.maxHeight
-                if (visible) placeable.place(x, y)
-            }
-        }
-    }
-}
-
-private fun DrawScope.drawTrail(map: CampaignMap, viewport: MapViewport, color: Color, width: Float, dash: FloatArray) {
-    val points = map.events.trail()
-    if (points.size < 2) return
-    val path = Path()
-    points.forEachIndexed { index, point ->
-        val x = viewport.screenX(point.x).toFloat()
-        val y = viewport.screenY(point.y).toFloat()
-        if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-    }
-    drawPath(path, color, style = Stroke(width = width, pathEffect = PathEffect.dashPathEffect(dash)))
-}
-
-/** Tiles of the coarsest levels first, so finer ones cover them as they arrive. */
-private fun DrawScope.drawTiles(store: TileStore, manifest: MapTileManifest, viewport: MapViewport, urlOf: (MapTile) -> String) {
-    store.version // Redraw when a tile arrives.
-    val visible = viewport.visibleNativeRect()
-    val level = manifest.levelFor(viewport.scale)
-    for (shown in 0..level) {
-        for (tile in manifest.tilesCovering(shown, visible.left, visible.top, visible.right, visible.bottom)) {
-            val bitmap = store[urlOf(tile)] ?: continue
-            val bounds = manifest.nativeBounds(tile)
-            val step = manifest.nativePerLevelPixel(tile.level) * viewport.scale
-            val left = (viewport.offsetX + bounds.left * viewport.scale).roundToInt()
-            val top = (viewport.offsetY + bounds.top * viewport.scale).roundToInt()
-            drawImage(
-                bitmap,
-                dstOffset = IntOffset(left, top),
-                dstSize = IntSize(
-                    (viewport.offsetX + bounds.left * viewport.scale + bitmap.width * step).roundToInt() - left,
-                    (viewport.offsetY + bounds.top * viewport.scale + bitmap.height * step).roundToInt() - top,
-                ),
-                filterQuality = FilterQuality.Low,
-            )
-        }
-    }
-}
-
-/** The tiles worth loading for a view: a coarse overview of it, then the level that matches the zoom. */
-private fun wantedTiles(manifest: MapTileManifest, viewport: MapViewport) = buildList {
-    val visible = viewport.visibleNativeRect()
-    val level = manifest.levelFor(viewport.scale)
-    val overview = min(level, OVERVIEW_LEVEL)
-    if (overview < level) addAll(manifest.tilesCovering(overview, visible.left, visible.top, visible.right, visible.bottom))
-    addAll(manifest.tilesCovering(level, visible.left, visible.top, visible.right, visible.bottom))
-}
-
-/**
- * The decoded tiles of one map image, newest use last, bounded so a long
- * session of panning cannot exhaust memory. Loads that leave the view are
- * cancelled.
- */
-private class TileStore(private val images: MapTileImages) {
-    private val bitmaps = object : LinkedHashMap<String, ImageBitmap>(MAX_TILES, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ImageBitmap>?) = size > MAX_TILES
-    }
-    private val refused = HashSet<String>()
-    var version by mutableIntStateOf(0)
-        private set
-
-    operator fun get(url: String): ImageBitmap? = bitmaps[url]
-
-    suspend fun keepLoading(wanted: Flow<List<String>>, onRefused: () -> Unit) = coroutineScope {
-        val jobs = HashMap<String, Job>()
-        val permits = Semaphore(PARALLEL_LOADS)
-        wanted.collect { urls ->
-            val keep = urls.toHashSet()
-            jobs.entries.removeAll { (url, job) -> (url !in keep || !job.isActive).also { gone -> if (gone) job.cancel() } }
-            for (url in urls) {
-                if (url in bitmaps || url in refused || url in jobs) continue
-                jobs[url] = launch {
-                    permits.withPermit {
-                        when (val result = images.load(url)) {
-                            is TileResult.Loaded -> {
-                                bitmaps[url] = result.bitmap
-                                version++
-                            }
-                            TileResult.Refused -> {
-                                refused += url
-                                onRefused()
-                            }
-                            // Offline and never saved: tried again when the view next changes.
-                            TileResult.Unavailable -> Unit
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private const val MAX_TILES = 160
-private const val PARALLEL_LOADS = 6
-private const val OVERVIEW_LEVEL = 2
 /** The decoded original's long side never exceeds this: 64 MB in full colour. */
 private const val MAX_ORIGINAL_SIZE = 4096
 
