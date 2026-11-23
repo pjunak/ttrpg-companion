@@ -48,7 +48,7 @@ fun WebScreen(path: String, onBack: () -> Unit, viewModel: CampaignViewModel = h
     ) { padding ->
         // The scaffold's padding holds the navigation bar, which the keyboard's inset covers too.
         Box(Modifier.padding(padding).consumeWindowInsets(padding).imePadding().fillMaxSize()) {
-            SiteWebView(page, site.baseUrl, site.baseUrl + path, viewModel.webViewCookie(), Modifier.fillMaxSize())
+            SiteWebView(page, site.baseUrl, site.baseUrl + path, viewModel::webViewCookie, Modifier.fillMaxSize())
             val failure = page.failure
             if (failure != null) {
                 Surface(Modifier.fillMaxSize()) {

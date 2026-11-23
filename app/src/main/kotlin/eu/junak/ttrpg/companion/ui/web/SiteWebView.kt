@@ -104,13 +104,14 @@ class WebPageState internal constructor(private var saved: Bundle?) {
 fun rememberWebPageState(): WebPageState = rememberSaveable(saver = WebPageState.Saver) { WebPageState(null) }
 
 /**
- * The site's own pages, signed in with the app's [cookie]. Other web pages,
+ * The site's own pages, signed in with the app's session cookie, which
+ * [cookie] reads once, when the view is made. Other web pages,
  * mail and phone links open outside (see [linkTarget]); file inputs open the
  * system's file picker.
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun SiteWebView(state: WebPageState, baseUrl: String, url: String, cookie: String?, modifier: Modifier = Modifier) {
+fun SiteWebView(state: WebPageState, baseUrl: String, url: String, cookie: () -> String?, modifier: Modifier = Modifier) {
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         state.filesPicked(pickedFiles(result.resultCode, result.data))
     }
@@ -118,7 +119,7 @@ fun SiteWebView(state: WebPageState, baseUrl: String, url: String, cookie: Strin
         modifier = modifier,
         factory = { context ->
             val cookies = CookieManager.getInstance()
-            cookie?.let { cookies.setCookie(baseUrl, it) }
+            cookie()?.let { cookies.setCookie(baseUrl, it) }
             cookies.flush()
             WebView(context).apply {
                 settings.javaScriptEnabled = true
