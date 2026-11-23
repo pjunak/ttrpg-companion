@@ -18,7 +18,6 @@ import coil3.compose.AsyncImage
 import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
 
-/** The map a location's pin is on: its parent's own map, or the world map when [parentId] is null. */
 /**
  * A location's own map as a preview that opens the map viewer. A map this
  * session may not load is left out rather than shown as an empty frame.
