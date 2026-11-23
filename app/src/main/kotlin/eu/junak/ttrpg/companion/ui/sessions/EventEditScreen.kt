@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -67,7 +68,9 @@ import eu.junak.ttrpg.companion.core.model.RecordSummary
 import eu.junak.ttrpg.companion.core.model.normalizeIdentity
 import eu.junak.ttrpg.companion.core.model.settings
 import eu.junak.ttrpg.companion.core.model.summaries
+import eu.junak.ttrpg.companion.core.network.campaign.CampaignProblem
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
+import eu.junak.ttrpg.companion.ui.components.Notice
 import eu.junak.ttrpg.companion.ui.components.Portrait
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
 import eu.junak.ttrpg.companion.ui.components.StatusDot
@@ -86,8 +89,9 @@ import eu.junak.ttrpg.companion.ui.theme.optionColor
 fun EventEditScreen(onClose: () -> Unit, viewModel: EventEditorViewModel = hiltViewModel()) {
     val spacing = LocalSpacing.current
     val status by viewModel.status.collectAsStateWithLifecycle()
-    val draft by viewModel.fields.collectAsStateWithLifecycle()
+    val draft = viewModel.fields
     val campaign by viewModel.campaign.collectAsStateWithLifecycle()
+    val saving = status == EditorStatus.Saving
     var confirmLeave by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     val leave = { if (viewModel.dirty) confirmLeave = true else onClose() }
@@ -103,11 +107,11 @@ fun EventEditScreen(onClose: () -> Unit, viewModel: EventEditorViewModel = hiltV
                 },
                 actions = {
                     if (!viewModel.creating && draft != null) {
-                        IconButton(onClick = { confirmDelete = true }, enabled = status != EditorStatus.Saving) {
+                        IconButton(onClick = { confirmDelete = true }, enabled = !saving) {
                             Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.action_delete))
                         }
                     }
-                    if (status == EditorStatus.Saving) {
+                    if (saving) {
                         CircularProgressIndicator(Modifier.padding(horizontal = spacing.md).size(spacing.lg))
                     } else {
                         TextButton(onClick = { viewModel.save() }, enabled = draft != null) { Text(stringResource(R.string.action_save)) }
@@ -120,19 +124,27 @@ fun EventEditScreen(onClose: () -> Unit, viewModel: EventEditorViewModel = hiltV
         val dataset = campaign.dataset
         if (fields == null || dataset == null) {
             Column(Modifier.padding(padding)) {
-                val problem = (status as? EditorStatus.Problem)?.problem
-                CenteredMessage(if (problem != null) saveProblemText(problem) else stringResource(R.string.campaign_loading), loading = problem == null)
+                when (val current = status) {
+                    is EditorStatus.CannotLoad -> Notice(loadProblemText(current.problem)) {
+                        TextButton(onClick = viewModel::retry) { Text(stringResource(R.string.action_retry)) }
+                    }
+                    is EditorStatus.Problem -> CenteredMessage(saveProblemText(current.problem))
+                    else -> CenteredMessage(stringResource(R.string.campaign_loading), loading = true)
+                }
             }
             return@Scaffold
         }
         Column(
-            Modifier.padding(padding).fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(spacing.md),
+            // The scaffold's padding holds the navigation bar, which the keyboard's inset covers too.
+            Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize().imePadding()
+                .verticalScroll(rememberScrollState()).padding(spacing.md),
             verticalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
             (status as? EditorStatus.Problem)?.problem?.takeUnless { it is SaveProblem.Conflict }?.let {
                 Text(saveProblemText(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             }
-            EventForm(fields, dataset, viewModel.site?.baseUrl.orEmpty(), viewModel.canManageVisibility, viewModel::update)
+            // Locked while saving, so nothing typed meanwhile is dropped when the editor closes.
+            EventForm(fields, dataset, viewModel.site?.baseUrl.orEmpty(), viewModel.canManageVisibility, enabled = !saving, viewModel::update)
         }
     }
 
@@ -178,6 +190,7 @@ private fun EventForm(
     dataset: CampaignDataset,
     baseUrl: String,
     canManageVisibility: Boolean,
+    enabled: Boolean,
     onChange: (EventFields) -> Unit,
 ) {
     val spacing = LocalSpacing.current
@@ -186,19 +199,18 @@ private fun EventForm(
         value = fields.name,
         onValueChange = { onChange(fields.copy(name = it.replace('\n', ' '))) },
         label = { Text(stringResource(R.string.field_name)) },
+        enabled = enabled,
         singleLine = true,
         keyboardOptions = words,
         modifier = Modifier.fillMaxWidth(),
     )
     Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
-        var session by rememberSaveable { mutableStateOf(fields.sitting.toString()) }
         OutlinedTextField(
-            value = session,
-            onValueChange = { text ->
-                session = text.filter(Char::isDigit).take(7)
-                onChange(fields.copy(sitting = session.toIntOrNull() ?: 0))
-            },
+            // An emptied field is session 0, which the editor refuses to save.
+            value = fields.sitting.takeIf { it > 0 }?.toString().orEmpty(),
+            onValueChange = { text -> onChange(fields.copy(sitting = text.filter(Char::isDigit).take(7).toIntOrNull() ?: 0)) },
             label = { Text(stringResource(R.string.field_session)) },
+            enabled = enabled,
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.weight(0.4f),
@@ -207,15 +219,17 @@ private fun EventForm(
             value = fields.date,
             onValueChange = { onChange(fields.copy(date = it.replace('\n', ' '))) },
             label = { Text(stringResource(R.string.field_date)) },
+            enabled = enabled,
             singleLine = true,
             modifier = Modifier.weight(0.6f),
         )
     }
-    PriorityField(fields, dataset, onChange)
+    PriorityField(fields, dataset, enabled, onChange)
     OutlinedTextField(
         value = fields.short,
         onValueChange = { onChange(fields.copy(short = it)) },
         label = { Text(stringResource(R.string.field_short_summary)) },
+        enabled = enabled,
         maxLines = 3,
         keyboardOptions = words,
         modifier = Modifier.fillMaxWidth(),
@@ -224,44 +238,46 @@ private fun EventForm(
         value = fields.description,
         onValueChange = { onChange(fields.copy(description = it)) },
         label = { Text(stringResource(R.string.field_description_markdown)) },
+        enabled = enabled,
         minLines = 6,
         keyboardOptions = words,
         modifier = Modifier.fillMaxWidth(),
     )
-    ReferenceField(CampaignPage.CHARACTERS, fields.characters, dataset, baseUrl) { onChange(fields.copy(characters = it)) }
-    ReferenceField(CampaignPage.LOCATIONS, fields.locations, dataset, baseUrl) { onChange(fields.copy(locations = it)) }
+    ReferenceField(CampaignPage.CHARACTERS, fields.characters, dataset, baseUrl, enabled) { onChange(fields.copy(characters = it)) }
+    ReferenceField(CampaignPage.LOCATIONS, fields.locations, dataset, baseUrl, enabled) { onChange(fields.copy(locations = it)) }
     if (canManageVisibility) {
         Row(
-            Modifier.fillMaxWidth().clickable { onChange(fields.copy(dmOnly = !fields.dmOnly)) }.padding(vertical = spacing.sm),
+            Modifier.fillMaxWidth().clickable(enabled = enabled) { onChange(fields.copy(dmOnly = !fields.dmOnly)) }.padding(vertical = spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.event_dm_only), style = MaterialTheme.typography.bodyLarge)
                 Text(stringResource(R.string.event_dm_only_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Switch(checked = fields.dmOnly, onCheckedChange = { onChange(fields.copy(dmOnly = it)) })
+            Switch(checked = fields.dmOnly, onCheckedChange = { onChange(fields.copy(dmOnly = it)) }, enabled = enabled)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PriorityField(fields: EventFields, dataset: CampaignDataset, onChange: (EventFields) -> Unit) {
+private fun PriorityField(fields: EventFields, dataset: CampaignDataset, enabled: Boolean, onChange: (EventFields) -> Unit) {
     val priorities = remember(dataset) { dataset.settings.eventPriorities }
     if (priorities.isEmpty() && fields.priority.isEmpty()) return
     var open by remember { mutableStateOf(false) }
     val selected = priorities.firstOrNull { it.id == fields.priority }
-    ExposedDropdownMenuBox(expanded = open, onExpandedChange = { open = it }) {
+    ExposedDropdownMenuBox(expanded = open && enabled, onExpandedChange = { open = it && enabled }) {
         OutlinedTextField(
             value = selected?.label ?: fields.priority.ifEmpty { stringResource(R.string.priority_none) },
             onValueChange = {},
             readOnly = true,
+            enabled = enabled,
             label = { Text(stringResource(R.string.fact_priority)) },
             leadingIcon = selected?.color?.let { color -> { StatusDot(optionColor(color, Color.Unspecified)) } },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = open) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled),
         )
-        ExposedDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        ExposedDropdownMenu(expanded = open && enabled, onDismissRequest = { open = false }) {
             DropdownMenuItem(text = { Text(stringResource(R.string.priority_none)) }, onClick = { open = false; onChange(fields.copy(priority = "")) })
             priorities.forEach { priority ->
                 DropdownMenuItem(
@@ -286,6 +302,7 @@ private fun ReferenceField(
     keys: List<String>,
     dataset: CampaignDataset,
     baseUrl: String,
+    enabled: Boolean,
     onChange: (List<String>) -> Unit,
 ) {
     val spacing = LocalSpacing.current
@@ -297,6 +314,7 @@ private fun ReferenceField(
             InputChip(
                 selected = false,
                 onClick = { onChange(keys - summary.key) },
+                enabled = enabled,
                 label = { Text(summary.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 avatar = { Portrait(baseUrl, summary.portrait, summary.name, page, spacing.md + spacing.xs, summary.icon) },
                 trailingIcon = { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_remove_item, summary.name), Modifier.size(spacing.md)) },
@@ -305,12 +323,13 @@ private fun ReferenceField(
         if (options.isNotEmpty()) {
             AssistChip(
                 onClick = { picking = true },
+                enabled = enabled,
                 label = { Text(stringResource(R.string.action_choose)) },
                 leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, Modifier.size(spacing.md + spacing.xxs)) },
             )
         }
     }
-    if (picking) {
+    if (picking && enabled) {
         RecordPicker(page, options, keys.toSet(), baseUrl, onDismiss = { picking = false }) { chosen ->
             // Keep the stored order, hidden keys included, and add new choices at the end.
             onChange(keys.filter { it in chosen || options.none { option -> option.key == it } } + chosen.filter { it !in keys })
@@ -364,5 +383,16 @@ private fun RecordPicker(
                 )
             }
         }
+    }
+}
+
+/** Why the campaign behind the editor could not be loaded. */
+@Composable
+private fun loadProblemText(problem: CampaignProblem?): String {
+    val offline = stringResource(R.string.save_offline)
+    return when (problem) {
+        is CampaignProblem.Unavailable -> stringResource(R.string.campaign_failed, problem.detail.ifEmpty { offline })
+        is CampaignProblem.UnsupportedHost -> stringResource(R.string.problem_unsupported, problem.version)
+        CampaignProblem.SessionExpired, null -> stringResource(R.string.campaign_failed, offline)
     }
 }

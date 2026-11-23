@@ -169,7 +169,7 @@ fun SessionScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val site by viewModel.site.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    val text by notes.text.collectAsStateWithLifecycle()
+    val text = notes.text
     val sending by notes.sending.collectAsStateWithLifecycle()
     val problem by notes.problem.collectAsStateWithLifecycle()
     val dataset = state.dataset

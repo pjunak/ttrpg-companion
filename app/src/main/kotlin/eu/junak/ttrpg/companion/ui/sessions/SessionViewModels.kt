@@ -1,5 +1,8 @@
 package eu.junak.ttrpg.companion.ui.sessions
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +15,7 @@ import eu.junak.ttrpg.companion.core.model.EventProblem
 import eu.junak.ttrpg.companion.core.model.HostJson
 import eu.junak.ttrpg.companion.core.model.Role
 import eu.junak.ttrpg.companion.core.model.newRecordKey
+import eu.junak.ttrpg.companion.core.network.campaign.CampaignProblem
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignRepository
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignState
 import eu.junak.ttrpg.companion.core.network.campaign.EventSaveResult
@@ -23,7 +27,6 @@ import eu.junak.ttrpg.companion.navigation.SessionRoute
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import java.util.UUID
@@ -51,20 +54,24 @@ class SessionNotesViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val route = savedState.toRoute<SessionRoute>()
-    val text: StateFlow<String> = savedState.getStateFlow(KEY_TEXT, "")
+
+    private var typed by mutableStateOf(savedState[KEY_TEXT] ?: "")
+
+    /** The note being written, as Compose state so the text field never lags behind typing. */
+    val text: String get() = typed
     private val _sending = MutableStateFlow(false)
     val sending: StateFlow<Boolean> = _sending.asStateFlow()
     private val _problem = MutableStateFlow<SaveProblem?>(null)
     val problem: StateFlow<SaveProblem?> = _problem.asStateFlow()
 
     fun setText(value: String) {
-        savedState[KEY_TEXT] = value
+        keep(value)
         _problem.value = null
     }
 
     fun send() {
         val site = sites.site(route.siteId) ?: return
-        val note = text.value
+        val note = text
         val fields = EventFields.note(note, route.number)
         fields.problem?.let { _problem.value = SaveProblem.Invalid(it); return }
         val key = savedState.get<String>(KEY_PENDING)?.takeIf { savedState.get<String>(KEY_PENDING_TEXT) == note }
@@ -76,13 +83,18 @@ class SessionNotesViewModel @Inject constructor(
             val result = writer.save(site, EventBase(key, JsonObject(emptyMap()), 0), fields)
             _sending.value = false
             if (result == EventSaveResult.Saved) {
-                if (text.value == note) savedState[KEY_TEXT] = ""
+                if (text == note) keep("")
                 savedState.remove<String>(KEY_PENDING)
                 savedState.remove<String>(KEY_PENDING_TEXT)
             } else {
                 _problem.value = result.problem()
             }
         }
+    }
+
+    private fun keep(value: String) {
+        typed = value
+        savedState[KEY_TEXT] = value
     }
 
     private companion object {
@@ -99,6 +111,9 @@ sealed interface EditorStatus {
     data object Saving : EditorStatus
     data object Done : EditorStatus
     data class Problem(val problem: SaveProblem) : EditorStatus
+
+    /** The campaign could not be loaded, so there is no event to edit yet; [problem] says why when known. */
+    data class CannotLoad(val problem: CampaignProblem?) : EditorStatus
 }
 
 /**
@@ -118,37 +133,54 @@ class EventEditorViewModel @Inject constructor(
     val site = sites.site(route.siteId)
     val campaign: StateFlow<CampaignState> = site?.let(campaigns::state) ?: MutableStateFlow(CampaignState())
     val creating: Boolean = route.key == null
-    val canManageVisibility: Boolean = site?.role == Role.DM
+
+    /** Whether the DM-only switch applies: the role the campaign was fetched for, which saving uses too. */
+    val canManageVisibility: Boolean get() = campaign.value.role == Role.DM
 
     private var base: EventBase? = restoreBase()
     private var initial: EventFields? = null
-    private val _fields = MutableStateFlow<EventFields?>(null)
-    val fields: StateFlow<EventFields?> = _fields.asStateFlow()
+
+    /** The draft, as Compose state so text fields never lag behind typing; null until the event opened. */
+    var fields: EventFields? by mutableStateOf(null)
+        private set
     private val _status = MutableStateFlow<EditorStatus>(EditorStatus.Loading)
     val status: StateFlow<EditorStatus> = _status.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            if (campaign.value.dataset == null && site != null) campaigns.open(site)
-            val dataset = campaign.first { it.dataset != null }.dataset!!
-            val opening = base ?: if (route.key == null) {
-                EventBase("", JsonObject(emptyMap()), 0)
-            } else {
-                dataset.record(CampaignPage.EVENTS.collection, route.key)?.let(EventBase::of)
-            }
-            if (opening == null) {
-                _status.value = EditorStatus.Problem(SaveProblem.Gone)
-                return@launch
-            }
-            remember(opening)
-            initial = if (opening.creating) {
-                if (route.note.isBlank()) EventFields(sitting = route.sitting) else EventFields.note(route.note, route.sitting)
-            } else {
-                EventFields.of(opening.value)
-            }
-            _fields.value = restoreFields() ?: initial
-            _status.value = EditorStatus.Editing
+        viewModelScope.launch { open() }
+    }
+
+    /** Tries again to load the campaign after it could not be loaded. */
+    fun retry() {
+        if (_status.value !is EditorStatus.CannotLoad) return
+        _status.value = EditorStatus.Loading
+        viewModelScope.launch { open() }
+    }
+
+    private suspend fun open() {
+        if (campaign.value.dataset == null && site != null) campaigns.open(site)
+        val dataset = campaign.value.dataset
+        if (dataset == null) {
+            _status.value = EditorStatus.CannotLoad(campaign.value.problem)
+            return
         }
+        val opening = base ?: if (route.key == null) {
+            EventBase("", JsonObject(emptyMap()), 0)
+        } else {
+            dataset.record(CampaignPage.EVENTS.collection, route.key)?.let(EventBase::of)
+        }
+        if (opening == null) {
+            _status.value = EditorStatus.Problem(SaveProblem.Gone)
+            return
+        }
+        remember(opening)
+        initial = if (opening.creating) {
+            if (route.note.isBlank()) EventFields(sitting = route.sitting) else EventFields.note(route.note, route.sitting)
+        } else {
+            EventFields.of(opening.value)
+        }
+        fields = restoreFields() ?: initial
+        _status.value = EditorStatus.Editing
     }
 
     /**
@@ -158,19 +190,21 @@ class EventEditorViewModel @Inject constructor(
      */
     val dirty: Boolean
         get() {
-            val fields = _fields.value ?: return false
+            val fields = fields ?: return false
             return if (creating) fields != EventFields(sitting = route.sitting) else fields != initial
         }
 
+    /** Changes the draft; ignored while saving, when the form is locked. */
     fun update(fields: EventFields) {
-        _fields.value = fields
+        if (_status.value == EditorStatus.Saving) return
+        this.fields = fields
         saveDraft(fields)
         if (_status.value is EditorStatus.Problem) _status.value = EditorStatus.Editing
     }
 
     fun save(overwrite: Boolean = false) {
         val site = site ?: return
-        val fields = _fields.value ?: return
+        val fields = fields ?: return
         fields.problem?.let { _status.value = EditorStatus.Problem(SaveProblem.Invalid(it)); return }
         var opening = base ?: return
         if (opening.creating && opening.key.isEmpty()) {

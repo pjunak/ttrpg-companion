@@ -186,6 +186,7 @@
     <string name="action_overwrite">Uložit moji verzi</string>
     <string name="action_choose">Vybrat</string>
     <string name="action_done">Hotovo</string>
+    <string name="action_retry">Zkusit znovu</string>
     <string name="action_remove_item">Odebrat %1$s</string>
     <string name="discard_title">Zahodit změny?</string>
     <string name="discard_text">Změny této události ještě nejsou uložené.</string>

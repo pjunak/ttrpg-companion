@@ -87,7 +87,7 @@ class SessionNotesViewModelTest {
 
         assertEquals(2, f.host.commits.size)
         assertEquals(keyOf(f.host.commits[0]), keyOf(f.host.commits[1]))
-        assertEquals("the retry found the note saved", "", composer.text.value)
+        assertEquals("the retry found the note saved", "", composer.text)
     }
 
     @Test
@@ -96,7 +96,7 @@ class SessionNotesViewModelTest {
         composer.setText("Met the mayor")
         send(composer)
         assertEquals(1, f.host.commits.size)
-        assertEquals("", composer.text.value)
+        assertEquals("", composer.text)
         assertNull(composer.problem.value)
     }
 
@@ -118,7 +118,7 @@ class SessionNotesViewModelTest {
         release.countDown()
         composer.sending.first { !it }
 
-        assertEquals("Met the mayor and his guard", composer.text.value)
+        assertEquals("Met the mayor and his guard", composer.text)
         assertNull(composer.problem.value)
     }
 
@@ -140,6 +140,6 @@ class SessionNotesViewModelTest {
         send(composer)
         val problem = composer.problem.value as SaveProblem.NotSaved
         assertTrue(problem.reason is WriteResult.Failed)
-        assertEquals("Met the mayor", composer.text.value)
+        assertEquals("Met the mayor", composer.text)
     }
 }

@@ -186,6 +186,7 @@
     <string name="action_overwrite">Save mine</string>
     <string name="action_choose">Choose</string>
     <string name="action_done">Done</string>
+    <string name="action_retry">Try again</string>
     <string name="action_remove_item">Remove %1$s</string>
     <string name="discard_title">Discard changes?</string>
     <string name="discard_text">Your changes to this event are not saved yet.</string>

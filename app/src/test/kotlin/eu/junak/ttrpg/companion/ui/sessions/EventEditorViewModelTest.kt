@@ -2,10 +2,12 @@ package eu.junak.ttrpg.companion.ui.sessions
 
 import androidx.lifecycle.SavedStateHandle
 import eu.junak.ttrpg.companion.core.model.EventFields
+import eu.junak.ttrpg.companion.core.model.Role
 import eu.junak.ttrpg.companion.core.network.FakeHost
 import eu.junak.ttrpg.companion.core.network.FakeHost.Companion.campaign
 import eu.junak.ttrpg.companion.core.network.FakeHost.Companion.event
 import eu.junak.ttrpg.companion.core.network.Fixture
+import eu.junak.ttrpg.companion.core.network.campaign.CampaignProblem
 import eu.junak.ttrpg.companion.core.network.site.Site
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,6 +33,8 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /** How the event editor opens, remembers and saves an event today. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -88,14 +92,14 @@ class EventEditorViewModelTest {
     fun theDraftAndTheOpeningEventSurviveProcessDeath() = runTest {
         val state = handle("key" to "arrival")
         val first = editor(state)
-        val draft = first.fields.value!!.copy(description = "Rain and fog.")
+        val draft = first.fields!!.copy(description = "Rain and fog.")
         first.update(draft)
         // Meanwhile someone renames the event.
         f.host.campaign = campaign(renamed)
 
         val second = editor(restored(state))
 
-        assertEquals(draft, second.fields.value)
+        assertEquals(draft, second.fields)
         assertTrue("the draft still differs from the event as it opened", second.dirty)
         assertEquals(EditorStatus.Done, write(second) { second.save() })
         // Saving merges against the event as it first opened, so the rename made meanwhile stays.
@@ -108,7 +112,7 @@ class EventEditorViewModelTest {
     fun aNewEventIsDirtyOnceItHasContent() = runTest {
         val editor = editor(handle("sitting" to 2))
         assertTrue(editor.creating)
-        assertEquals(EventFields(sitting = 2), editor.fields.value)
+        assertEquals(EventFields(sitting = 2), editor.fields)
         assertFalse(editor.dirty)
         editor.update(EventFields(name = "Ambush", sitting = 2))
         assertTrue(editor.dirty)
@@ -119,7 +123,7 @@ class EventEditorViewModelTest {
     @Test
     fun anEditedEventIsDirtyWhileItDiffersFromHowItOpened() = runTest {
         val editor = editor(handle("key" to "arrival"))
-        val opened = editor.fields.value!!
+        val opened = editor.fields!!
         assertFalse(editor.dirty)
         editor.update(opened.copy(name = "Arrival at night"))
         assertTrue(editor.dirty)
@@ -130,7 +134,7 @@ class EventEditorViewModelTest {
     @Test
     fun aNoteHandedOverFromTheComposerIsDirtyAtOnce() = runTest {
         val editor = editor(handle("sitting" to 3, "note" to "Met the mayor\nHe lied."))
-        assertEquals(EventFields(name = "Met the mayor", description = "He lied.", sitting = 3), editor.fields.value)
+        assertEquals(EventFields(name = "Met the mayor", description = "He lied.", sitting = 3), editor.fields)
         assertTrue("the composer no longer holds the note", editor.dirty)
     }
 
@@ -163,5 +167,55 @@ class EventEditorViewModelTest {
 
         assertEquals(EditorStatus.Problem(SaveProblem.ChangedBeforeDelete), write(editor) { editor.delete() })
         assertTrue(f.host.commits.isEmpty())
+    }
+
+    @Test
+    fun aCampaignThatCannotLoadSaysSoAndCanBeRetried() = runTest {
+        f.host.failing += "/api/campaign"
+        val editor = EventEditorViewModel(handle("key" to "arrival"), f.store, f.campaigns, f.writer)
+        runCurrent()
+        val failed = editor.status.first { it != EditorStatus.Loading }
+        assertTrue("no endless wait for a campaign that will not come", (failed as EditorStatus.CannotLoad).problem is CampaignProblem.Unavailable)
+
+        f.host.failing.clear()
+        editor.retry()
+        runCurrent()
+        assertEquals(EditorStatus.Editing, editor.status.first { it != EditorStatus.Loading })
+        assertEquals("Arrival", editor.fields?.name)
+    }
+
+    @Test
+    fun theFormIsLockedWhileSaving() = runTest {
+        val editor = editor(handle("key" to "arrival"))
+        val draft = editor.fields!!.copy(description = "Rain and fog.")
+        editor.update(draft)
+        val arrived = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        f.host.onCommit = {
+            arrived.countDown()
+            release.await(5, TimeUnit.SECONDS)
+        }
+        editor.save()
+        runCurrent()
+        assertTrue(arrived.await(5, TimeUnit.SECONDS))
+
+        editor.update(draft.copy(description = "Typed while saving."))
+        assertEquals(draft, editor.fields)
+        release.countDown()
+        assertEquals(EditorStatus.Done, editor.status.first { it != EditorStatus.Saving })
+    }
+
+    @Test
+    fun theDmSwitchFollowsTheRoleTheCampaignWasFetchedFor() = runTest {
+        // The site was last signed in as the DM, but the session now is a player's.
+        f.site("dm")
+        f.host.role = "player"
+        val asPlayer = editor(handle("key" to "arrival"))
+        assertEquals(Role.DM, f.store.site(site.id)?.role)
+        assertFalse(asPlayer.canManageVisibility)
+
+        f.host.role = "dm"
+        f.campaigns.refresh(site)
+        assertTrue(asPlayer.canManageVisibility)
     }
 }
