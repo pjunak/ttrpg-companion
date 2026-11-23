@@ -1,5 +1,7 @@
 package eu.junak.ttrpg.companion.ui.web
 
+import android.webkit.WebViewClient
+import eu.junak.ttrpg.companion.core.network.HostFailure
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -31,5 +33,13 @@ class WebLinksTest {
         assertEquals(LinkTarget.IGNORED, linkTarget("javascript:alert(1)", site))
         assertEquals(LinkTarget.IGNORED, linkTarget("market://details?id=x", site))
         assertEquals(LinkTarget.IGNORED, linkTarget("no scheme at all", site))
+    }
+
+    @Test
+    fun aFailedPageReadsLikeOtherHostFailures() {
+        assertEquals(HostFailure.Reason.OFFLINE, pageFailure(WebViewClient.ERROR_HOST_LOOKUP, "net::ERR_NAME_NOT_RESOLVED").reason)
+        assertEquals(HostFailure.Reason.OFFLINE, pageFailure(WebViewClient.ERROR_CONNECT, "net::ERR_CONNECTION_REFUSED").reason)
+        assertEquals(HostFailure.Reason.TIMEOUT, pageFailure(WebViewClient.ERROR_TIMEOUT, "net::ERR_TIMED_OUT").reason)
+        assertEquals(HostFailure(HostFailure.Reason.OTHER, "net::ERR_SSL_PROTOCOL_ERROR"), pageFailure(WebViewClient.ERROR_FAILED_SSL_HANDSHAKE, "net::ERR_SSL_PROTOCOL_ERROR"))
     }
 }

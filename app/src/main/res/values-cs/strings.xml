@@ -37,6 +37,7 @@
 
     <string name="campaign_loading">Načítám kampaň…</string>
     <string name="campaign_failed">Kampaň se nepodařilo načíst. %1$s</string>
+    <string name="web_failed">Stránku se nepodařilo otevřít. %1$s</string>
     <string name="failure_offline">Web není dostupný. Zkontroluj připojení.</string>
     <string name="failure_timeout">Web neodpověděl včas.</string>
     <string name="failure_host_error">Web odpověděl chybou (%1$d).</string>

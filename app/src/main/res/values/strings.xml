@@ -40,6 +40,7 @@
 
     <string name="campaign_loading">Loading the campaign…</string>
     <string name="campaign_failed">Couldn’t load the campaign. %1$s</string>
+    <string name="web_failed">Couldn’t open this page. %1$s</string>
     <string name="failure_offline">The site can’t be reached. Check the connection.</string>
     <string name="failure_timeout">The site took too long to answer.</string>
     <string name="failure_host_error">The site answered with an error (%1$d).</string>
