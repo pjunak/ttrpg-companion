@@ -15,8 +15,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Companion">
 
+        <!-- Compose adapts to these without a restart, which also keeps a web page's unsaved work. -->
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
