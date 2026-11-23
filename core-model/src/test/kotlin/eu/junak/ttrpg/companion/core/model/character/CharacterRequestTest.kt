@@ -61,6 +61,16 @@ class CharacterRequestTest {
     }
 
     @Test
+    fun featureTogglesAndGrantedCastsMatchTheirRecordings() {
+        val on = Recordings.read("sheet-bren-save-toggle-on")
+        val toggle = PlayChange.ToggleFeature("feature:oath-of-devotion-sacred-weapon:sacred-weapon", true)
+        assertEquals(CharacterRequest(on.method, on.params), CharacterRequest.play(on.key, on.expectedRevision, on.operationId, toggle))
+        val cast = Recordings.read("sheet-bren-save-cast-granted")
+        val granted = PlayChange.CastGrantedSpell("feature:paladin-faithful-steed:find-steed", "charge:feature:paladin-faithful-steed:find-steed")
+        assertEquals(CharacterRequest(cast.method, cast.params), CharacterRequest.play(cast.key, cast.expectedRevision, cast.operationId, granted))
+    }
+
+    @Test
     fun buildSavesMatchTheRecordings() {
         val builds = Recordings.calls().filter { it.operation == "build" }
         assertTrue(builds.size >= 8)

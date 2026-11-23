@@ -24,6 +24,9 @@ internal object Recordings {
 
     fun schema(): JsonObject =
         Json.parseToJsonElement(checkNotNull(javaClass.getResource("/character/character.request.schema.json")).readText()).jsonObject
+
+    fun responseSchema(): JsonObject =
+        Json.parseToJsonElement(checkNotNull(javaClass.getResource("/character/character.response.schema.json")).readText()).jsonObject
 }
 
 internal class Recording(val name: String, json: JsonObject) {
