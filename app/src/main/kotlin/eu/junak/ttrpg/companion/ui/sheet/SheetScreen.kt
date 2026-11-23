@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Backspace
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Backpack
@@ -48,7 +47,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -104,7 +102,7 @@ import eu.junak.ttrpg.companion.ui.theme.LocalVitalColors
 /**
  * A character's sheet: a header with hit points, stats, concentration and
  * conditions above the tab chosen in the bottom bar. [tabBody] draws a tab from
- * the sheet and what it can change; until the tabs exist it draws nothing.
+ * the sheet and what it can change.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,7 +110,7 @@ fun SheetScreen(
     onBack: () -> Unit,
     onSignIn: () -> Unit,
     onOpenWebsite: (path: String) -> Unit,
-    tabBody: @Composable (SheetTab, CharacterSheet, SheetActions) -> Unit = { _, _, _ -> },
+    tabBody: @Composable (SheetTab, CharacterSheet, SheetActions) -> Unit = { tab, sheet, actions -> SheetTabBody(tab, sheet, actions) },
     viewModel: SheetViewModel = hiltViewModel(),
 ) {
     if (viewModel.site == null) {
@@ -201,6 +199,16 @@ fun SheetScreen(
             },
             onDismiss = { picker = false },
         )
+    }
+}
+
+/** The body of [tab]; Spells, Gear and More follow. */
+@Composable
+fun SheetTabBody(tab: SheetTab, sheet: CharacterSheet, actions: SheetActions) {
+    when (tab) {
+        SheetTab.COMBAT -> CombatTab(sheet, actions)
+        SheetTab.ABILITIES -> AbilitiesTab(sheet)
+        SheetTab.SPELLS, SheetTab.GEAR, SheetTab.MORE -> Unit
     }
 }
 
@@ -418,92 +426,21 @@ private fun NoSheet(name: String, onOpenBuilder: () -> Unit) =
     }
 
 /** The ± keypad: type an amount, then damage, heal or set temporary hit points. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HitPointKeypad(header: SheetHeader, enabled: Boolean, onChange: (PlayChange) -> Unit, onDismiss: () -> Unit) {
-    val spacing = LocalSpacing.current
     val colors = MaterialTheme.colorScheme
     val vitals = LocalVitalColors.current
     var number by rememberSaveable { mutableStateOf("") }
     val amount = keypadAmount(number)
-    // Opens fully: half open would hide the action row.
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.padding(horizontal = spacing.md).padding(bottom = spacing.lg), verticalArrangement = Arrangement.spacedBy(spacing.md - spacing.xs)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-                Text(
-                    number.ifEmpty { "0" },
-                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                    color = if (number.isEmpty()) colors.onSurfaceVariant else colors.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    stringResource(R.string.sheet_keypad_current, header.hitPoints, header.maxHitPoints),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.onSurfaceVariant,
-                )
+    NumberPadSheet(number, { number = it }, stringResource(R.string.sheet_keypad_current, header.hitPoints, header.maxHitPoints), onDismiss) {
+        @Composable
+        fun Action(action: HitPointAction, label: Int, container: Color, content: Color, border: Color) =
+            ActionKey(label, container, content, border, enabled && keypadAllows(action, amount), Modifier.weight(1f)) {
+                amount?.let { onChange(hitPointChange(action, it)) }
             }
-            val rows = listOf(
-                listOf(KeypadKey.Digit(1), KeypadKey.Digit(2), KeypadKey.Digit(3)),
-                listOf(KeypadKey.Digit(4), KeypadKey.Digit(5), KeypadKey.Digit(6)),
-                listOf(KeypadKey.Digit(7), KeypadKey.Digit(8), KeypadKey.Digit(9)),
-                listOf(KeypadKey.Clear, KeypadKey.Digit(0), KeypadKey.Delete),
-            )
-            rows.forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
-                    row.forEach { key -> Key(key, Modifier.weight(1f)) { number = pressKey(number, key) } }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
-                @Composable
-                fun Action(action: HitPointAction, label: Int, container: Color, content: Color, border: Color) =
-                    ActionKey(label, container, content, border, enabled && keypadAllows(action, amount), Modifier.weight(1f)) {
-                        amount?.let { onChange(hitPointChange(action, it)) }
-                    }
-                Action(HitPointAction.DAMAGE, R.string.sheet_damage, colors.tertiaryContainer, colors.onTertiaryContainer, colors.tertiary)
-                Action(HitPointAction.HEAL, R.string.sheet_heal, vitals.healContainer, vitals.onHealContainer, vitals.health)
-                Action(HitPointAction.TEMPORARY, R.string.sheet_temporary, vitals.temporaryContainer, vitals.onTemporaryContainer, vitals.temporary)
-            }
-        }
-    }
-}
-
-@Composable
-private fun Key(key: KeypadKey, modifier: Modifier, onClick: () -> Unit) {
-    val spacing = LocalSpacing.current
-    val colors = MaterialTheme.colorScheme
-    Surface(
-        onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
-        color = colors.surfaceContainer,
-        border = BorderStroke(spacing.hairline, colors.outlineVariant),
-        modifier = modifier.height(spacing.controlLarge),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            when (key) {
-                is KeypadKey.Digit -> Text(key.digit.toString(), style = MaterialTheme.typography.headlineSmall)
-                KeypadKey.Clear -> {
-                    val clear = stringResource(R.string.action_clear)
-                    Text("C", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.clearAndSetSemantics { contentDescription = clear })
-                }
-                KeypadKey.Delete -> Icon(Icons.AutoMirrored.Outlined.Backspace, contentDescription = stringResource(R.string.sheet_keypad_delete))
-            }
-        }
-    }
-}
-
-@Composable
-private fun ActionKey(label: Int, container: Color, content: Color, border: Color, enabled: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    val spacing = LocalSpacing.current
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        shape = MaterialTheme.shapes.medium,
-        color = container,
-        contentColor = content,
-        border = BorderStroke(spacing.hairline, border),
-        modifier = modifier.height(spacing.controlLarge).alpha(if (enabled) 1f else Emphasis.DIMMED),
-    ) {
-        Box(contentAlignment = Alignment.Center) { Text(stringResource(label), style = MaterialTheme.typography.titleSmall) }
+        Action(HitPointAction.DAMAGE, R.string.sheet_damage, colors.tertiaryContainer, colors.onTertiaryContainer, colors.tertiary)
+        Action(HitPointAction.HEAL, R.string.sheet_heal, vitals.healContainer, vitals.onHealContainer, vitals.health)
+        Action(HitPointAction.TEMPORARY, R.string.sheet_temporary, vitals.temporaryContainer, vitals.onTemporaryContainer, vitals.temporary)
     }
 }
 
