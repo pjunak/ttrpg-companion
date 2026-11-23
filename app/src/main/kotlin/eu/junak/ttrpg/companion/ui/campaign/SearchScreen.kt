@@ -1,5 +1,6 @@
 package eu.junak.ttrpg.companion.ui.campaign
 
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -86,7 +87,7 @@ fun SearchScreen(
                 state.dataset == null -> CampaignMissing(state, viewModel::refresh)
                 query.isBlank() -> Unit
                 results.isEmpty() -> CenteredMessage(stringResource(R.string.search_empty))
-                else -> LazyColumn(Modifier.fillMaxSize()) {
+                else -> LazyColumn(Modifier.fillMaxSize().readableWidth()) {
                     items(results, key = { "${it.page.id}/${it.key}" }) { summary ->
                         RecordRow(
                             site?.baseUrl.orEmpty(),

@@ -1,5 +1,6 @@
 package eu.junak.ttrpg.companion.ui.sites
 
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -111,7 +112,7 @@ fun AddSiteScreen(onBack: () -> Unit, onDone: (Site) -> Unit, viewModel: AddSite
     ) { padding ->
         Column(
             Modifier.padding(padding).consumeWindowInsets(padding).imePadding()
-                .verticalScroll(rememberScrollState()).padding(spacing.md).fillMaxWidth(),
+                .readableWidth().verticalScroll(rememberScrollState()).padding(spacing.md),
             verticalArrangement = Arrangement.spacedBy(spacing.md),
         ) {
             OutlinedTextField(

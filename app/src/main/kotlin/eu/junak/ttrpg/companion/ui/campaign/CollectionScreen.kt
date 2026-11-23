@@ -1,5 +1,6 @@
 package eu.junak.ttrpg.companion.ui.campaign
 
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -150,7 +151,7 @@ fun CollectionScreen(
                     CenteredMessage(stringResource(if (records.isEmpty()) R.string.collection_empty else R.string.collection_no_match))
                 } else {
                     val baseUrl = site?.baseUrl.orEmpty()
-                    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = spacing.lg)) {
+                    LazyColumn(Modifier.fillMaxSize().readableWidth(), contentPadding = PaddingValues(bottom = spacing.lg)) {
                         // Only a status other than the first (usual) one is marked, as the website marks the dead and missing.
                         val usualStatus = settings?.characterStatuses?.firstOrNull()?.id
                         items(shown, key = { it.key }) { record ->

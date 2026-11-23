@@ -1,5 +1,6 @@
 package eu.junak.ttrpg.companion.ui.settings
 
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -68,7 +69,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
         topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_title)) }, navigationIcon = { BackButton(onBack) }) },
     ) { padding ->
         Column(
-            Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(spacing.md).fillMaxWidth(),
+            Modifier.padding(padding).readableWidth().verticalScroll(rememberScrollState()).padding(spacing.md),
             verticalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
             Text(stringResource(R.string.appearance_title), style = MaterialTheme.typography.titleMedium)

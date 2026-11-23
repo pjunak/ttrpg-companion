@@ -1,5 +1,6 @@
 package eu.junak.ttrpg.companion.ui.sessions
 
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -142,7 +143,7 @@ fun EventEditScreen(onClose: () -> Unit, onDeleted: () -> Unit, viewModel: Event
         Column(
             // The scaffold's padding holds the navigation bar, which the keyboard's inset covers too.
             Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize().imePadding()
-                .verticalScroll(rememberScrollState()).padding(spacing.md),
+                .readableWidth().verticalScroll(rememberScrollState()).padding(spacing.md),
             verticalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
             (status as? EditorStatus.Problem)?.problem?.takeUnless { it is SaveProblem.Conflict || it is SaveProblem.ChangedBeforeDelete }?.let {

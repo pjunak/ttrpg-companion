@@ -1,5 +1,6 @@
 package eu.junak.ttrpg.companion.ui.campaign
 
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -167,7 +168,7 @@ fun RecordScreen(
         }
         val open = { ref: RecordRef -> onOpenRecord(ref.page, ref.key) }
         PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = viewModel::refresh, modifier = Modifier.padding(padding)) {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            Column(Modifier.fillMaxSize().readableWidth().verticalScroll(rememberScrollState())) {
                 CampaignStatus(state, onSignIn)
                 Column(Modifier.padding(horizontal = spacing.md).padding(bottom = spacing.xl)) {
                     Hero(baseUrl, details)

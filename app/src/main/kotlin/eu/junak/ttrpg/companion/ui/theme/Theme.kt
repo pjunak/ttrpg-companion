@@ -175,6 +175,9 @@ data class Spacing(
     val markerLabelWidth: Dp = 160.dp,
 )
 
+/** The widest articles and lists grow, so text stays readable on tablets and in landscape. */
+val ReadableWidth = 720.dp
+
 /** Shared transparencies. */
 object Emphasis {
     /** A label over the map stays readable without hiding it. */

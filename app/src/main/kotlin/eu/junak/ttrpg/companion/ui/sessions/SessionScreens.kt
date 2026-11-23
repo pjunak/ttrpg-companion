@@ -1,5 +1,6 @@
 package eu.junak.ttrpg.companion.ui.sessions
 
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -114,6 +115,7 @@ fun SessionsScreen(
                     state.dataset == null -> CampaignMissing(state, viewModel::refresh)
                     sessions.isEmpty() -> CenteredMessage(stringResource(R.string.sessions_empty))
                     else -> LazyColumn(
+                        modifier = Modifier.readableWidth(),
                         contentPadding = PaddingValues(start = spacing.md, end = spacing.md, bottom = spacing.xl * 3),
                         verticalArrangement = Arrangement.spacedBy(spacing.sm),
                     ) {
@@ -232,6 +234,7 @@ fun SessionScreen(
             }
             PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = viewModel::refresh) {
                 LazyColumn(
+                    modifier = Modifier.readableWidth(),
                     state = list,
                     contentPadding = PaddingValues(spacing.md),
                     verticalArrangement = Arrangement.spacedBy(spacing.sm),

@@ -1,5 +1,6 @@
 package eu.junak.ttrpg.companion.ui.campaign
 
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -160,7 +161,7 @@ fun CampaignHomeScreen(
                 return@Column
             }
             PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = viewModel::refresh) {
-                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = spacing.xl)) {
+                LazyColumn(Modifier.fillMaxSize().readableWidth(), contentPadding = PaddingValues(bottom = spacing.xl)) {
                     item { Introduction(overview, roleLabel(site?.role), state.fetchedAt) }
                     item { CampaignStatus(state, onSignIn) }
                     item { SearchField(onSearch) }

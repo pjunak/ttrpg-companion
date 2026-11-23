@@ -1,5 +1,6 @@
 package eu.junak.ttrpg.companion.ui.sites
 
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -117,7 +118,7 @@ fun SitesScreen(
             return@Scaffold
         }
         LazyColumn(
-            Modifier.padding(padding).fillMaxSize(),
+            Modifier.padding(padding).fillMaxSize().readableWidth(),
             contentPadding = PaddingValues(horizontal = spacing.md, vertical = spacing.sm),
             verticalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
