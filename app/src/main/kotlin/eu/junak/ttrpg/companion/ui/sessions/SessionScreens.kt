@@ -198,7 +198,8 @@ fun SessionScreen(
         shownEvents = events.size
     }
     LaunchedEffect(leave) { if (leave == Leave.GO) onBack() }
-    BackHandler(enabled = leave != Leave.GO, onBack = notes::requestLeave)
+    // Only while something would be lost, so the system's back animation stays otherwise.
+    BackHandler(enabled = leave != Leave.GO && (text.isNotBlank() || sending), onBack = notes::requestLeave)
 
     Scaffold(
         topBar = {
