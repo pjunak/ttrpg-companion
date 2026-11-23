@@ -50,7 +50,9 @@ An Android app for players and DMs of TTRPG Codex campaign sites.
   Settings → Updates downloads, verifies and installs it.
 
 Planned next (host backlog): the optional character sheet module, for sites
-running host 2.2.0 or newer with Character Sheets installed.
+running host 2.2.0 or newer with Character Sheets installed. Like the
+campaign, each sheet it has shown stays on the phone for reading without a
+connection; changes to a sheet need the site.
 
 ## Requirements
 
@@ -107,6 +109,6 @@ app afterwards.
 ```text
 app/             Compose UI, navigation, theme
 core-model/      Host wire formats and campaign presentation rules (pure Kotlin)
-core-network/    HTTP client, sessions, sites, campaign cache, live events
+core-network/    HTTP client, sessions, sites, campaign and sheet copies, live events
 feature-update/  GitHub release updates
 ```

@@ -51,7 +51,7 @@ $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
 ```text
 app/             Compose UI, navigation, ViewModels, theme, live updates
 core-model/      Pure Kotlin: host wire formats, record pages, wiki links, search, map math
-core-network/    OkHttp client and per-site cookies, host client, sites, campaign cache, maps, events, add-on services
+core-network/    OkHttp client and per-site cookies, host client, sites, campaign and sheet copies, maps, events, add-on services
 feature-update/  GitHub release check, verified download, installer handoff
 ```
 
@@ -95,6 +95,11 @@ Dependencies point inward: `app` uses everything, `core-network` uses
 - One OkHttp client and cookie jar serve REST, images and the event stream.
   Session cookies are stored encrypted per site origin; passwords are never
   stored.
+- Each site keeps its campaign copy, map details and character sheet copies
+  in the app's files (`SiteStore`); removing the site removes them. A sheet
+  copy is the newest answer the character session took, kept with the role it
+  was received under and shown only to that role, until the host answers
+  (`CharacterSession`).
 - HTTPS only. Debug builds also accept plain HTTP to local development hosts.
 
 ## Release
