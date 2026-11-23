@@ -15,13 +15,22 @@ through the host's client service routes against a throwaway local host.
 copied unchanged from the Sheets add-on's `contracts/` (last changed in
 `6857213`; identical to the installed 6.4.0 package).
 
-## The character
+## The characters
 
 Mira Quill (`mira-quill`, public) is a made-up level 5 High Elf wizard
 (Evoker, Sage background) with a quarterstaff, daggers, two Potions of Healing
 pinned for quick use, coins, prepared spells and ritual spells in her
 spellbook. Hollow Agent (`hollow-agent`) is a DM-only record without a sheet.
-Revisions in the files follow one session of play on her sheet.
+Revisions in the `load-*` and `save-*` files follow one session of play on
+her sheet.
+
+Bren Ashcroft (`bren-ashcroft`) is the companion mockup's made-up Human
+Paladin 5 (Oath of Devotion): chain mail, shield, a longsword with Sap,
+javelins and a backpack and belt pouch, Lay on Hands, Channel Divinity with
+Sacred Weapon, and Find Steed and Divine Smite with one free cast each. His
+`sheet-bren-load.json` shows him at 31 of 44 hit points, concentrating on
+Bless, poisoned and inspired. Corin Vale (`corin-vale`) is a made-up Human
+Warlock 2 with pact slots and a thrown dagger.
 
 ## Files
 
@@ -44,6 +53,11 @@ player session read from `GET /api/events` during the play session.
   and, when a state is present, `inputs`. The real answers carry all of it.
 - A build save's `params.inputs` are the `state.inputs` of the answer before
   it with one field changed.
+- `sheet-*.json` keep what the sheet view reads: the whole `state.inputs`,
+  the sheet members it shows, the spell evidence and the names of classes,
+  subclasses, species, backgrounds and feats, and `evaluation`'s condition
+  options and spell options (`castSlots`, `ritualIds`, granted spells,
+  slots). Everything else is emptied as above.
 
 Files are written as one line; pretty-print them to read.
 
