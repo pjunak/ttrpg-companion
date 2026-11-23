@@ -1,15 +1,1 @@
-{
- "method": "load",
- "params": {
-  "contractVersion": "character.v3",
-  "key": "hollow-agent"
- },
- "http": 403,
- "ms": 3,
- "response": {
-  "error": {
-   "kind": "FORBIDDEN",
-   "message": "the service operation is not allowed for this user"
-  }
- }
-}
+{"method":"load","params":{"contractVersion":"character.v3","key":"hollow-agent"},"http":403,"ms":3,"response":{"error":{"kind":"FORBIDDEN","message":"the service operation is not allowed for this user"}}}

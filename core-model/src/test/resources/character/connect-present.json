@@ -1,15 +1,1 @@
-{
- "http": 200,
- "response": {
-  "contract": "dnd5e.character",
-  "contractVersion": "client-service-connection.v1",
-  "providers": [
-   {
-    "addonId": "dnd-sheets",
-    "contractVersion": "4.0.0",
-    "generation": "f9417c265c5abf294de452b47d3b2059594396e1c0448ced06e8f84aca2383b7"
-   }
-  ],
-  "range": "^4.0.0"
- }
-}
+{"http":200,"response":{"contract":"dnd5e.character","contractVersion":"client-service-connection.v1","providers":[{"addonId":"dnd-sheets","contractVersion":"4.0.0","generation":"f9417c265c5abf294de452b47d3b2059594396e1c0448ced06e8f84aca2383b7"}],"range":"^4.0.0"}}

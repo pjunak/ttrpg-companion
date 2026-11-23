@@ -32,13 +32,20 @@ envelope, or `{"error":{...}}`). `connect-*.json` are answers to
 `POST /api/services/connect`; `events-addon-data-changed.txt` is what a second
 player session read from `GET /api/events` during the play session.
 
-- `load-sheet.json` and `save-play-cast-spell.json` are complete answers.
-- In every other answer, `result` keeps its envelope (`status`, `revision`,
-  `message`, `messageText`, `rulesChanged`, `policy`) and only the parts of
-  `state` that differ from the answer before it in the session
-  (`state.inputs.play`, `state.projection.sheet` and `state.rules` keys);
-  `evaluation` is dropped except the blank `inputs` of a record without a
-  sheet. The real answers carry the whole saved state.
+- `load-sheet.json` is a complete answer.
+- Every other answer is trimmed but keeps the shape of a
+  `character-response.v3`: its envelope (`status`, `revision`, `message`,
+  `messageText`, `rulesChanged`, `policy`), the whole `state.inputs`,
+  `state.rules` and `state.operationId`, and only the members of
+  `state.projection.sheet` that differ from the answer before it in the
+  session. Other large parts are emptied to `{}` or `[]`: the projection's
+  `explanations` and `evidence`, and `evaluation`'s `guidance`, `plan`,
+  `spellOptions`, `explanations`, `evidence`, `sheet` (except its `status`)
+  and, when a state is present, `inputs`. The real answers carry all of it.
+- A build save's `params.inputs` are the `state.inputs` of the answer before
+  it with one field changed.
+
+Files are written as one line; pretty-print them to read.
 
 Compendium text (summaries, descriptions, excerpts, rules text, materials and
 long casting times) is replaced by `Placeholder: compendium text removed.`;
