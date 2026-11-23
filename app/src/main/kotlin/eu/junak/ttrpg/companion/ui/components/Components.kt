@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -242,6 +244,21 @@ fun TappableCard(onClick: () -> Unit, modifier: Modifier = Modifier, content: @C
         color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = modifier.fillMaxWidth(),
         content = content,
+    )
+}
+
+/**
+ * A screen's main action as an extended floating button. Material's own
+ * clears the semantics of its text, so the button carries the [label] itself
+ * for TalkBack.
+ */
+@Composable
+fun ActionButton(label: String, icon: ImageVector, onClick: () -> Unit) {
+    ExtendedFloatingActionButton(
+        onClick = onClick,
+        icon = { Icon(icon, contentDescription = null) },
+        text = { Text(label) },
+        modifier = Modifier.semantics { contentDescription = label },
     )
 }
 

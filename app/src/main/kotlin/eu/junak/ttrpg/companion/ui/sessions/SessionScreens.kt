@@ -1,5 +1,6 @@
 package eu.junak.ttrpg.companion.ui.sessions
 
+import eu.junak.ttrpg.companion.ui.components.ActionButton
 import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +26,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -100,11 +100,7 @@ fun SessionsScreen(
         },
         floatingActionButton = {
             if (canWrite && state.dataset != null) {
-                ExtendedFloatingActionButton(
-                    onClick = { onOpenSession(latest + 1) },
-                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text(stringResource(R.string.sessions_new, latest + 1)) },
-                )
+                ActionButton(stringResource(R.string.sessions_new, latest + 1), Icons.Default.Add) { onOpenSession(latest + 1) }
             }
         },
     ) { padding ->
