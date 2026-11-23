@@ -329,7 +329,7 @@ private fun ReferenceField(
                 onClick = { onChange(keys - summary.key) },
                 enabled = enabled,
                 label = { Text(summary.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                avatar = { Portrait(baseUrl, summary.portrait, summary.name, page, spacing.iconMedium, summary.icon) },
+                avatar = { Portrait(baseUrl, summary.portrait, page, spacing.iconMedium, summary.icon) },
                 trailingIcon = { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_remove_item, summary.name), Modifier.size(spacing.md)) },
             )
         }
@@ -389,7 +389,7 @@ private fun RecordPicker(
                 ListItem(
                     headlineContent = { Text(summary.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     supportingContent = summary.subtitle.takeIf(String::isNotEmpty)?.let { { Text(it, maxLines = 1) } },
-                    leadingContent = { Portrait(baseUrl, summary.portrait, summary.name, page, spacing.portraitSmall, summary.icon) },
+                    leadingContent = { Portrait(baseUrl, summary.portrait, page, spacing.portraitSmall, summary.icon) },
                     trailingContent = { Checkbox(checked = checked, onCheckedChange = { toggle() }) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     modifier = Modifier.clickable(onClick = toggle),

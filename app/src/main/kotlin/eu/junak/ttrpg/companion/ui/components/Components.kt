@@ -42,6 +42,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -81,7 +83,6 @@ fun UpdateBadge(pending: Boolean, content: @Composable () -> Unit) {
 fun Portrait(
     baseUrl: String,
     path: String?,
-    name: String,
     page: CampaignPage,
     size: Dp,
     icon: String = "",
@@ -103,7 +104,8 @@ fun Portrait(
     } else {
         AsyncImage(
             model = baseUrl + path,
-            contentDescription = stringResource(R.string.portrait_description, name),
+            // Decorative: every portrait sits beside the record's name, which TalkBack reads instead.
+            contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = modifier,
         )
@@ -124,7 +126,7 @@ fun RecordRow(
     ListItem(
         headlineContent = { Text(summary.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = secondLine.takeIf(String::isNotEmpty)?.let { { Text(it, maxLines = 2, overflow = TextOverflow.Ellipsis) } },
-        leadingContent = { Portrait(baseUrl, summary.portrait, summary.name, summary.page, spacing.portrait, summary.icon) },
+        leadingContent = { Portrait(baseUrl, summary.portrait, summary.page, spacing.portrait, summary.icon) },
         trailingContent = trailing,
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clickable(onClick = onClick),
@@ -137,7 +139,7 @@ fun RefRow(baseUrl: String, ref: RecordRef, supporting: String? = null, onClick:
     ListItem(
         headlineContent = { Text(ref.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = supporting?.takeIf(String::isNotEmpty)?.let { { Text(it, maxLines = 3, overflow = TextOverflow.Ellipsis) } },
-        leadingContent = { Portrait(baseUrl, ref.portrait, ref.name, ref.page, LocalSpacing.current.portraitSmall, ref.icon) },
+        leadingContent = { Portrait(baseUrl, ref.portrait, ref.page, LocalSpacing.current.portraitSmall, ref.icon) },
         trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clickable(onClick = onClick),
@@ -153,7 +155,7 @@ fun PortraitTile(baseUrl: String, ref: RecordRef, onClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(spacing.xs),
     ) {
-        Portrait(baseUrl, ref.portrait, ref.name, ref.page, spacing.portraitMedium, ref.icon, ring = true)
+        Portrait(baseUrl, ref.portrait, ref.page, spacing.portraitMedium, ref.icon, ring = true)
         Text(
             ref.name,
             style = MaterialTheme.typography.labelMedium,
@@ -174,7 +176,11 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier, trailing: String
                 title.uppercase(),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(1f),
+                // A heading for TalkBack, read as written rather than in capitals.
+                modifier = Modifier.weight(1f).clearAndSetSemantics {
+                    heading()
+                    contentDescription = title
+                },
             )
             if (trailing != null) {
                 Text(trailing, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

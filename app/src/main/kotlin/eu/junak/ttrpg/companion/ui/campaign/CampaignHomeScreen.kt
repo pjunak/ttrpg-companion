@@ -314,7 +314,7 @@ private fun ContinueReading(baseUrl: String, records: List<RecordRef>, onOpenRec
                 AssistChip(
                     onClick = { onOpenRecord(ref.page, ref.key) },
                     label = { Text(ref.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    leadingIcon = { Portrait(baseUrl, ref.portrait, ref.name, ref.page, spacing.iconLarge, ref.icon) },
+                    leadingIcon = { Portrait(baseUrl, ref.portrait, ref.page, spacing.iconLarge, ref.icon) },
                 )
             }
         }

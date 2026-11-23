@@ -253,7 +253,7 @@ private fun Hero(baseUrl: String, details: RecordDetails) {
         verticalArrangement = Arrangement.spacedBy(spacing.sm),
     ) {
         val size = if (summary.portrait != null) spacing.portraitLarge else spacing.heroSymbol
-        Portrait(baseUrl, summary.portrait, summary.name, summary.page, size, summary.icon, ring = true)
+        Portrait(baseUrl, summary.portrait, summary.page, size, summary.icon, ring = true)
         Text(
             summary.name,
             style = MaterialTheme.typography.headlineMedium,

@@ -125,7 +125,6 @@
 
     <string name="search_hint">Hledat jména</string>
     <string name="search_empty">Žádné jméno neodpovídá.</string>
-    <string name="portrait_description">Portrét: %1$s</string>
 
     <string name="page_characters">Postavy</string>
     <string name="page_locations">Místa</string>

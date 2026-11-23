@@ -307,7 +307,7 @@ private fun EventCard(
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.xs), modifier = Modifier.padding(end = spacing.md)) {
                     linked.forEach { ref ->
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = spacing.xxs)) {
-                            Portrait(baseUrl, ref.portrait, ref.name, ref.page, spacing.iconMedium, ref.icon)
+                            Portrait(baseUrl, ref.portrait, ref.page, spacing.iconMedium, ref.icon)
                             Spacer(Modifier.size(spacing.xs))
                             Text(ref.name, style = MaterialTheme.typography.labelMedium)
                             Spacer(Modifier.size(spacing.sm))
