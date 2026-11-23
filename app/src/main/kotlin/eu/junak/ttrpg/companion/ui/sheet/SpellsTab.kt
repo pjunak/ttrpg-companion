@@ -122,9 +122,9 @@ private fun SpellRow(spell: CastableSpell, castable: Boolean, onCast: () -> Unit
 }
 
 /**
- * Casts [spell]: its facts and summary, a note when it ends the current
- * concentration, then every way to cast it now with what is left. The only
- * usable way starts chosen; otherwise the player picks one.
+ * Casts [spell]: its facts, a note when it ends the current concentration,
+ * every way to cast it now with what is left, Cast, then the summary, which
+ * can be long. The only usable way starts chosen; otherwise the player picks one.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -147,9 +147,6 @@ private fun CastSheet(spell: CastableSpell, sheet: CharacterSheet, actions: Shee
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.onSurfaceVariant,
                 )
-            }
-            spell.summary?.let { spellSummary(it, spell.name) }?.takeIf(String::isNotEmpty)?.let { summary ->
-                ArticleTheme { Markdown(content = summary) }
             }
             concentrationEnded(spell, sheet.header.concentration)?.let {
                 Banner(stringResource(R.string.sheet_cast_ends_concentration, it), BannerTone.INFO)
@@ -174,6 +171,9 @@ private fun CastSheet(spell: CastableSpell, sheet: CharacterSheet, actions: Shee
             ) {
                 choice?.let { actions.play(it.change) }
                 onDismiss()
+            }
+            spell.summary?.let { spellSummary(it, spell.name) }?.takeIf(String::isNotEmpty)?.let { summary ->
+                ArticleTheme { Markdown(content = summary) }
             }
         }
     }

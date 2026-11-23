@@ -127,6 +127,11 @@ class SpellsPresentationTest {
         assertEquals("*Level 1*\n\nHeals.", spellSummary("# Cure Wounds\n*Level 1*\n\nHeals.", "Cure Wounds"))
         assertEquals("Heals.", spellSummary("Heals.", "Cure Wounds"))
         assertEquals("another heading stays", "## Notes\nHeals.", spellSummary("## Notes\nHeals.", "Cure Wounds"))
+        assertEquals(
+            "a line break inside a paragraph stays one",
+            "**Casting Time:** Action  \n**Range:** Touch\n\nA creature you touch.",
+            spellSummary("# Cure Wounds\n**Casting Time:** Action\n**Range:** Touch\n\nA creature you touch.", "Cure Wounds"),
+        )
     }
 
     @Test

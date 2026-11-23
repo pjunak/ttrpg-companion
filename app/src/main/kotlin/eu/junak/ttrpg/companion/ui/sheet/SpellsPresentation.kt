@@ -103,13 +103,20 @@ fun preselectedOption(options: List<CastOption>): CastOption? = options.filter {
 
 /**
  * A spell's summary as the cast sheet shows it: the rules data's Markdown
- * without a leading heading that only repeats the spell's [name].
+ * without a leading heading that only repeats the spell's [name]. A single
+ * line break inside a paragraph stays a line break (Markdown would join the
+ * lines), so a block of facts such as "Casting Time … Range …" keeps its lines.
  */
 fun spellSummary(summary: String, name: String): String {
     val lines = summary.trim().lines()
     val heading = lines.firstOrNull()?.trim()?.trimStart('#')?.trim()
-    val text = if (lines.firstOrNull()?.trimStart()?.startsWith("#") == true && heading.equals(name, ignoreCase = true)) lines.drop(1) else lines
-    return text.joinToString("\n").trim()
+    val text = (if (lines.firstOrNull()?.trimStart()?.startsWith("#") == true && heading.equals(name, ignoreCase = true)) lines.drop(1) else lines)
+        .dropWhile(String::isBlank)
+    return text.mapIndexed { index, line ->
+        val next = text.getOrNull(index + 1)
+        // Two trailing spaces are Markdown's hard line break; a heading needs none.
+        if (next != null && line.isNotBlank() && next.isNotBlank() && !line.trimStart().startsWith("#")) line.trimEnd() + "  " else line
+    }.joinToString("\n").trim()
 }
 
 /** The spell whose concentration casting [spell] ends, by name; null when nothing ends. */
