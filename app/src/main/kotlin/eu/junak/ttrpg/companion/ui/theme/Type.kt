@@ -67,3 +67,9 @@ val ArticleTypography = CompanionTypography.copy(
     bodyLarge = base.bodyLarge.copy(fontFamily = ReadingFont, fontSize = 17.sp, lineHeight = 27.sp, letterSpacing = 0.sp),
     bodyMedium = base.bodyMedium.copy(fontFamily = ReadingFont, fontSize = 15.sp, lineHeight = 23.sp),
 )
+
+/** Numbers that stand out in a row or tile, such as a to-hit bonus or an ability modifier: the interface face with even figures. */
+object NumberStyles {
+    val Medium = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 24.sp, fontFeatureSettings = "tnum")
+    val Large = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 28.sp, fontFeatureSettings = "tnum")
+}

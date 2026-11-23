@@ -177,6 +177,11 @@ data class Spacing(
     val controlLarge: Dp = 56.dp,
     /** The hit point bar's thickness. */
     val meter: Dp = 8.dp,
+    /** A list row's least height. */
+    val row: Dp = 52.dp,
+    /** A use pip as drawn, and the area that takes a tap on it. */
+    val pip: Dp = 16.dp,
+    val pipTouch: Dp = 32.dp,
     /** The widest a map marker's name label grows. */
     val markerLabelWidth: Dp = 160.dp,
 )
