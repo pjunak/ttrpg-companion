@@ -574,12 +574,13 @@ class CharacterSession internal constructor(
     }
 
     /**
-     * A load failed while the device's copy is shown. While the host cannot be
-     * reached the copy stays and the load is tried again after a pause; any
-     * other answer ends the copy's showing.
+     * A load failed while the device's copy is shown. Only an answer that the
+     * sheet is not for this session (signed out, forbidden, not found, not
+     * offered, a host too old) ends the copy's showing; after any other failure
+     * the copy stays and the load is tried again after a pause.
      */
     private suspend fun copyLoadFailed(failure: ServiceFailure) {
-        if (unreachable(failure)) {
+        if (!hidesCopy(failure)) {
             copyFailures++
             _state.update { it.copy(copy = it.copy?.copy(failure = failure)) }
             val pause = timing.retryDelaysMs[minOf(copyFailures, timing.retryDelaysMs.size) - 1]
@@ -593,14 +594,9 @@ class CharacterSession internal constructor(
         loadFailed(failure, keepSheet = false)
     }
 
-    /** A failure that says only that the host could not be reached: no connection, a timeout, or the host or service down. */
-    private fun unreachable(failure: ServiceFailure): Boolean = when (failure) {
-        ServiceFailure.ServiceUnavailable, ServiceFailure.DeadlineExceeded -> true
-        is ServiceFailure.Failed -> when (failure.failure.reason) {
-            HostFailure.Reason.OFFLINE, HostFailure.Reason.TIMEOUT, HostFailure.Reason.OTHER -> true
-            HostFailure.Reason.HOST_ERROR -> (failure.failure.status ?: 0) >= 500
-            HostFailure.Reason.MALFORMED -> false
-        }
+    /** A failure that says the sheet is not for this session, so the device's copy must not stay on screen. */
+    private fun hidesCopy(failure: ServiceFailure): Boolean = when (failure) {
+        ServiceFailure.SignedOut, ServiceFailure.Forbidden, ServiceFailure.NotFound, ServiceFailure.NotOffered, ServiceFailure.HostTooOld -> true
         else -> false
     }
 

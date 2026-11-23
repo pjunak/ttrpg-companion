@@ -215,6 +215,29 @@ class CharacterCopyTest {
     }
 
     @Test
+    fun anyOtherFailureKeepsTheCopyAndTriesAgain() = runTest {
+        keep("load-sheet")
+        val unreadable = wrap(JsonObject(result("load-sheet") + ("contractVersion" to JsonPrimitive("character-response.v9"))))
+        val session = open(error(429, "RATE_LIMITED"), unreadable, answer("save-play-damage"))
+
+        assertEquals(ServiceFailure.RateLimited, session.until { it.copy?.failure != null }.copy!!.failure)
+        val malformed = session.until { it.copy?.failure is ServiceFailure.Failed }.copy!!.failure as ServiceFailure.Failed
+        assertEquals(HostFailure.Reason.MALFORMED, malformed.failure.reason)
+        assertEquals(1L, session.state.value.answer!!.revision)
+        val live = session.until { it.copy == null }
+        assertEquals(3L, live.answer!!.revision)
+    }
+
+    @Test
+    fun anOlderHostHidesTheCopy() = runTest {
+        keep("load-sheet")
+        f.host.version = "2.1.0"
+        val session = open()
+        assertEquals(SheetLoad.NotOffered(true), session.until { it.copy == null && it.load !is SheetLoad.Sheet && it.load != SheetLoad.Loading }.load)
+        assertNotNull(kept())
+    }
+
+    @Test
     fun signedOutAndNotOfferedKeepTheCopyHidden() = runTest {
         keep("load-sheet")
         f.host.role = null
