@@ -18,7 +18,6 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +53,7 @@ import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.CampaignMap
 import eu.junak.ttrpg.companion.core.model.MapViewport
 import eu.junak.ttrpg.companion.core.model.RecordRef
+import eu.junak.ttrpg.companion.core.model.labelOrder
 import eu.junak.ttrpg.companion.core.model.markerScale
 import eu.junak.ttrpg.companion.core.model.stops
 import eu.junak.ttrpg.companion.core.model.trail
@@ -194,13 +194,6 @@ private fun MapSurface(
     val dash = with(density) { floatArrayOf(spacing.md.toPx(), spacing.sm.toPx()) }
     val ratio = map?.markerZoomRatio ?: 0.0
     val markerScale = { camera.viewport?.let { markerScale(it.zoom, ratio).toFloat() } ?: 1f }
-    // Names show once the reader zooms in, or on maps with few pins.
-    val showLabels by remember(map) {
-        derivedStateOf {
-            val viewport = camera.viewport
-            (map?.pins?.size ?: 0) <= FEW_PINS || (viewport != null && viewport.scale >= viewport.minScale * LABEL_ZOOM)
-        }
-    }
 
     Box(
         Modifier
@@ -236,13 +229,14 @@ private fun MapSurface(
                             pin = pin,
                             baseUrl = baseUrl,
                             focused = pin.ref.key == focus,
-                            showLabel = showLabels,
                             scale = markerScale,
                             onClick = { onOpen(pin.ref) },
                         )
                     }
                 }
             }
+            val labelOrder = remember(map, focus) { labelOrder(map.pins, focus) }
+            LabelLayer(camera, map.pins, labelOrder, focus, touch, markerScale)
             if (showEvents) {
                 val stops = remember(map) { map.events.stops() }
                 MarkerLayer(camera, stops.map { MarkerSpot(it.x, it.y, touch / 2) }) {
@@ -279,5 +273,3 @@ private const val MAX_ORIGINAL_SIZE = 4096
 private const val ORIGINAL_DETAIL = 2
 private const val DOUBLE_TAP_ZOOM = 2.0
 private const val BUTTON_ZOOM = 1.6
-private const val FEW_PINS = 12
-private const val LABEL_ZOOM = 2.0

@@ -1,10 +1,9 @@
 package eu.junak.ttrpg.companion.ui.map
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -55,6 +54,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -78,51 +78,54 @@ internal fun PinMarker(
     pin: MapPin,
     baseUrl: String,
     focused: Boolean,
-    showLabel: Boolean,
     scale: () -> Float,
     onClick: () -> Unit,
 ) {
     val spacing = LocalSpacing.current
     val ring = optionColor(pin.attitudeColors.firstOrNull(), MaterialTheme.colorScheme.primary)
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(spacing.xxs)) {
-        Box(
-            Modifier
-                .size(maxOf(spacing.markerTouch, pin.size.dp))
-                .clickable(role = Role.Button, onClick = onClick)
-                .semantics { contentDescription = pin.ref.name },
-            contentAlignment = Alignment.Center,
+    Box(
+        Modifier
+            .size(maxOf(spacing.markerTouch, pin.size.dp))
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = pin.ref.name },
+        contentAlignment = Alignment.Center,
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(if (focused) spacing.xs else spacing.xxs, ring),
+            shadowElevation = spacing.xxs,
+            modifier = Modifier
+                .size(pin.size.dp)
+                .graphicsLayer {
+                    scaleX = scale()
+                    scaleY = scale()
+                },
         ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(if (focused) spacing.xs else spacing.xxs, ring),
-                shadowElevation = spacing.xxs,
-                modifier = Modifier
-                    .size(pin.size.dp)
-                    .graphicsLayer {
-                        scaleX = scale()
-                        scaleY = scale()
-                    },
-            ) {
-                Box(contentAlignment = Alignment.Center) { PinArtwork(pin, baseUrl) }
-            }
-        }
-        if (showLabel || focused) {
-            Surface(
-                shape = MaterialTheme.shapes.extraSmall,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = Emphasis.MAP_LABEL),
-                modifier = Modifier.widthIn(max = spacing.markerLabelWidth),
-            ) {
-                Text(
-                    pin.ref.name,
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = spacing.xs),
-                )
-            }
+            Box(contentAlignment = Alignment.Center) { PinArtwork(pin, baseUrl) }
         }
     }
+}
+
+/**
+ * A pin's name under its marker. It takes no touches, so a tap reaches the
+ * map or a marker below, and TalkBack skips it: the marker reads the name.
+ */
+@Composable
+internal fun PinLabel(name: String) {
+    val spacing = LocalSpacing.current
+    Text(
+        name,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurface,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
+            .widthIn(max = spacing.markerLabelWidth)
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = Emphasis.MAP_LABEL), MaterialTheme.shapes.extraSmall)
+            .padding(horizontal = spacing.xs)
+            .clearAndSetSemantics {},
+    )
 }
 
 @Composable
