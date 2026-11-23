@@ -14,7 +14,9 @@ An Android app for players and DMs of TTRPG Codex campaign sites.
   facts, Markdown article, known facts and questions, relationships, related
   records, the records that mention it and a preview of a location's own map.
   Wiki links open records natively; pages filter by name, party and status;
-  search by name ignores accents.
+  search finds every word, in any order and ignoring accents, across names,
+  subtitles, tags and excerpts, as the website does. A DM sees one entry per
+  public/DM twin pair, as on the website.
 - **Maps:** the world map and each location's own map, panned and pinched
   across the site's map tiles (or the original image when the site does not
   tile it), with a marker for every placed location this session may see and,
@@ -24,17 +26,25 @@ An Android app for players and DMs of TTRPG Codex campaign sites.
   the next session, write a note whose first line becomes the event's name,
   or open the full editor for its session, date, priority, summary,
   description and the characters and places involved (DMs can keep an event
-  to themselves). Saving needs a connection and a signed-in session.
+  to themselves). Saving needs a connection and a signed-in session. Leaving
+  with an unsent note or unsaved changes asks first, leaving while a save is
+  on its way offers to wait for it, and a save keeps going if the screen is
+  left anyway.
 - **Look and language:** the website's fonts (Cinzel and Lora), the site's
   Classic or Moonlit colours in light or dark, and English or Czech following
   the site's language.
-- **Offline:** the last campaign copy stays on the phone; without a connection
-  the app shows it and says how old it is. Maps and map tiles already viewed
-  stay viewable from a bounded cache.
+- **Offline and failures:** the last campaign copy stays on the phone; without
+  a connection the app shows it and says how old it is. Maps and map tiles
+  already viewed stay viewable from a bounded cache. A failed load, sign-in or
+  save says why in the reader's language (no connection, timeout, an error
+  from the site) and offers to try again.
 - **Live:** while a site is open, changes made on the website appear within
   seconds; reconnecting catches up on what was missed.
 - **Website:** anything without a native screen (the Builder, DM tools, map
   editing, add-ons) opens in an in-app web view that is already signed in.
+  A page keeps its unsaved work when the phone rotates, file inputs open the
+  file picker for uploads, and a page that cannot load says why with "Try
+  again". Downloads from the site (backups, exports) do not work in the app.
 - **Updates:** at start the app checks GitHub quietly; when a newer release
   exists, the Settings button (or the menu on a site's home) shows a dot, and
   Settings → Updates downloads, verifies and installs it.
