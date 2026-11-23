@@ -73,3 +73,6 @@ object NumberStyles {
     val Medium = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 24.sp, fontFeatureSettings = "tnum")
     val Large = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 28.sp, fontFeatureSettings = "tnum")
 }
+
+/** The smallest a short label (a glance tile's caption) shrinks to so that it never breaks a word. */
+val LabelMinSize = 8.sp

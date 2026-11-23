@@ -98,7 +98,7 @@ class CharacterSheetTest {
     @Test
     fun spellsListEveryWayToCastThem() {
         val spells = bren.spells
-        assertEquals(listOf(SpellCaster("paladin", "Paladin", 5, 13, 5)), spells.casters)
+        assertEquals(listOf(SpellCaster("paladin", "Paladin", 5, 13, 5, preparedCount = 6, preparedLimit = 6)), spells.casters)
         assertEquals(listOf(SpellSlot("slot-1", 1, 4, 3, false), SpellSlot("slot-2", 2, 2, 2, false)), spells.slots)
         assertEquals(
             listOf(
@@ -138,7 +138,7 @@ class CharacterSheetTest {
     fun pactSlotsCantripsAndAtWillGrants() {
         val corin = sheet("sheet-corin-load")
         assertEquals(listOf(SpellSlot("pact-slot", 1, 2, 2, true)), corin.spells.slots)
-        assertEquals(listOf(SpellCaster("warlock", "Warlock", 2, 12, 4)), corin.spells.casters)
+        assertEquals(listOf(SpellCaster("warlock", "Warlock", 2, 12, 4, preparedCount = 3, preparedLimit = 3)), corin.spells.casters)
         val blast = corin.spells.spells.first { it.ref == "eldritch-blast" }
         assertEquals(0, blast.level)
         assertEquals(listOf(ClassCasting("warlock", listOf(""))), blast.classes)
@@ -172,11 +172,25 @@ class CharacterSheetTest {
         assertEquals(HeldItem("sword", "Longsword", true), gear.mainHand)
         assertEquals(HeldItem("shield", "Shield", true), gear.offHand)
         assertEquals(listOf(Coins("pp", 2), Coins("gp", 87), Coins("ep", 0), Coins("sp", 30), Coins("cp", 12)), gear.coins)
-        assertEquals(97.62, gear.carriedPounds, 0.001)
-        assertEquals(270.0, gear.capacityPounds, 0.001)
+        assertEquals(97.62, gear.carriedPounds!!, 0.001)
+        assertEquals(270.0, gear.capacityPounds!!, 0.001)
         assertEquals(GearItem("rations", "Rations", 6, "carried", "Backpack"), gear.items.first { it.id == "rations" })
         assertEquals(GearItem("javelins", "Javelin", 4, "carried", null), gear.items.first { it.id == "javelins" })
         assertNull(sheet("sheet-corin-load").gear.offHand)
+    }
+
+    @Test
+    fun theGlanceValuesComeFromTheAnswer() {
+        val mira = sheet("load-sheet")
+        assertEquals(listOf(Sense("darkvision", 60)), mira.abilities.senses)
+        assertEquals(Attunement(count = 0, limit = 3), mira.gear.attunement)
+        assertEquals(9 to 9, mira.spells.casters.single().let { it.preparedCount to it.preparedLimit })
+        // The background's name comes from the answer's evidence; the languages list is there but empty.
+        assertEquals(SheetIdentity(size = "Medium", background = "Sage", languages = emptyList()), mira.identity)
+
+        // The trimmed recordings lack these parts: nothing is made up for them.
+        assertEquals(emptyList<Sense>(), bren.abilities.senses)
+        assertNull(bren.gear.attunement)
     }
 
     @Test

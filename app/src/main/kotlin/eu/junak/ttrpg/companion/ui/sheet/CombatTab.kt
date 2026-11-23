@@ -46,9 +46,10 @@ import eu.junak.ttrpg.companion.ui.theme.NumberStyles
 import java.util.UUID
 
 /**
- * The Combat tab: attacks, limited uses with the feature switches, hit dice
- * and rests. A section with nothing in it is left out; every change follows
- * [SheetActions.canWrite].
+ * The Combat tab: its glance card (hit points, Armor, Speed, Initiative,
+ * Inspired, concentration and conditions), then attacks, limited uses with
+ * the feature switches, hit dice and rests. A section with nothing in it is
+ * left out; every change follows [SheetActions.canWrite].
  */
 @Composable
 fun CombatTab(sheet: CharacterSheet, actions: SheetActions) {
@@ -58,8 +59,11 @@ fun CombatTab(sheet: CharacterSheet, actions: SheetActions) {
     var pool by rememberSaveable { mutableStateOf<String?>(null) }
     var hitDie by rememberSaveable { mutableStateOf<String?>(null) }
     var rest by rememberSaveable { mutableStateOf<RestLength?>(null) }
+    var keypad by rememberSaveable { mutableStateOf(false) }
+    var picker by rememberSaveable { mutableStateOf(false) }
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = spacing.md, end = spacing.md, bottom = spacing.lg)) {
+        item(key = "glance") { CombatGlance(sheet.header, actions, onHitPoints = { keypad = true }, onAddCondition = { picker = true }) }
         if (combat.attacks.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.sheet_attacks)) }
             items(combat.attacks) { AttackRow(it) }
@@ -88,6 +92,27 @@ fun CombatTab(sheet: CharacterSheet, actions: SheetActions) {
     combat.limitedUses.firstOrNull { it.key == pool }?.let { PoolSheet(it, actions) { pool = null } }
     combat.hitDice.firstOrNull { it.key == hitDie }?.let { HitDieSheet(it, actions) { hitDie = null } }
     rest?.let { length -> RestDialog(length, onRest = { actions.play(PlayChange.Rest(length)) }) { rest = null } }
+    if (keypad) {
+        HitPointKeypad(
+            header = sheet.header,
+            enabled = actions.canWrite,
+            onChange = { change ->
+                actions.play(change)
+                keypad = false
+            },
+            onDismiss = { keypad = false },
+        )
+    }
+    if (picker) {
+        ConditionPicker(
+            choices = conditionChoices(sheet.conditionOptions, sheet.header.conditions),
+            onPick = { id, level ->
+                actions.edit { CharacterInputs.setCondition(it, id, level) }
+                picker = false
+            },
+            onDismiss = { picker = false },
+        )
+    }
 }
 
 @Composable

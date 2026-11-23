@@ -32,12 +32,17 @@ An Android app for players and DMs of TTRPG Codex campaign sites.
   left anyway.
 - **Character sheet:** on sites running host 2.2.0 or newer with the Character
   Sheets add-on (6.0.0 or newer) and the Rules Engine, a character's page
-  offers "Open sheet". The sheet is native: hit points with a keypad for
-  damage, healing and temporary hit points, AC, speed, initiative, inspiration,
-  concentration and conditions above five tabs: Combat (attacks, limited uses,
-  feature switches, hit dice, rests), Abilities, Spells (slots and every way
-  to cast), Gear (quick use, hands, worn and carried items, coins) and More
-  (features). Building the character, equipment, import and export open the
+  offers "Open sheet". The sheet is native. Its top bar holds the name,
+  species and classes and whether the sheet is saved; each of its five tabs
+  starts with a glance card. Combat: hit points with a keypad for damage,
+  healing and temporary hit points, armor, speed, initiative, inspiration,
+  concentration and conditions, then attacks, limited uses, feature switches,
+  hit dice and rests. Abilities: proficiency, Passive Perception and special
+  senses, the abilities with their saves, and skills. Spells: save DC, spell
+  attack and prepared spells per casting class, concentration, slots and every
+  way to cast. Gear: carried weight, attunement and coins, then quick use,
+  hands, worn and carried items. More: class, species and size, background
+  and languages, then features. Building the character, equipment, import and export open the
   website. Every sheet the app has shown stays on the phone and opens without
   a connection, read-only and marked as the phone's copy; changes need the
   site, are saved one at a time, and a change that could not be saved waits

@@ -37,6 +37,9 @@ object CharacterInputs {
         return editPlay(inputs) { it["conditions"] = JsonArray(conditions(play).filter { condition -> condition.id() != id }) }
     }
 
+    /** Whether [inputs] give the character Heroic Inspiration; a missing field means no. */
+    fun inspiration(inputs: JsonObject): Boolean = (play(inputs)["inspiration"] as? JsonPrimitive)?.content == "true"
+
     fun setInspiration(inputs: JsonObject, inspiration: Boolean): JsonObject =
         editPlay(inputs) { it["inspiration"] = JsonPrimitive(inspiration) }
 

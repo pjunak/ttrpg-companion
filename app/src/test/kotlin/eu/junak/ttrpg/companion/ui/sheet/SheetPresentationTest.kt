@@ -59,10 +59,10 @@ class SheetPresentationTest {
     }
 
     @Test
-    fun theHeaderDimsWhileTheRulesCannotBeUsed() {
-        assertTrue(headerDimmed(CharacterSessionState(answer = answer(rulesChanged = true))))
-        assertTrue(headerDimmed(CharacterSessionState(answer = answer(CharacterStatus.UNAVAILABLE))))
-        assertFalse(headerDimmed(CharacterSessionState(answer = answer(), copy = DeviceCopy(1L))))
+    fun theCombatGlanceDimsWhileTheRulesCannotBeUsed() {
+        assertTrue(sheetDimmed(CharacterSessionState(answer = answer(rulesChanged = true))))
+        assertTrue(sheetDimmed(CharacterSessionState(answer = answer(CharacterStatus.UNAVAILABLE))))
+        assertFalse(sheetDimmed(CharacterSessionState(answer = answer(), copy = DeviceCopy(1L))))
     }
 
     @Test

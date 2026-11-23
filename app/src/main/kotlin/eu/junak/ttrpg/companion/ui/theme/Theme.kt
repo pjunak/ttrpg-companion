@@ -157,6 +157,8 @@ data class Spacing(
     val tileWidth: Dp = 80.dp,
     /** The big symbol a record without a portrait shows in its header. */
     val heroSymbol: Dp = 88.dp,
+    /** An icon inside a line of small text, such as the shield beside a saving throw. */
+    val iconInline: Dp = 14.dp,
     /** An icon inside a button or chip. */
     val iconSmall: Dp = 18.dp,
     /** An icon or avatar beside a line of text. */
@@ -177,6 +179,13 @@ data class Spacing(
     val controlLarge: Dp = 56.dp,
     /** The hit point bar's thickness. */
     val meter: Dp = 8.dp,
+    /**
+     * A glance tile's least height, the least width of a tile beside a meter,
+     * and the width of the labels in a glance card's list of facts.
+     */
+    val glanceTile: Dp = 64.dp,
+    val glanceSide: Dp = 96.dp,
+    val glanceLabel: Dp = 88.dp,
     /** A list row's least height, and a compact row's. */
     val row: Dp = 52.dp,
     val rowCompact: Dp = 40.dp,

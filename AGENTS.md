@@ -104,6 +104,10 @@ Dependencies point inward: `app` uses everything, `core-network` uses
   until the host answers. An answer that the sheet is not for this session
   (signed out, forbidden, not found, not offered) ends its showing, and
   forbidden or not found removes it.
+- The sheet's top bar holds only the name, species and classes, and the save
+  badge. Each tab starts with its glance card, built from `ui/components`
+  `Glance.kt`; a glance shows only values the answer carries and leaves out a
+  box or row it lacks, never looking it up elsewhere.
 - Before changing the sheet, read the Character Sheets add-on's `contracts/`
   (`character.service.json` and the schemas) and `docs/`; Czech names that
   its `locales/cs.json` has are taken from there, so the phone and the website

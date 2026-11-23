@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import eu.junak.ttrpg.companion.core.model.CampaignPage
-import eu.junak.ttrpg.companion.core.model.character.CharacterInputs
 import eu.junak.ttrpg.companion.core.model.character.PlayChange
 import eu.junak.ttrpg.companion.core.model.text
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignRepository
@@ -35,8 +34,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
 
 /**
  * One open character sheet: its session, which lives as long as this
@@ -84,19 +81,6 @@ class SheetViewModel @Inject constructor(
     fun edit(edit: (JsonObject) -> JsonObject) {
         session?.edit(edit)
     }
-
-    /** Switches inspiration on the newest saved inputs, so taps in a row alternate. */
-    fun toggleInspiration() = edit { inputs ->
-        val play = inputs["play"] as? JsonObject
-        val inspired = (play?.get("inspiration") as? JsonPrimitive)?.booleanOrNull ?: false
-        CharacterInputs.setInspiration(inputs, !inspired)
-    }
-
-    fun setCondition(id: String, level: Int) = edit { CharacterInputs.setCondition(it, id, level) }
-
-    fun removeCondition(id: String) = edit { CharacterInputs.removeCondition(it, id) }
-
-    fun endConcentration() = play(PlayChange.EndConcentration)
 
     fun retry() {
         session?.retry()

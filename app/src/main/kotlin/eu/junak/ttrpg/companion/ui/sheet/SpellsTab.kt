@@ -10,6 +10,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.AutoFixHigh
+import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -23,21 +27,22 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import com.mikepenz.markdown.m3.Markdown
 import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.character.CastableSpell
 import eu.junak.ttrpg.companion.core.model.character.CharacterInputs
 import eu.junak.ttrpg.companion.core.model.character.CharacterSheet
+import eu.junak.ttrpg.companion.core.model.character.Concentration
 import eu.junak.ttrpg.companion.core.model.character.SpellCaster
 import eu.junak.ttrpg.companion.core.model.character.SpellSlot
 import eu.junak.ttrpg.companion.ui.components.Banner
 import eu.junak.ttrpg.companion.ui.components.BannerTone
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.components.ChoiceRow
+import eu.junak.ttrpg.companion.ui.components.GlanceCaption
+import eu.junak.ttrpg.companion.ui.components.GlanceCard
+import eu.junak.ttrpg.companion.ui.components.GlanceTiles
+import eu.junak.ttrpg.companion.ui.components.GlanceValue
 import eu.junak.ttrpg.companion.ui.components.ListRow
 import eu.junak.ttrpg.companion.ui.components.PipRow
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
@@ -45,7 +50,8 @@ import eu.junak.ttrpg.companion.ui.theme.ArticleTheme
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 
 /**
- * The Spells tab: each casting class's save DC and attack, pact slots, then
+ * The Spells tab: its glance card (each casting class's save DC, attack and
+ * prepared spells, and the spell being concentrated on), pact slots, then
  * the spells by level (cantrips first) under their slots, each with Cast. A
  * spent slot's pip gives it back after a mis-tap.
  */
@@ -59,7 +65,9 @@ fun SpellsTab(sheet: CharacterSheet, actions: SheetActions) {
     }
     var casting by rememberSaveable { mutableStateOf<String?>(null) }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = spacing.md, end = spacing.md, bottom = spacing.lg)) {
-        items(spells.casters, key = { "caster:" + it.classId }) { CasterLine(it) }
+        if (spells.casters.isNotEmpty() || sheet.header.concentration != null) {
+            item(key = "glance") { SpellsGlance(spells.casters, sheet.header.concentration, actions) }
+        }
         items(spells.slots.filter { it.pact }, key = { "pact:" + it.key }) { slot ->
             ListRow(stringResource(R.string.sheet_pact_slots, romanLevel(slot.level)), subtitle = stringResource(R.string.sheet_left, slot.left, slot.maximum)) {
                 SlotPips(slot, actions)
@@ -83,22 +91,41 @@ fun SpellsTab(sheet: CharacterSheet, actions: SheetActions) {
     spells.spells.firstOrNull { it.ref == casting }?.let { CastSheet(it, sheet, actions) { casting = null } }
 }
 
+/** One row of tiles per casting class, named when there are several, then the concentration chip. */
 @Composable
-private fun CasterLine(caster: SpellCaster) {
-    val colors = MaterialTheme.colorScheme
-    val strong = SpanStyle(color = colors.onSurface, fontWeight = FontWeight.Medium)
-    Text(
-        buildAnnotatedString {
-            append(caster.name + " · " + stringResource(R.string.sheet_save_dc) + " ")
-            withStyle(strong) { append(caster.saveDc.toString()) }
-            append(" · " + stringResource(R.string.sheet_spell_attack) + " ")
-            withStyle(strong) { append(signed(caster.attackBonus)) }
-        },
-        style = MaterialTheme.typography.bodySmall,
-        color = colors.onSurfaceVariant,
-        modifier = Modifier.padding(top = LocalSpacing.current.sm + LocalSpacing.current.xxs),
-    )
+private fun SpellsGlance(casters: List<SpellCaster>, concentration: Concentration?, actions: SheetActions) = GlanceCard {
+    casters.forEach { caster ->
+        if (casters.size > 1) GlanceCaption(caster.name)
+        val attack = signed(caster.attackBonus)
+        val prepared = countOf(caster.preparedCount, caster.preparedLimit)
+        val values = listOfNotNull(
+            GlanceValue(
+                Icons.Outlined.TrackChanges,
+                caster.saveDc.toString(),
+                stringResource(R.string.sheet_save_dc),
+                stringResource(R.string.sheet_save_dc_description, caster.saveDc),
+            ),
+            GlanceValue(
+                Icons.Outlined.AutoFixHigh,
+                attack,
+                stringResource(R.string.sheet_spell_attack),
+                stringResource(R.string.sheet_spell_attack_description, attack),
+            ),
+            prepared?.let {
+                GlanceValue(
+                    Icons.AutoMirrored.Outlined.MenuBook,
+                    it,
+                    stringResource(R.string.sheet_prepared),
+                    stringResource(R.string.sheet_prepared_description, caster.preparedCount ?: 0, caster.preparedLimit ?: 0),
+                )
+            },
+        )
+        GlanceTiles(values, CASTER_TILES)
+    }
+    concentration?.let { ConcentrationChip(it, actions) }
 }
+
+private const val CASTER_TILES = 3
 
 /** A slot's pips; a spent one gives the slot back, counted from the newest saved inputs. */
 @Composable

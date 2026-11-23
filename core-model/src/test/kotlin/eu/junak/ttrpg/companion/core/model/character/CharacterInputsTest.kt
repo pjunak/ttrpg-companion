@@ -49,6 +49,14 @@ class CharacterInputsTest {
     }
 
     @Test
+    fun inspirationIsReadBack() {
+        val inputs = savedBefore("save-build-condition-remove")
+        assertEquals(false, CharacterInputs.inspiration(inputs))
+        assertEquals(true, CharacterInputs.inspiration(CharacterInputs.setInspiration(inputs, true)))
+        assertEquals(false, CharacterInputs.inspiration(CharacterInputs.setInspiration(inputs, false)))
+    }
+
+    @Test
     fun spendingCountsFromTheNewestInputsWithinTheMaximum() {
         val inputs = savedBefore("save-build-inspiration")
         assertEquals(0, CharacterInputs.resourceSpent(inputs, "arcane-recovery"))

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ButtonDefaults
@@ -30,61 +29,11 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import eu.junak.ttrpg.companion.ui.theme.Emphasis
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
-
-/** A labelled number in a small box, such as "AC 18"; read as one phrase. */
-@Composable
-fun StatChip(label: String, value: String, modifier: Modifier = Modifier) {
-    val spacing = LocalSpacing.current
-    val colors = MaterialTheme.colorScheme
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = colors.surfaceContainer,
-        border = BorderStroke(spacing.hairline, colors.outlineVariant),
-        modifier = modifier.semantics(mergeDescendants = true) {},
-    ) {
-        Row(
-            Modifier.defaultMinSize(minHeight = spacing.control).padding(horizontal = spacing.sm + spacing.xxs),
-            horizontalArrangement = Arrangement.spacedBy(spacing.xs + spacing.xxs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(label, style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
-            Text(value, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = colors.onSurface)
-        }
-    }
-}
-
-/** A chip that switches something on and off, such as Inspired; it shows the accent while [checked]. */
-@Composable
-fun ToggleChip(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit, enabled: Boolean = true, icon: ImageVector? = null) {
-    val spacing = LocalSpacing.current
-    val colors = MaterialTheme.colorScheme
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = if (checked) colors.primaryContainer else colors.surfaceContainer,
-        contentColor = if (checked) colors.onPrimaryContainer else colors.onSurfaceVariant,
-        border = BorderStroke(spacing.hairline, if (checked) colors.primary else colors.outlineVariant),
-        modifier = Modifier
-            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onCheckedChange)
-            .alpha(if (enabled) 1f else Emphasis.DIMMED),
-    ) {
-        Row(
-            Modifier.defaultMinSize(minHeight = spacing.control).padding(horizontal = spacing.sm + spacing.xxs),
-            horizontalArrangement = Arrangement.spacedBy(spacing.xs + spacing.xxs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (icon != null) Icon(icon, contentDescription = null, modifier = Modifier.size(spacing.iconSmall))
-            Text(label, style = MaterialTheme.typography.labelLarge)
-        }
-    }
-}
 
 /** How a [RemovableChip] looks: a condition in the alert colours, concentration in the accent. */
 enum class ChipTone { CONDITION, CONCENTRATION }

@@ -20,6 +20,8 @@ enum class SheetTab { COMBAT, ABILITIES, SPELLS, GEAR, MORE }
  */
 class SheetActions(
     val canWrite: Boolean,
+    /** The rules changed or are unavailable: the Combat glance is dimmed, readable but not usable. */
+    val dimmed: Boolean = false,
     val play: (PlayChange) -> Unit,
     val edit: ((JsonObject) -> JsonObject) -> Unit,
     /** Opens the character's page on the website, where the sheet is built. */
@@ -49,7 +51,7 @@ fun saveBadge(state: CharacterSessionState): SaveBadge {
     }
 }
 
-/** The one banner above the header, the most urgent first. */
+/** The one banner under the top bar, the most urgent first. */
 sealed interface SheetBanner {
     /** A change's answer was lost; it waits with everything behind it. */
     data class NotSaved(val failure: ServiceFailure, val retrying: Boolean) : SheetBanner
@@ -77,8 +79,8 @@ fun sheetBanner(state: CharacterSessionState): SheetBanner? {
     }
 }
 
-/** The header is dimmed while the rules changed or are unavailable: readable, not usable. */
-fun headerDimmed(state: CharacterSessionState): Boolean =
+/** The sheet is dimmed while the rules changed or are unavailable: readable, not usable. */
+fun sheetDimmed(state: CharacterSessionState): Boolean =
     state.answer?.rulesChanged == true || state.answer?.status == CharacterStatus.UNAVAILABLE
 
 /** "Human · Paladin 5", or with several classes "Human · Paladin 4 / Warlock 1". */

@@ -69,6 +69,7 @@ data class CharacterSheet(
     val features: List<SheetFeature>,
     /** The conditions the "+ Condition" picker offers; empty without an evaluation. */
     val conditionOptions: List<ConditionOption>,
+    val identity: SheetIdentity,
 ) {
     companion object {
         /**
@@ -83,6 +84,7 @@ data class CharacterSheet(
             return SheetReader(
                 sheet = Node(state.projection.sheet, "sheet"),
                 play = Node(state.inputs, "inputs").obj("play") ?: Node(JsonObject(emptyMap()), "inputs.play"),
+                build = Node(state.inputs, "inputs").obj("build"),
                 evidence = state.projection.evidence,
                 options = evaluation?.let { Node(it.spellOptions, "spellOptions") },
                 conditions = evaluation?.let { Node(it.guidance, "guidance").obj("conditions") },
@@ -163,7 +165,12 @@ data class SheetAbilities(
     val proficiencyBonus: Int,
     val passivePerception: Int,
     val skills: List<SkillRow>,
+    /** Special senses such as darkvision, in the sheet's order; empty when it has none. */
+    val senses: List<Sense> = emptyList(),
 )
+
+/** A special sense by the sheet's ID (`darkvision`, `devils-sight`) and its range in the ruleset's distance unit. */
+data class Sense(val id: String, val range: Int)
 
 data class AbilityRow(
     val id: String,
@@ -192,7 +199,16 @@ data class SheetSpells(
     val spells: List<CastableSpell>,
 )
 
-data class SpellCaster(val classId: String, val name: String, val level: Int, val saveDc: Int, val attackBonus: Int)
+/** A casting class; [preparedCount] and [preparedLimit] are null when the sheet does not say them. */
+data class SpellCaster(
+    val classId: String,
+    val name: String,
+    val level: Int,
+    val saveDc: Int,
+    val attackBonus: Int,
+    val preparedCount: Int? = null,
+    val preparedLimit: Int? = null,
+)
 
 /** A slot pool such as `slot-1` or `pact-slot`. */
 data class SpellSlot(val key: String, val level: Int, val maximum: Int, val left: Int, val pact: Boolean)
@@ -241,11 +257,23 @@ data class SheetGear(
     val offHand: HeldItem?,
     /** Coins by kind: pp, gp, ep, sp, cp, then any other kind. */
     val coins: List<Coins>,
-    val carriedPounds: Double,
-    val capacityPounds: Double,
+    /** The carried weight and what the character can carry; null when the sheet does not say them. */
+    val carriedPounds: Double?,
+    val capacityPounds: Double?,
     /** Every inventory item as saved, with the container it is in. */
     val items: List<GearItem>,
+    /** Attuned magic items and how many the character may attune; null when the sheet does not say. */
+    val attunement: Attunement? = null,
 )
+
+data class Attunement(val count: Int, val limit: Int)
+
+/**
+ * Who the character is, as far as the answer says: [size] as the rules data
+ * words it ("Medium"), the [background]'s name from the answer's evidence,
+ * and the [languages]. Null or empty for what the answer does not carry.
+ */
+data class SheetIdentity(val size: String?, val background: String?, val languages: List<String>)
 
 data class QuickUseItem(val itemId: String, val name: String, val quantity: Int, val available: Boolean, val location: String?, val container: String?)
 
@@ -315,6 +343,7 @@ private class Node(val json: JsonObject, val path: String) {
 private class SheetReader(
     private val sheet: Node,
     private val play: Node,
+    private val build: Node?,
     private val evidence: JsonArray,
     private val options: Node?,
     private val conditions: Node?,
@@ -371,6 +400,11 @@ private class SheetReader(
             val id = it.requireString("id")
             ConditionOption(id, it.string("name") ?: id, it.int("maximumLevel") ?: 1, it.bool("canAdd") ?: true)
         },
+        identity = SheetIdentity(
+            size = derived?.string("size")?.takeIf(String::isNotEmpty),
+            background = build?.string("background")?.takeIf(String::isNotEmpty)?.let { recordName("background", it) },
+            languages = sheet.strings("languages").filter(String::isNotEmpty),
+        ),
     )
 
     private fun header() = SheetHeader(
@@ -436,6 +470,7 @@ private class SheetReader(
             abilities = rows.sortedBy { it.ability?.ordinal ?: Ability.entries.size },
             proficiencyBonus = derived?.int("proficiencyBonus") ?: 0,
             passivePerception = derived?.int("passivePerception") ?: 0,
+            senses = sheet.obj("senses")?.json?.keys.orEmpty().map { id -> Sense(id, sheet.obj("senses")?.int(id) ?: 0) },
             skills = sheet.members("skills").map { (id, skill) ->
                 SkillRow(
                     id = id,
@@ -505,7 +540,15 @@ private class SheetReader(
         return SheetSpells(
             casters = spellcasting?.objects("perClass").orEmpty().map {
                 val id = it.requireString("classId")
-                SpellCaster(id, classes.firstOrNull { c -> c.classId == id }?.name ?: id, it.int("level") ?: 0, it.int("saveDC") ?: 0, it.int("spellAttack") ?: 0)
+                SpellCaster(
+                    id,
+                    classes.firstOrNull { c -> c.classId == id }?.name ?: id,
+                    it.int("level") ?: 0,
+                    it.int("saveDC") ?: 0,
+                    it.int("spellAttack") ?: 0,
+                    it.int("preparedCount"),
+                    it.int("preparedLimit"),
+                )
             },
             slots = slots,
             spells = byRef.values.sortedWith(compareBy({ it.level }, { it.name })),
@@ -529,12 +572,13 @@ private class SheetReader(
             mainHand = held("main"),
             offHand = held("off"),
             coins = currency.entries.sortedBy { (coin, _) -> order.indexOf(coin).let { if (it < 0) order.size else it } }.map { Coins(it.key, it.value) },
-            carriedPounds = carrying?.double("weightLb") ?: 0.0,
-            capacityPounds = carrying?.double("capacityLb") ?: 0.0,
+            carriedPounds = carrying?.double("weightLb"),
+            capacityPounds = carrying?.double("capacityLb"),
             items = play.objects("inventory").map {
                 val id = it.requireString("id")
                 GearItem(id, it.string("name") ?: id, it.int("quantity") ?: 1, it.string("location") ?: "", containerName(it.string("containerId")))
             },
+            attunement = sheet.obj("attunement")?.let { Attunement(it.int("count") ?: 0, it.requireInt("limit")) },
         )
     }
 }

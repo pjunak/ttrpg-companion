@@ -254,7 +254,7 @@
     <string name="sheet_banner_rules_changed">The rules on this site changed. Review %1$s on the website before playing.</string>
     <string name="sheet_banner_rules_unavailable">The rules aren’t available on this site right now. The sheet can be read but not changed.</string>
     <string name="sheet_open">Open</string>
-    <string name="sheet_ac">AC</string>
+    <string name="sheet_ac">Armor</string>
     <string name="sheet_speed">Speed</string>
     <string name="sheet_initiative">Init</string>
     <string name="sheet_inspired">Inspired</string>
@@ -344,12 +344,10 @@
     <string name="sheet_long_rest_title">Take a long rest?</string>
     <string name="sheet_long_rest_text">Hit points, hit dice and uses that recover on a long rest come back.</string>
     <string name="sheet_rest">Rest</string>
-    <string name="sheet_save">save %1$s</string>
     <string name="sheet_ability_description">%1$s: modifier %2$s, score %3$s, saving throw %4$s</string>
     <string name="sheet_ability_save_proficient">%1$s, proficient</string>
     <string name="sheet_passive_perception">Passive Perception</string>
     <string name="sheet_proficiency">Proficiency</string>
-    <string name="sheet_saves_hint">highlighted saves are proficient</string>
     <string name="sheet_skills">Skills</string>
     <string name="sheet_untrained">Untrained</string>
     <string name="sheet_proficient">Proficient</string>
@@ -358,8 +356,8 @@
     <string name="sheet_disadvantage">disadvantage</string>
     <!-- Spells, Gear and More tabs; My character -->
     <string name="sheet_no_spells">No spells to cast.</string>
-    <string name="sheet_save_dc">save DC</string>
-    <string name="sheet_spell_attack">attack</string>
+    <string name="sheet_save_dc">Save DC</string>
+    <string name="sheet_spell_attack">Spell attack</string>
     <string name="sheet_cantrips">Cantrips</string>
     <string name="sheet_cantrip">Cantrip</string>
     <string name="sheet_spell_level">Level %1$s</string>
@@ -383,9 +381,8 @@
     <string name="sheet_main_hand">Main hand</string>
     <string name="sheet_off_hand">Off hand</string>
     <string name="sheet_worn">Worn</string>
-    <string name="sheet_coins">Coins</string>
     <string name="sheet_carried">Carried</string>
-    <string name="sheet_weight">%1$s of %2$s lb</string>
+    <string name="sheet_weight">%1$s / %2$s lb</string>
     <string name="sheet_quantity">× %1$d</string>
     <string name="sheet_all_equipment">All equipment</string>
     <string name="sheet_all_equipment_text">Opens the sheet on the website</string>
@@ -395,6 +392,41 @@
     <string name="sheet_my_character_text">Show %1$s on this site’s home screen</string>
     <string name="sheet_open_website">Open on the website</string>
     <string name="sheet_open_website_text">Builder, equipment, import and export</string>
+    <!-- Glance cards -->
+    <string name="sheet_ac_description">Armor Class %1$d</string>
+    <string name="sheet_speed_description">Speed %1$s feet</string>
+    <string name="sheet_initiative_description">Initiative %1$s</string>
+    <string name="sheet_inspired_description">Heroic Inspiration</string>
+    <string name="sheet_proficiency_description">Proficiency bonus %1$s</string>
+    <string name="sheet_passive_perception_description">Passive Perception %1$d</string>
+    <string name="sheet_sense_description">%1$s %2$s feet</string>
+    <string name="sheet_save_dc_description">Spell save DC %1$d</string>
+    <string name="sheet_spell_attack_description">Spell attack %1$s</string>
+    <string name="sheet_prepared">Prepared</string>
+    <string name="sheet_prepared_description">Prepared spells: %1$d of %2$d</string>
+    <string name="sheet_weight_description">Carried weight: %1$s of %2$s pounds</string>
+    <string name="sheet_attuned">Attuned</string>
+    <string name="sheet_attuned_description">Attuned items: %1$d of %2$d</string>
+    <string name="sheet_coin_description">%1$s: %2$s</string>
+    <string name="coin_platinum">Platinum pieces</string>
+    <string name="coin_gold">Gold pieces</string>
+    <string name="coin_electrum">Electrum pieces</string>
+    <string name="coin_silver">Silver pieces</string>
+    <string name="coin_copper">Copper pieces</string>
+    <string name="sheet_class">Class</string>
+    <string name="sheet_species">Species</string>
+    <string name="sheet_background">Background</string>
+    <string name="sheet_languages">Languages</string>
+    <string name="sense_darkvision">Darkvision</string>
+    <string name="sense_blindsight">Blindsight</string>
+    <string name="sense_tremorsense">Tremorsense</string>
+    <string name="sense_truesight">Truesight</string>
+    <string name="size_tiny">Tiny</string>
+    <string name="size_small">Small</string>
+    <string name="size_medium">Medium</string>
+    <string name="size_large">Large</string>
+    <string name="size_huge">Huge</string>
+    <string name="size_gargantuan">Gargantuan</string>
     <string name="home_my_character">My character</string>
     <string name="home_open_sheet">Open the character sheet</string>
 </resources>

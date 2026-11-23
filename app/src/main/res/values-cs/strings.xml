@@ -345,12 +345,10 @@
     <string name="sheet_long_rest_title">Dát si dlouhý odpočinek?</string>
     <string name="sheet_long_rest_text">Obnoví se životy, kostky životů a použití, která se obnovují dlouhým odpočinkem.</string>
     <string name="sheet_rest">Odpočinout</string>
-    <string name="sheet_save">záchrana %1$s</string>
     <string name="sheet_ability_description">%1$s: oprava %2$s, hodnota %3$s, záchranný hod %4$s</string>
     <string name="sheet_ability_save_proficient">%1$s, zběhlost</string>
     <string name="sheet_passive_perception">Pasivní vnímání</string>
     <string name="sheet_proficiency">Zdatnostní bonus</string>
-    <string name="sheet_saves_hint">zvýrazněné záchrany mají zběhlost</string>
     <string name="sheet_skills">Dovednosti</string>
     <string name="sheet_untrained">Bez zběhlosti</string>
     <string name="sheet_proficient">Zběhlost</string>
@@ -359,8 +357,8 @@
     <string name="sheet_disadvantage">nevýhoda</string>
     <!-- Karty Kouzla, Výbava a Další; Moje postava -->
     <string name="sheet_no_spells">Žádná kouzla k seslání.</string>
-    <string name="sheet_save_dc">SO</string>
-    <string name="sheet_spell_attack">útok</string>
+    <string name="sheet_save_dc">SO záchrany</string>
+    <string name="sheet_spell_attack">Útok kouzlem</string>
     <string name="sheet_cantrips">Triky</string>
     <string name="sheet_cantrip">Trik</string>
     <string name="sheet_spell_level">Úroveň %1$s</string>
@@ -384,9 +382,8 @@
     <string name="sheet_main_hand">Hlavní ruka</string>
     <string name="sheet_off_hand">Vedlejší ruka</string>
     <string name="sheet_worn">Nošené</string>
-    <string name="sheet_coins">Mince</string>
     <string name="sheet_carried">V batohu</string>
-    <string name="sheet_weight">%1$s z %2$s lb</string>
+    <string name="sheet_weight">%1$s / %2$s lb</string>
     <string name="sheet_quantity">× %1$d</string>
     <string name="sheet_all_equipment">Veškeré vybavení</string>
     <string name="sheet_all_equipment_text">Otevře deník na webu</string>
@@ -396,6 +393,41 @@
     <string name="sheet_my_character_text">Ukázat postavu %1$s na úvodní obrazovce webu</string>
     <string name="sheet_open_website">Otevřít na webu</string>
     <string name="sheet_open_website_text">Tvorba, vybavení, import a export</string>
+    <!-- Glance cards -->
+    <string name="sheet_ac_description">Obranné číslo %1$d</string>
+    <string name="sheet_speed_description">Rychlost %1$s stop</string>
+    <string name="sheet_initiative_description">Iniciativa %1$s</string>
+    <string name="sheet_inspired_description">Hrdinská inspirace</string>
+    <string name="sheet_proficiency_description">Zdatnostní bonus %1$s</string>
+    <string name="sheet_passive_perception_description">Pasivní vnímání %1$d</string>
+    <string name="sheet_sense_description">%1$s %2$s stop</string>
+    <string name="sheet_save_dc_description">SO záchrany proti kouzlům %1$d</string>
+    <string name="sheet_spell_attack_description">Útok kouzlem %1$s</string>
+    <string name="sheet_prepared">Připraveno</string>
+    <string name="sheet_prepared_description">Připravená kouzla: %1$d z %2$d</string>
+    <string name="sheet_weight_description">Nesená váha: %1$s z %2$s lb</string>
+    <string name="sheet_attuned">Sladěno</string>
+    <string name="sheet_attuned_description">Sladěné předměty: %1$d z %2$d</string>
+    <string name="sheet_coin_description">%1$s: %2$s</string>
+    <string name="coin_platinum">Platinové mince</string>
+    <string name="coin_gold">Zlaté mince</string>
+    <string name="coin_electrum">Elektrové mince</string>
+    <string name="coin_silver">Stříbrné mince</string>
+    <string name="coin_copper">Měděné mince</string>
+    <string name="sheet_class">Povolání</string>
+    <string name="sheet_species">Druh</string>
+    <string name="sheet_background">Zázemí</string>
+    <string name="sheet_languages">Jazyky</string>
+    <string name="sense_darkvision">Vidění ve tmě</string>
+    <string name="sense_blindsight">Mimosmyslové vnímání</string>
+    <string name="sense_tremorsense">Vnímání otřesů</string>
+    <string name="sense_truesight">Pravdivé vidění</string>
+    <string name="size_tiny">Drobná</string>
+    <string name="size_small">Malá</string>
+    <string name="size_medium">Střední</string>
+    <string name="size_large">Velká</string>
+    <string name="size_huge">Obrovská</string>
+    <string name="size_gargantuan">Gigantická</string>
     <string name="home_my_character">Moje postava</string>
     <string name="home_open_sheet">Otevřít deník postavy</string>
 </resources>
