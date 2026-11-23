@@ -117,6 +117,16 @@ class CharacterAnswerTest {
     }
 
     @Test
+    fun answersAndEvaluationsReadBackFromTheirJson() {
+        for (recording in Recordings.calls().filter { it.http == 200 }) {
+            val answer = recording.answer()
+            assertEquals(recording.name, answer, CharacterAnswer.parse(answer.toJson(), answer.key))
+            answer.evaluation?.let { assertEquals(recording.name, it, CharacterEvaluation.parse(it.toJson())) }
+        }
+        assertThrows(HostFormatException::class.java) { CharacterEvaluation.parse(JsonObject(mapOf("ready" to JsonPrimitive(true)))) }
+    }
+
+    @Test
     fun anotherFormatIsRejected() {
         val result = Recordings.read("save-play-damage").result.jsonObject
         fun changed(field: String, value: String?) =

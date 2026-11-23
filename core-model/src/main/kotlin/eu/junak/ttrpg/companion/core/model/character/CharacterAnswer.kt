@@ -9,6 +9,8 @@ import eu.junak.ttrpg.companion.core.model.stringOrNull
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 
 /** How the character service answered a `load` or `save`. */
 enum class CharacterStatus(val wire: String) {
@@ -62,7 +64,20 @@ data class CharacterEvaluation(
     val explanations: JsonObject,
     val evidence: JsonArray,
     val issues: JsonArray,
-)
+) {
+    /** The evaluation as [parse] reads it back. */
+    fun toJson(): JsonObject = JsonObject(
+        mapOf(
+            "ready" to JsonPrimitive(ready), "inputs" to inputs, "sheet" to sheet, "guidance" to guidance, "plan" to plan,
+            "spellOptions" to spellOptions, "explanations" to explanations, "evidence" to evidence, "issues" to issues,
+        ),
+    )
+
+    companion object {
+        /** Reads an evaluation on its own, as one inside an answer is read. */
+        fun parse(value: JsonElement): CharacterEvaluation = CharacterAnswer.parseEvaluation(value)
+    }
+}
 
 /**
  * The `character-response.v3` result of a `dnd5e.character` call for one
@@ -87,6 +102,36 @@ data class CharacterAnswer(
      */
     val canPlay: Boolean
         get() = state != null && evaluation?.ready == true && !rulesChanged && status != CharacterStatus.UNAVAILABLE
+
+    /** The answer as [parse] reads it back: the members the app reads, without the ones it does not. */
+    fun toJson(): JsonObject = buildJsonObject {
+        put("contractVersion", JsonPrimitive(CONTRACT))
+        put("status", JsonPrimitive(status.wire))
+        put("message", JsonPrimitive(message))
+        put("key", JsonPrimitive(key))
+        put("revision", JsonPrimitive(revision))
+        put("role", JsonPrimitive(role.wire))
+        put("rulesChanged", JsonPrimitive(rulesChanged))
+        state?.let {
+            put(
+                "state",
+                buildJsonObject {
+                    put("inputs", it.inputs)
+                    put(
+                        "projection",
+                        buildJsonObject {
+                            put("sheet", it.projection.sheet)
+                            put("explanations", it.projection.explanations)
+                            put("evidence", it.projection.evidence)
+                            put("issues", it.projection.issues)
+                        },
+                    )
+                    put("operationId", JsonPrimitive(it.operationId))
+                },
+            )
+        }
+        evaluation?.let { put("evaluation", it.toJson()) }
+    }
 
     companion object {
         const val CONTRACT = "character-response.v3"
@@ -125,7 +170,7 @@ data class CharacterAnswer(
             )
         }
 
-        private fun parseEvaluation(value: JsonElement): CharacterEvaluation {
+        internal fun parseEvaluation(value: JsonElement): CharacterEvaluation {
             val evaluation = value.objectOrNull() ?: fail("evaluation must be an object")
             return CharacterEvaluation(
                 ready = evaluation["ready"].booleanOrNull() ?: fail("evaluation.ready is missing"),
