@@ -81,18 +81,25 @@ class MapRepository @Inject constructor(private val client: CodexClient, private
             val manifest = client.mapTiles(site.baseUrl, mediaPath)
             update(site) { it.with(SavedManifest.of(manifest)) }
             MapLoad.Ready(MapImage.Tiled(mediaPath, manifest), offline = false)
-        } catch (_: HostException) {
-            // Not tiled (unsupported image or older host) or not readable now: the original decides.
-            MapLoad.Ready(MapImage.Original(mediaPath), offline = false)
+        } catch (error: HostException) {
+            // Only the host saying it does not tile this image (415 MAP_TILES_UNAVAILABLE) or has no tiles
+            // for it (404, also an older host) lets the original decide. Anything else, such as 503 during a
+            // deploy, keeps the saved pyramid instead of fetching the full-size image.
+            if (error.status == 415 || error.status == 404) {
+                MapLoad.Ready(MapImage.Original(mediaPath), offline = false)
+            } else {
+                savedTiles(site, mediaPath)?.let { MapLoad.Ready(it, offline = true) } ?: MapLoad.Failed(error.message.orEmpty())
+            }
         } catch (_: IOException) {
             MapLoad.Ready(saved(site, mediaPath), offline = true)
         }
     }
 
-    private suspend fun saved(site: Site, mediaPath: String): MapImage =
+    private suspend fun saved(site: Site, mediaPath: String): MapImage = savedTiles(site, mediaPath) ?: MapImage.Original(mediaPath)
+
+    private suspend fun savedTiles(site: Site, mediaPath: String): MapImage.Tiled? =
         read(site).manifests.firstOrNull { "/api/media/${it.id}" == mediaPath }?.manifest()
             ?.let { MapImage.Tiled(mediaPath, it) }
-            ?: MapImage.Original(mediaPath)
 
     private suspend fun read(site: Site): SavedMaps = lock.withLock { load(site) }
 

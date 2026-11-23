@@ -86,12 +86,28 @@ class MapRepositoryTest {
     }
 
     @Test
-    fun anImageTheHostDoesNotTileUsesTheOriginal() = runTest {
+    fun onlyTheHostsNoTilesAnswerUsesTheOriginal() = runTest {
+        server.enqueue(
+            MockResponse.Builder().code(415).body("""{"error":{"kind":"MAP_TILES_UNAVAILABLE","message":"use the original map image"}}""")
+                .addHeader("Content-Type", "application/json").build(),
+        )
+        assertEquals(MapLoad.Ready(MapImage.Original(path), offline = false), maps.local(site, path))
+        server.enqueue(MockResponse.Builder().code(404).build())
+        assertEquals("an older host without tiles", MapLoad.Ready(MapImage.Original(path), offline = false), maps.local(site, path))
+    }
+
+    @Test
+    fun aTemporaryFailureKeepsTheSavedPyramid() = runTest {
         server.enqueue(MockResponse.Builder().code(503).build())
-        assertEquals(MapLoad.Ready(MapImage.Original(path), offline = false), maps.local(site, path))
-        // A manifest for another image is not used.
+        assertTrue("nothing saved: no full-size download either", maps.local(site, path) is MapLoad.Failed)
+
+        server.enqueue(json(manifestBody()))
+        maps.local(site, path)
+        server.enqueue(MockResponse.Builder().code(503).build())
+        assertEquals(MapLoad.Ready(MapImage.Tiled(path, manifest), offline = true), maps.local(site, path))
+        // A manifest for another image is not used either.
         server.enqueue(json(manifestBody().replace(id, "b_ffffffffffffffffffffffffffffffff")))
-        assertEquals(MapLoad.Ready(MapImage.Original(path), offline = false), maps.local(site, path))
+        assertEquals(MapLoad.Ready(MapImage.Tiled(path, manifest), offline = true), maps.local(site, path))
     }
 
     @Test
