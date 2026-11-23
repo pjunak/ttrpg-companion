@@ -67,7 +67,7 @@ fun CampaignDataset.campaignMap(parentId: String?): CampaignMap? {
         val definition = definitions.firstOrNull { it.text("id") == type }
         val icons = ((definition?.get("iconConfig") as? JsonObject)?.get("files") as? JsonArray).orEmpty().filterIsInstance<JsonObject>()
         val random = (definition?.get("iconConfig") as? JsonObject)?.text("strategy") == "random"
-        val chosen = icons.getOrNull(if (random && icons.isNotEmpty()) (fnv1a(record.key) % icons.size.toUInt()).toInt() else 0)
+        val chosen = icons.getOrNull(if (random && icons.isNotEmpty()) (markerHash(record.key) % icons.size).toInt() else 0)
         val bundled = definition?.text("defaultIconId").orEmpty().ifEmpty { type }
         MapPin(
             ref = recordRef(CampaignPage.LOCATIONS, record.key) ?: return@mapNotNull null,
@@ -155,12 +155,19 @@ private fun markerSize(size: JsonElement?, type: String): Int {
 
 private fun JsonObject.storyNumber(field: String): Double = number(field) ?: 0.0
 
-/** The website's 32-bit FNV-1a hash over UTF-16 code units, which picks a random marker image. */
-internal fun fnv1a(value: String): UInt {
-    var result = 2166136261u
+/**
+ * The website's hash that picks a random marker image (`hash` in the host's
+ * `campaign-map.ts`), reproduced exactly: FNV-1a over UTF-16 code units as
+ * JavaScript computes it, where `^=` yields a signed 32-bit integer and the
+ * multiplication runs in double precision, losing low bits, before `>>> 0`.
+ */
+internal fun markerHash(value: String): Long {
+    var result = 2166136261L
     for (char in value) {
-        result = result xor char.code.toUInt()
-        result *= 16777619u
+        val mixed = result.toInt() xor char.code
+        // Exact: the double is a whole number below 2^56.
+        val product = (mixed.toDouble() * 16777619.0).toLong()
+        result = Math.floorMod(product, 1L shl 32)
     }
     return result
 }

@@ -82,7 +82,7 @@ class CampaignMapTest {
         val shop = local.pins[0]
         // A size that is not a number is the default 28; the random marker image follows the website's hash.
         assertEquals(28, shop.size)
-        assertEquals(listOf(icon1, icon2)[(fnv1a("shop") % 2u).toInt()], shop.customIcon)
+        assertEquals(listOf(icon1, icon2)[(markerHash("shop") % 2).toInt()], shop.customIcon)
         assertEquals("", shop.iconId)
         val well = local.pins[1]
         assertEquals(28, well.size)
@@ -125,10 +125,20 @@ class CampaignMapTest {
         assertEquals(listOf(listOf("first", "late"), listOf("pinned"), listOf("late", "elsewhere")), stops.map { stop -> stop.events.map { it.ref.key } })
     }
 
+    /**
+     * Values of the website's `hash` (`campaign-map.ts`) computed with Node; an
+     * exact 32-bit FNV-1a would give 4245442695 for "x" and 660119532 for "fort".
+     */
     @Test
     fun theWebsitesHashPicksTheSameImage() {
-        // FNV-1a of "a" is 0xe40c292c.
-        assertEquals(0xe40c292cu, fnv1a("a"))
-        assertEquals(2166136261u, fnv1a(""))
+        assertEquals(2166136261L, markerHash(""))
+        assertEquals(3826002220L, markerHash("a"))
+        assertEquals(4245442696L, markerHash("x"))
+        assertEquals(2499339696L, markerHash("fort"))
+        assertEquals(3526742988L, markerHash("shop"))
+        assertEquals(684604526L, markerHash("radov"))
+        assertEquals(2615505672L, markerHash("old-mill-crossroads-1a2b3c4d5e6f"))
+        assertEquals(2218611584L, markerHash("Žlutý kůň"))
+        assertEquals(458433808L, markerHash("tower-of-the-moon-and-the-long-forgotten-kings-of-the-north"))
     }
 }
