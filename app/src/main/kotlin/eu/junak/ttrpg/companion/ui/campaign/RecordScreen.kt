@@ -24,7 +24,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -365,7 +365,7 @@ private fun QuestionRow(question: Question) {
     val answered = question.answer.isNotEmpty()
     Row(Modifier.padding(vertical = spacing.sm), horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
         Icon(
-            if (answered) Icons.Filled.CheckCircle else Icons.Outlined.HelpOutline,
+            if (answered) Icons.Filled.CheckCircle else Icons.AutoMirrored.Outlined.HelpOutline,
             contentDescription = stringResource(if (answered) R.string.record_question_answered else R.string.record_question_open),
             tint = if (answered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(spacing.iconMedium),

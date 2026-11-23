@@ -12,7 +12,7 @@ import javax.inject.Singleton
 
 /** Device-wide app preferences from Settings. */
 @Singleton
-class AppPreferences @Inject constructor(@param:ApplicationContext context: Context) {
+class AppPreferences @Inject constructor(@ApplicationContext context: Context) {
 
     private val preferences = context.getSharedPreferences("app", Context.MODE_PRIVATE)
     private val _themeMode = MutableStateFlow(
