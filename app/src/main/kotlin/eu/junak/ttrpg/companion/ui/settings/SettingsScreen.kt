@@ -37,18 +37,32 @@ import eu.junak.ttrpg.companion.feature.update.Updater
 import eu.junak.ttrpg.companion.ui.components.BackButton
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import eu.junak.ttrpg.companion.ui.theme.ThemeMode
+import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
+/** The appearance setting and the app's own updates. */
 @HiltViewModel
-class SettingsViewModel @Inject constructor(val updater: Updater, val preferences: AppPreferences) : ViewModel()
+class SettingsViewModel @Inject constructor(private val updater: Updater, private val preferences: AppPreferences) : ViewModel() {
+    val update: StateFlow<UpdateState> = updater.state
+    val themeMode: StateFlow<ThemeMode> = preferences.themeMode
+
+    fun setThemeMode(mode: ThemeMode) = preferences.setThemeMode(mode)
+
+    fun checkForUpdate() = updater.check()
+
+    fun download(update: UpdateState.Available) = updater.download(update)
+
+    fun dismissUpdate() = updater.dismiss()
+
+    fun install(ready: UpdateState.ReadyToInstall) = updater.install(ready.file)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val spacing = LocalSpacing.current
-    val updater = viewModel.updater
-    val update by updater.state.collectAsStateWithLifecycle()
-    val themeMode by viewModel.preferences.themeMode.collectAsStateWithLifecycle()
+    val update by viewModel.update.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_title)) }, navigationIcon = { BackButton(onBack) }) },
@@ -63,7 +77,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 ThemeMode.entries.forEachIndexed { index, mode ->
                     SegmentedButton(
                         selected = themeMode == mode,
-                        onClick = { viewModel.preferences.setThemeMode(mode) },
+                        onClick = { viewModel.setThemeMode(mode) },
                         shape = SegmentedButtonDefaults.itemShape(index, ThemeMode.entries.size),
                     ) {
                         Text(
@@ -85,11 +99,11 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             when (val state = update) {
-                UpdateState.Idle -> OutlinedButton(onClick = updater::check) { Text(stringResource(R.string.update_check)) }
+                UpdateState.Idle -> OutlinedButton(onClick = viewModel::checkForUpdate) { Text(stringResource(R.string.update_check)) }
                 UpdateState.Checking -> Text(stringResource(R.string.update_checking))
                 UpdateState.UpToDate -> {
                     Text(stringResource(R.string.update_up_to_date))
-                    OutlinedButton(onClick = updater::check) { Text(stringResource(R.string.update_check)) }
+                    OutlinedButton(onClick = viewModel::checkForUpdate) { Text(stringResource(R.string.update_check)) }
                 }
                 is UpdateState.Available -> {
                     Text(stringResource(R.string.update_available, state.version))
@@ -103,8 +117,8 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                         )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
-                        Button(onClick = { updater.download(state) }) { Text(stringResource(R.string.update_download)) }
-                        TextButton(onClick = updater::dismiss) { Text(stringResource(R.string.update_dismiss)) }
+                        Button(onClick = { viewModel.download(state) }) { Text(stringResource(R.string.update_download)) }
+                        TextButton(onClick = viewModel::dismissUpdate) { Text(stringResource(R.string.update_dismiss)) }
                     }
                 }
                 is UpdateState.Downloading -> {
@@ -114,11 +128,11 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 is UpdateState.ReadyToInstall -> {
                     // Shown again when the user backs out of the installer or must first allow installs.
                     Text(stringResource(R.string.update_downloaded, state.version))
-                    Button(onClick = { updater.install(state.file) }) { Text(stringResource(R.string.update_install)) }
+                    Button(onClick = { viewModel.install(state) }) { Text(stringResource(R.string.update_install)) }
                 }
                 is UpdateState.Error -> {
                     Text(state.message, color = MaterialTheme.colorScheme.error)
-                    OutlinedButton(onClick = updater::check) { Text(stringResource(R.string.update_check)) }
+                    OutlinedButton(onClick = viewModel::checkForUpdate) { Text(stringResource(R.string.update_check)) }
                 }
             }
             HorizontalDivider(Modifier.padding(vertical = spacing.sm))
