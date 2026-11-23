@@ -231,7 +231,7 @@ private fun MapSurface(
             if (showEvents && map != null) drawTrail(map, viewport, trailColor, trailWidth, dash)
         }
         if (map != null) {
-            val touch = with(density) { MarkerTouchSize.toPx() }
+            val touch = with(density) { spacing.markerTouch.toPx() }
             val pinSpots = remember(map, density) {
                 map.pins.map { MarkerSpot(it.x, it.y, max(touch, with(density) { it.size.dp.toPx() }) / 2) }
             }
@@ -294,10 +294,11 @@ private fun MarkerLayer(camera: MapCamera, spots: List<MarkerSpot>, content: @Co
             val viewport = camera.viewport ?: return@layout
             placeables.forEachIndexed { index, placeable ->
                 val spot = spots.getOrNull(index) ?: return@forEachIndexed
-                placeable.place(
-                    viewport.screenX(spot.x).roundToInt() - placeable.width / 2,
-                    (viewport.screenY(spot.y) - spot.anchorY).roundToInt(),
-                )
+                val x = viewport.screenX(spot.x).roundToInt() - placeable.width / 2
+                val y = (viewport.screenY(spot.y) - spot.anchorY).roundToInt()
+                // A marker outside the view stays unplaced, which also keeps it out of TalkBack.
+                val visible = x + placeable.width > 0 && y + placeable.height > 0 && x < constraints.maxWidth && y < constraints.maxHeight
+                if (visible) placeable.place(x, y)
             }
         }
     }

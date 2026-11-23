@@ -86,6 +86,7 @@ import eu.junak.ttrpg.companion.ui.components.pageLabel
 import eu.junak.ttrpg.companion.ui.components.partyName
 import eu.junak.ttrpg.companion.ui.components.relatedLabel
 import eu.junak.ttrpg.companion.ui.theme.ArticleTheme
+import eu.junak.ttrpg.companion.ui.theme.Emphasis
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import eu.junak.ttrpg.companion.ui.theme.optionColor
 
@@ -251,7 +252,7 @@ private fun Hero(baseUrl: String, details: RecordDetails) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(spacing.sm),
     ) {
-        val size = if (summary.portrait != null) spacing.portraitLarge else spacing.portraitMedium + spacing.lg
+        val size = if (summary.portrait != null) spacing.portraitLarge else spacing.heroSymbol
         Portrait(baseUrl, summary.portrait, summary.name, summary.page, size, summary.icon, ring = true)
         Text(
             summary.name,
@@ -285,7 +286,7 @@ private fun Badge(label: String, color: Long?, icon: String) {
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(spacing.xxs / 2, tint.copy(alpha = 0.6f)),
+        border = BorderStroke(spacing.hairline, tint.copy(alpha = Emphasis.BADGE_OUTLINE)),
     ) {
         Row(
             Modifier.padding(horizontal = spacing.md - spacing.xs, vertical = spacing.xs),
@@ -366,7 +367,7 @@ private fun QuestionRow(question: Question) {
             if (answered) Icons.Filled.CheckCircle else Icons.Outlined.HelpOutline,
             contentDescription = stringResource(if (answered) R.string.record_question_answered else R.string.record_question_open),
             tint = if (answered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(spacing.md + spacing.xs),
+            modifier = Modifier.size(spacing.iconMedium),
         )
         ArticleTheme {
             Column(verticalArrangement = Arrangement.spacedBy(spacing.xxs)) {

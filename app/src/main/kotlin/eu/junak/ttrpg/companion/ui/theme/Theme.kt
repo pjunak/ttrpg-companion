@@ -153,7 +153,36 @@ data class Spacing(
     val portraitMedium: Dp = 64.dp,
     val portraitLarge: Dp = 168.dp,
     val tileHeight: Dp = 88.dp,
+    /** A portrait tile's width in a row of them. */
+    val tileWidth: Dp = 80.dp,
+    /** The big symbol a record without a portrait shows in its header. */
+    val heroSymbol: Dp = 88.dp,
+    /** An icon inside a button or chip. */
+    val iconSmall: Dp = 18.dp,
+    /** An icon or avatar beside a line of text. */
+    val iconMedium: Dp = 20.dp,
+    /** An avatar in a larger chip. */
+    val iconLarge: Dp = 24.dp,
+    /** A progress spinner in place of a button. */
+    val progressInline: Dp = 28.dp,
+    /** A thin outline. */
+    val hairline: Dp = 1.dp,
+    /** The smallest area a map marker answers to, whatever its drawn size; the accessibility minimum. */
+    val markerTouch: Dp = 48.dp,
+    /** A map event marker's drawn size. */
+    val eventMarker: Dp = 28.dp,
+    /** The widest a map marker's name label grows. */
+    val markerLabelWidth: Dp = 160.dp,
 )
+
+/** Shared transparencies. */
+object Emphasis {
+    /** A label over the map stays readable without hiding it. */
+    const val MAP_LABEL = 0.85f
+
+    /** A badge's outline is softer than its text. */
+    const val BADGE_OUTLINE = 0.6f
+}
 
 val LocalSpacing = staticCompositionLocalOf { Spacing() }
 

@@ -210,7 +210,7 @@ fun CampaignHomeScreen(
                             onClick = { onOpenWebsite("/") },
                             modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.md, vertical = spacing.lg),
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(spacing.md + spacing.xxs))
+                            Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(spacing.iconSmall))
                             Spacer(Modifier.size(spacing.sm))
                             Text(stringResource(R.string.action_website))
                         }
@@ -259,7 +259,7 @@ private fun SessionSection(
                 }
                 if (canWrite) {
                     FilledTonalButton(onClick = { onOpenSession(last ?: 1) }) {
-                        Icon(Icons.Default.EditNote, contentDescription = null, modifier = Modifier.size(spacing.md + spacing.xs))
+                        Icon(Icons.Default.EditNote, contentDescription = null, modifier = Modifier.size(spacing.iconMedium))
                         Spacer(Modifier.size(spacing.sm))
                         Text(stringResource(if (last != null) R.string.home_add_note else R.string.home_start_notes))
                     }
@@ -314,7 +314,7 @@ private fun ContinueReading(baseUrl: String, records: List<RecordRef>, onOpenRec
                 AssistChip(
                     onClick = { onOpenRecord(ref.page, ref.key) },
                     label = { Text(ref.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    leadingIcon = { Portrait(baseUrl, ref.portrait, ref.name, ref.page, spacing.md + spacing.sm, ref.icon) },
+                    leadingIcon = { Portrait(baseUrl, ref.portrait, ref.name, ref.page, spacing.iconLarge, ref.icon) },
                 )
             }
         }

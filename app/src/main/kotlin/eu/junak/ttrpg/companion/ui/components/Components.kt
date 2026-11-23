@@ -149,7 +149,7 @@ fun RefRow(baseUrl: String, ref: RecordRef, supporting: String? = null, onClick:
 fun PortraitTile(baseUrl: String, ref: RecordRef, onClick: () -> Unit) {
     val spacing = LocalSpacing.current
     Column(
-        Modifier.width(spacing.portraitMedium + spacing.md).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(vertical = spacing.xs),
+        Modifier.width(spacing.tileWidth).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(vertical = spacing.xs),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(spacing.xs),
     ) {

@@ -307,7 +307,7 @@ private fun EventCard(
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.xs), modifier = Modifier.padding(end = spacing.md)) {
                     linked.forEach { ref ->
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = spacing.xxs)) {
-                            Portrait(baseUrl, ref.portrait, ref.name, ref.page, spacing.md + spacing.xs, ref.icon)
+                            Portrait(baseUrl, ref.portrait, ref.name, ref.page, spacing.iconMedium, ref.icon)
                             Spacer(Modifier.size(spacing.xs))
                             Text(ref.name, style = MaterialTheme.typography.labelMedium)
                             Spacer(Modifier.size(spacing.sm))
@@ -355,7 +355,7 @@ private fun NoteComposer(
                 )
                 Spacer(Modifier.size(spacing.xs))
                 if (sending) {
-                    CircularProgressIndicator(Modifier.padding(spacing.sm).size(spacing.lg + spacing.xs))
+                    CircularProgressIndicator(Modifier.padding(spacing.sm).size(spacing.progressInline))
                 } else {
                     FilledIconButton(onClick = onSend, enabled = text.isNotBlank(), modifier = Modifier.padding(bottom = spacing.xs)) {
                         Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.note_send))

@@ -329,7 +329,7 @@ private fun ReferenceField(
                 onClick = { onChange(keys - summary.key) },
                 enabled = enabled,
                 label = { Text(summary.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                avatar = { Portrait(baseUrl, summary.portrait, summary.name, page, spacing.md + spacing.xs, summary.icon) },
+                avatar = { Portrait(baseUrl, summary.portrait, summary.name, page, spacing.iconMedium, summary.icon) },
                 trailingIcon = { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_remove_item, summary.name), Modifier.size(spacing.md)) },
             )
         }
@@ -338,7 +338,7 @@ private fun ReferenceField(
                 onClick = { picking = true },
                 enabled = enabled,
                 label = { Text(stringResource(R.string.action_choose)) },
-                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, Modifier.size(spacing.md + spacing.xxs)) },
+                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, Modifier.size(spacing.iconSmall)) },
             )
         }
     }

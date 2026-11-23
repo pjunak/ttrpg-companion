@@ -64,11 +64,9 @@ import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.MapEventStop
 import eu.junak.ttrpg.companion.core.model.MapPin
 import eu.junak.ttrpg.companion.core.model.RecordRef
+import eu.junak.ttrpg.companion.ui.theme.Emphasis
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import eu.junak.ttrpg.companion.ui.theme.optionColor
-
-/** The smallest area a marker answers to, whatever its drawn size. */
-internal val MarkerTouchSize = 40.dp
 
 /**
  * A location's marker: its uploaded image, the website's marker type as an
@@ -89,7 +87,7 @@ internal fun PinMarker(
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(spacing.xxs)) {
         Box(
             Modifier
-                .size(maxOf(MarkerTouchSize, pin.size.dp))
+                .size(maxOf(spacing.markerTouch, pin.size.dp))
                 .clickable(role = Role.Button, onClick = onClick)
                 .semantics { contentDescription = pin.ref.name },
             contentAlignment = Alignment.Center,
@@ -112,8 +110,8 @@ internal fun PinMarker(
         if (showLabel || focused) {
             Surface(
                 shape = MaterialTheme.shapes.extraSmall,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-                modifier = Modifier.widthIn(max = 160.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = Emphasis.MAP_LABEL),
+                modifier = Modifier.widthIn(max = spacing.markerLabelWidth),
             ) {
                 Text(
                     pin.ref.name,
@@ -162,7 +160,7 @@ internal fun EventStopMarker(stop: MapEventStop, onOpen: (RecordRef) -> Unit) {
     }
     Box(
         Modifier
-            .size(MarkerTouchSize)
+            .size(spacing.markerTouch)
             .clickable(role = Role.Button) { if (stop.events.size == 1) onOpen(first.ref) else choosing = true }
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
@@ -172,7 +170,7 @@ internal fun EventStopMarker(stop: MapEventStop, onOpen: (RecordRef) -> Unit) {
             color = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
             border = BorderStroke(spacing.xxs, MaterialTheme.colorScheme.tertiary),
-            modifier = Modifier.size(EVENT_MARKER_SIZE.dp),
+            modifier = Modifier.size(spacing.eventMarker),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 val label = if (stop.events.size == 1) first.sitting.takeIf { it > 0 }?.toString().orEmpty() else "${stop.events.size}"
@@ -230,4 +228,3 @@ private fun markerIcon(id: String): ImageVector = when (id) {
 }
 
 private const val ARTWORK_SHARE = 0.62f
-internal const val EVENT_MARKER_SIZE = 28

@@ -179,7 +179,7 @@ private fun SiteCard(site: Site, onOpen: () -> Unit, onSignIn: () -> Unit, onRem
                     painterResource(R.drawable.ic_launcher_foreground),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(spacing.portrait + spacing.md),
+                    modifier = Modifier.size(spacing.portraitMedium),
                 )
             }
             Column(Modifier.weight(1f).padding(horizontal = spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.xxs)) {
