@@ -1,6 +1,5 @@
 package eu.junak.ttrpg.companion.ui.sessions
 
-import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -77,6 +76,7 @@ import eu.junak.ttrpg.companion.ui.components.Portrait
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
 import eu.junak.ttrpg.companion.ui.components.StatusDot
 import eu.junak.ttrpg.companion.ui.components.pageLabel
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import eu.junak.ttrpg.companion.ui.theme.optionColor
 

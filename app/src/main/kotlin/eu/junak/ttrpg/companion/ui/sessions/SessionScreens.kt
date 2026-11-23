@@ -1,7 +1,5 @@
 package eu.junak.ttrpg.companion.ui.sessions
 
-import eu.junak.ttrpg.companion.ui.components.ActionButton
-import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -63,12 +61,14 @@ import eu.junak.ttrpg.companion.core.model.sessions
 import eu.junak.ttrpg.companion.ui.campaign.CampaignMissing
 import eu.junak.ttrpg.companion.ui.campaign.CampaignStatus
 import eu.junak.ttrpg.companion.ui.campaign.CampaignViewModel
-import eu.junak.ttrpg.companion.ui.components.TappableCard
+import eu.junak.ttrpg.companion.ui.components.ActionButton
 import eu.junak.ttrpg.companion.ui.components.BackButton
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.components.Notice
 import eu.junak.ttrpg.companion.ui.components.Portrait
 import eu.junak.ttrpg.companion.ui.components.StatusDot
+import eu.junak.ttrpg.companion.ui.components.TappableCard
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import eu.junak.ttrpg.companion.ui.theme.optionColor
 

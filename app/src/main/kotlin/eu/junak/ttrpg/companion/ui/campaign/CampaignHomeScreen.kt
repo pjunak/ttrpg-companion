@@ -1,6 +1,5 @@
 package eu.junak.ttrpg.companion.ui.campaign
 
-import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -62,7 +61,6 @@ import eu.junak.ttrpg.companion.core.model.RecordRef
 import eu.junak.ttrpg.companion.core.model.RecordSummary
 import eu.junak.ttrpg.companion.core.model.overview
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignProblem
-import eu.junak.ttrpg.companion.ui.components.TappableCard
 import eu.junak.ttrpg.companion.ui.components.BackButton
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.components.Portrait
@@ -70,11 +68,13 @@ import eu.junak.ttrpg.companion.ui.components.PortraitTile
 import eu.junak.ttrpg.companion.ui.components.RecordRow
 import eu.junak.ttrpg.companion.ui.components.SectionCard
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
+import eu.junak.ttrpg.companion.ui.components.TappableCard
 import eu.junak.ttrpg.companion.ui.components.UpdateBadge
 import eu.junak.ttrpg.companion.ui.components.UpdateDot
 import eu.junak.ttrpg.companion.ui.components.pageIcon
 import eu.junak.ttrpg.companion.ui.components.pageLabel
 import eu.junak.ttrpg.companion.ui.components.partyName
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import eu.junak.ttrpg.companion.ui.components.relativeTime
 import eu.junak.ttrpg.companion.ui.components.roleLabel
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing

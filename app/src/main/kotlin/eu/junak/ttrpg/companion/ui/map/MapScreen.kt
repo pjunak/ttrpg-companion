@@ -31,8 +31,8 @@ import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.CampaignPage
 import eu.junak.ttrpg.companion.ui.campaign.CampaignMissing
 import eu.junak.ttrpg.companion.ui.campaign.CampaignStatus
-import eu.junak.ttrpg.companion.ui.campaign.hostFailureText
 import eu.junak.ttrpg.companion.ui.campaign.CampaignViewModel
+import eu.junak.ttrpg.companion.ui.campaign.hostFailureText
 import eu.junak.ttrpg.companion.ui.components.BackButton
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.components.Notice

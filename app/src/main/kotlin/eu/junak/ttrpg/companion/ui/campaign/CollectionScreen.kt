@@ -1,6 +1,5 @@
 package eu.junak.ttrpg.companion.ui.campaign
 
-import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -40,9 +39,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.CampaignPage
+import eu.junak.ttrpg.companion.core.model.Choice
 import eu.junak.ttrpg.companion.core.model.CollectionFilter
 import eu.junak.ttrpg.companion.core.model.collectionView
-import eu.junak.ttrpg.companion.core.model.Choice
 import eu.junak.ttrpg.companion.core.model.summary
 import eu.junak.ttrpg.companion.core.model.text
 import eu.junak.ttrpg.companion.ui.components.BackButton
@@ -51,6 +50,7 @@ import eu.junak.ttrpg.companion.ui.components.RecordRow
 import eu.junak.ttrpg.companion.ui.components.StatusDot
 import eu.junak.ttrpg.companion.ui.components.pageLabel
 import eu.junak.ttrpg.companion.ui.components.partyName
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import eu.junak.ttrpg.companion.ui.theme.optionColor
 

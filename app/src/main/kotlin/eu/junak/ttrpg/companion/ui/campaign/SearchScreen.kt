@@ -1,6 +1,5 @@
 package eu.junak.ttrpg.companion.ui.campaign
 
-import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,6 +39,7 @@ import eu.junak.ttrpg.companion.ui.components.BackButton
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.components.RecordRow
 import eu.junak.ttrpg.companion.ui.components.pageLabel
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 
 /** Finds records across every page by name. */
 @OptIn(ExperimentalMaterial3Api::class)

@@ -1,6 +1,5 @@
 package eu.junak.ttrpg.companion.ui.sites
 
-import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -48,6 +47,7 @@ import eu.junak.ttrpg.companion.core.network.site.SiteStore
 import eu.junak.ttrpg.companion.navigation.SITE_ID_ARGUMENT
 import eu.junak.ttrpg.companion.ui.campaign.hostFailureText
 import eu.junak.ttrpg.companion.ui.components.BackButton
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
 import javax.inject.Inject

@@ -1,6 +1,5 @@
 package eu.junak.ttrpg.companion.ui.settings
 
-import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +35,7 @@ import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.feature.update.UpdateState
 import eu.junak.ttrpg.companion.feature.update.Updater
 import eu.junak.ttrpg.companion.ui.components.BackButton
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import eu.junak.ttrpg.companion.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.StateFlow

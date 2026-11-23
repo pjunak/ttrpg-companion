@@ -1,8 +1,8 @@
 package eu.junak.ttrpg.companion.core.network
 
 import eu.junak.ttrpg.companion.core.model.AuthState
-import eu.junak.ttrpg.companion.core.model.CampaignMutation
 import eu.junak.ttrpg.companion.core.model.CampaignDataset
+import eu.junak.ttrpg.companion.core.model.CampaignMutation
 import eu.junak.ttrpg.companion.core.model.HostFormatException
 import eu.junak.ttrpg.companion.core.model.HostJson
 import eu.junak.ttrpg.companion.core.model.MapTileManifest

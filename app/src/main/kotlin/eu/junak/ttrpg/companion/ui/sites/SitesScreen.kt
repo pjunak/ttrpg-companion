@@ -1,7 +1,5 @@
 package eu.junak.ttrpg.companion.ui.sites
 
-import eu.junak.ttrpg.companion.ui.components.ActionButton
-import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,8 +54,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.network.site.Site
 import eu.junak.ttrpg.companion.core.network.site.SiteRepository
+import eu.junak.ttrpg.companion.ui.components.ActionButton
 import eu.junak.ttrpg.companion.ui.components.TappableCard
 import eu.junak.ttrpg.companion.ui.components.UpdateBadge
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import eu.junak.ttrpg.companion.ui.components.roleLabel
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch

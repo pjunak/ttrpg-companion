@@ -1,6 +1,5 @@
 package eu.junak.ttrpg.companion.ui.campaign
 
-import eu.junak.ttrpg.companion.ui.components.readableWidth
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,21 +40,22 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mikepenz.markdown.coil3.Coil3ImageTransformerImpl
 import com.mikepenz.markdown.m3.Markdown
 import eu.junak.ttrpg.companion.R
+import eu.junak.ttrpg.companion.core.model.ArticleLink
 import eu.junak.ttrpg.companion.core.model.CampaignMarkdown
 import eu.junak.ttrpg.companion.core.model.CampaignPage
-import eu.junak.ttrpg.companion.core.model.ArticleLink
 import eu.junak.ttrpg.companion.core.model.RecordRef
+import eu.junak.ttrpg.companion.core.model.Role
 import eu.junak.ttrpg.companion.core.model.articleLink
+import eu.junak.ttrpg.companion.core.model.details
 import eu.junak.ttrpg.companion.core.model.listedFacts
 import eu.junak.ttrpg.companion.core.model.mapPlace
-import eu.junak.ttrpg.companion.core.model.Role
-import eu.junak.ttrpg.companion.core.model.details
 import eu.junak.ttrpg.companion.ui.components.BackButton
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.components.RefRow
 import eu.junak.ttrpg.companion.ui.components.SectionCard
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
 import eu.junak.ttrpg.companion.ui.components.pageLabel
+import eu.junak.ttrpg.companion.ui.components.readableWidth
 import eu.junak.ttrpg.companion.ui.components.relatedLabel
 import eu.junak.ttrpg.companion.ui.theme.ArticleTheme
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
