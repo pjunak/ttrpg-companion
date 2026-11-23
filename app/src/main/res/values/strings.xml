@@ -217,8 +217,7 @@
     <string name="save_signed_out">Not saved: sign in again first.</string>
     <string name="save_forbidden">Not saved: the site doesn’t allow this change.</string>
     <string name="save_busy">Not saved: the event keeps changing elsewhere. Try again.</string>
-    <string name="save_failed">Not saved: %1$s</string>
-    <string name="save_offline">no connection</string>
+    <string name="save_failed">Not saved. %1$s</string>
     <string name="problem_name_missing">Give the event a name.</string>
     <string name="problem_name_too_long">The name must fit on one line of at most 200 characters.</string>
     <string name="problem_short_too_long">The short summary can have at most 1,000 characters.</string>
@@ -231,9 +230,8 @@
     <string name="map_unavailable">This place is not visible, so its map can’t be shown.</string>
     <string name="map_no_world">This site has no world map yet.</string>
     <string name="map_no_local">This place has no map of its own.</string>
-    <string name="map_failed">Couldn’t load the map: %1$s</string>
+    <string name="map_failed">Couldn’t load the map. %1$s</string>
     <string name="map_image_failed">Couldn’t load the map image.</string>
-    <string name="map_retry">Try again</string>
     <string name="map_offline">Offline: showing the saved map. Parts you haven’t viewed before stay blank.</string>
     <string name="map_event_paths">Event paths</string>
     <string name="map_zoom_in">Zoom in</string>

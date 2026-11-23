@@ -63,8 +63,9 @@ class CampaignRepositoryTest {
 
         val state = f.state(site)
         assertNotNull(state.dataset?.record("events", "arrival"))
-        assertEquals(HostFailure.Reason.HOST_ERROR, (state.problem as CampaignProblem.Unavailable).failure.reason)
-        assertEquals(500, (state.problem as CampaignProblem.Unavailable).failure.status)
+        val failure = (state.problem as CampaignProblem.Unavailable).failure
+        assertEquals(HostFailure.Reason.HOST_ERROR, failure.reason)
+        assertEquals(500, failure.status)
         assertFalse(state.refreshing)
     }
 
@@ -143,7 +144,8 @@ class CampaignRepositoryTest {
         f.host.commitAnswers += FakeHost.error(409, "WRITE_CONFLICT")
         f.host.onCommit = { f.host.failing += "/api/campaign" }
 
-        assertTrue(f.campaigns.commit(site, listOf(rename), Role.PLAYER) is WriteResult.Failed)
+        val failed = f.campaigns.commit(site, listOf(rename), Role.PLAYER) as WriteResult.Failed
+        assertEquals("the refresh's own failure explains it", HostFailure(HostFailure.Reason.HOST_ERROR, "GET /api/campaign returned 500", 500), failed.failure)
     }
 
     @Test

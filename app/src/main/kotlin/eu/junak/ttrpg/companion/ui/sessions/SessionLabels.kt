@@ -5,6 +5,7 @@ import androidx.compose.ui.res.stringResource
 import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.EventProblem
 import eu.junak.ttrpg.companion.core.network.campaign.WriteResult
+import eu.junak.ttrpg.companion.ui.campaign.hostFailureText
 
 /** Why a note or event edit was not saved, in the reader's language. */
 @Composable
@@ -25,7 +26,7 @@ fun saveProblemText(problem: SaveProblem): String = when (problem) {
         WriteResult.SignedOut -> stringResource(R.string.save_signed_out)
         WriteResult.Forbidden -> stringResource(R.string.save_forbidden)
         WriteResult.Conflict -> stringResource(R.string.save_busy)
-        is WriteResult.Failed -> stringResource(R.string.save_failed, reason.detail.ifEmpty { stringResource(R.string.save_offline) })
+        is WriteResult.Failed -> stringResource(R.string.save_failed, hostFailureText(reason.failure))
         WriteResult.Saved -> ""
     }
 }

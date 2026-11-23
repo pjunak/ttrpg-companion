@@ -216,8 +216,7 @@
     <string name="save_signed_out">Neuloženo: nejdřív se znovu přihlas.</string>
     <string name="save_forbidden">Neuloženo: web tuto změnu nedovolí.</string>
     <string name="save_busy">Neuloženo: událost se jinde stále mění. Zkus to znovu.</string>
-    <string name="save_failed">Neuloženo: %1$s</string>
-    <string name="save_offline">bez připojení</string>
+    <string name="save_failed">Neuloženo. %1$s</string>
     <string name="problem_name_missing">Zadej název události.</string>
     <string name="problem_name_too_long">Název musí být na jednom řádku a mít nejvýš 200 znaků.</string>
     <string name="problem_short_too_long">Krátké shrnutí může mít nejvýš 1 000 znaků.</string>
@@ -230,9 +229,8 @@
     <string name="map_unavailable">Toto místo není vidět, takže jeho mapu nelze ukázat.</string>
     <string name="map_no_world">Tento web zatím nemá mapu světa.</string>
     <string name="map_no_local">Toto místo nemá vlastní mapu.</string>
-    <string name="map_failed">Mapu se nepodařilo načíst: %1$s</string>
+    <string name="map_failed">Mapu se nepodařilo načíst. %1$s</string>
     <string name="map_image_failed">Obrázek mapy se nepodařilo načíst.</string>
-    <string name="map_retry">Zkusit znovu</string>
     <string name="map_offline">Offline: ukazuji uloženou mapu. Části, které ještě nebyly zobrazeny, zůstanou prázdné.</string>
     <string name="map_event_paths">Cesty událostí</string>
     <string name="map_zoom_in">Přiblížit</string>

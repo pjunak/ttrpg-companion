@@ -2,6 +2,7 @@ package eu.junak.ttrpg.companion.core.network
 
 import eu.junak.ttrpg.companion.core.model.HostEvent
 import eu.junak.ttrpg.companion.core.network.events.EventStream
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.currentTime
@@ -14,6 +15,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class EventStreamTest {
 
     private val server = MockWebServer()

@@ -43,9 +43,7 @@ data class CampaignState(
 
 sealed interface CampaignProblem {
     /** The campaign could not be refreshed (offline or a host error); the cached copy is shown. */
-    data class Unavailable(val failure: HostFailure) : CampaignProblem {
-        val detail: String get() = failure.detail
-    }
+    data class Unavailable(val failure: HostFailure) : CampaignProblem
 
     /** The saved session ended; the public campaign is shown until the user signs in again. */
     data object SessionExpired : CampaignProblem
@@ -70,8 +68,8 @@ sealed interface WriteResult {
     /** The host refused the change for this role. */
     data object Forbidden : WriteResult
 
-    /** Nothing was saved: no connection or another host error. */
-    data class Failed(val detail: String) : WriteResult
+    /** Nothing was saved: no connection or another host error, as [failure] says. */
+    data class Failed(val failure: HostFailure) : WriteResult
 }
 
 /** Loads each site's campaign from its cache, then keeps it fresh from the host. */
@@ -167,7 +165,7 @@ class CampaignRepository @Inject constructor(
         if (result == WriteResult.Saved || result == WriteResult.Conflict) {
             val refreshed = reload(site)
             // Preparing again on a campaign that could not be refreshed would only conflict again.
-            if (result == WriteResult.Conflict && !refreshed) return WriteResult.Failed(problemDetail(site))
+            if (result == WriteResult.Conflict && !refreshed) return WriteResult.Failed(problemFailure(site))
         }
         return result
     }
@@ -184,23 +182,24 @@ class CampaignRepository @Inject constructor(
                 error.status == 401 -> WriteResult.SignedOut
                 // The host answers 403 both for a refused change and for a session that ended.
                 error.status == 403 -> refusal(site)
-                else -> WriteResult.Failed(error.message.orEmpty())
+                else -> WriteResult.Failed(HostFailure.of(error))
             }
         } catch (error: IOException) {
-            WriteResult.Failed(error.message.orEmpty())
+            WriteResult.Failed(HostFailure.of(error))
         }
     }
 
     private suspend fun refusal(site: Site): WriteResult = try {
         if (client.auth(site.baseUrl) is AuthState.SignedIn) WriteResult.Forbidden else WriteResult.SignedOut
     } catch (error: IOException) {
-        WriteResult.Failed(error.message.orEmpty())
+        WriteResult.Failed(HostFailure.of(error))
     }
 
-    private fun problemDetail(site: Site): String = when (val problem = flow(site.id).value.problem) {
-        is CampaignProblem.Unavailable -> problem.detail
-        is CampaignProblem.UnsupportedHost -> "TTRPG Codex ${problem.version}"
-        CampaignProblem.SessionExpired, null -> ""
+    /** Why the refresh after a conflict failed, for the write that could not be prepared again. */
+    private fun problemFailure(site: Site): HostFailure = when (val problem = flow(site.id).value.problem) {
+        is CampaignProblem.Unavailable -> problem.failure
+        is CampaignProblem.UnsupportedHost -> HostFailure(HostFailure.Reason.OTHER, "TTRPG Codex ${problem.version}")
+        CampaignProblem.SessionExpired, null -> HostFailure(HostFailure.Reason.OTHER, "")
     }
 
     /**

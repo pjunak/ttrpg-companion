@@ -99,7 +99,9 @@ class MapRepositoryTest {
     @Test
     fun aTemporaryFailureKeepsTheSavedPyramid() = runTest {
         server.enqueue(MockResponse.Builder().code(503).build())
-        assertTrue("nothing saved: no full-size download either", maps.local(site, path) is MapLoad.Failed)
+        val failed = maps.local(site, path) as MapLoad.Failed
+        assertEquals("nothing saved: no full-size download either", HostFailure.Reason.HOST_ERROR, failed.failure.reason)
+        assertEquals(503, failed.failure.status)
 
         server.enqueue(json(manifestBody()))
         maps.local(site, path)

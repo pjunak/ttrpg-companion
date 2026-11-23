@@ -7,6 +7,7 @@ import eu.junak.ttrpg.companion.core.model.EventSave
 import eu.junak.ttrpg.companion.core.model.Role
 import eu.junak.ttrpg.companion.core.model.prepareEventDelete
 import eu.junak.ttrpg.companion.core.model.prepareEventSave
+import eu.junak.ttrpg.companion.core.network.HostFailure
 import eu.junak.ttrpg.companion.core.network.di.ApplicationScope
 import eu.junak.ttrpg.companion.core.network.site.Site
 import kotlinx.coroutines.CoroutineScope
@@ -55,7 +56,7 @@ class EventWriter @Inject constructor(
     private suspend fun saveNow(site: Site, base: EventBase, fields: EventFields, overwrite: Boolean): EventSaveResult {
         repeat(MAX_ATTEMPTS) {
             val state = campaigns.state(site).value
-            val dataset = state.dataset ?: return EventSaveResult.NotSaved(WriteResult.Failed(""))
+            val dataset = state.dataset ?: return EventSaveResult.NotSaved(WriteResult.Failed(NO_CAMPAIGN))
             // Prepared for the role the campaign was fetched for; the commit checks it against the session.
             val mutation = when (val prepared = dataset.prepareEventSave(base, fields, state.role == Role.DM, overwrite)) {
                 is EventSave.Ready -> prepared.mutation
@@ -75,7 +76,7 @@ class EventWriter @Inject constructor(
     private suspend fun deleteNow(site: Site, base: EventBase): EventSaveResult {
         repeat(MAX_ATTEMPTS) {
             val state = campaigns.state(site).value
-            val dataset = state.dataset ?: return EventSaveResult.NotSaved(WriteResult.Failed(""))
+            val dataset = state.dataset ?: return EventSaveResult.NotSaved(WriteResult.Failed(NO_CAMPAIGN))
             val mutation = when (val prepared = dataset.prepareEventDelete(base)) {
                 is EventDelete.Ready -> prepared.mutation
                 EventDelete.Changed -> return EventSaveResult.Changed
@@ -92,5 +93,8 @@ class EventWriter @Inject constructor(
 
     private companion object {
         const val MAX_ATTEMPTS = 3
+
+        /** No campaign has loaded, which in practice means no connection yet. */
+        val NO_CAMPAIGN = HostFailure(HostFailure.Reason.OFFLINE, "")
     }
 }

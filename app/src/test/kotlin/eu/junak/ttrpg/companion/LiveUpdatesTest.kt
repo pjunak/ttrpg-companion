@@ -7,6 +7,7 @@ import eu.junak.ttrpg.companion.core.network.events.EventStream
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
@@ -22,6 +23,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 /** How live events reload the campaign and how a failed reload recovers. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class LiveUpdatesTest {
 
     @get:Rule

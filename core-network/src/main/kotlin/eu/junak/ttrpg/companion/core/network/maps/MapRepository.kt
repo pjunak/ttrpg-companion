@@ -5,6 +5,7 @@ import eu.junak.ttrpg.companion.core.model.MapTileManifest
 import eu.junak.ttrpg.companion.core.model.isMediaPath
 import eu.junak.ttrpg.companion.core.network.CodexClient
 import eu.junak.ttrpg.companion.core.network.HostException
+import eu.junak.ttrpg.companion.core.network.HostFailure
 import eu.junak.ttrpg.companion.core.network.site.Site
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -33,7 +34,7 @@ sealed interface MapLoad {
     data object NoImage : MapLoad
 
     /** The host could not be reached and nothing was saved for this map. */
-    data class Failed(val detail: String) : MapLoad
+    data class Failed(val failure: HostFailure) : MapLoad
 }
 
 /** Where a site's map details are kept between launches; [SiteStore][eu.junak.ttrpg.companion.core.network.site.SiteStore] on the device. */
@@ -63,10 +64,10 @@ class MapRepository @Inject constructor(private val client: CodexClient, private
                 return MapLoad.NoImage
             }
             // The world map is public, so a host failure may fall back to the saved image.
-            val saved = read(site).world ?: return MapLoad.Failed(error.message.orEmpty())
+            val saved = read(site).world ?: return MapLoad.Failed(HostFailure.of(error))
             return image(site, saved, offline = true)
         } catch (error: IOException) {
-            val saved = read(site).world ?: return MapLoad.Failed(error.message.orEmpty())
+            val saved = read(site).world ?: return MapLoad.Failed(HostFailure.of(error))
             return image(site, saved, offline = true)
         }
         return image(site, path, offline = false)
@@ -88,7 +89,7 @@ class MapRepository @Inject constructor(private val client: CodexClient, private
             if (error.status == 415 || error.status == 404) {
                 MapLoad.Ready(MapImage.Original(mediaPath), offline = false)
             } else {
-                savedTiles(site, mediaPath)?.let { MapLoad.Ready(it, offline = true) } ?: MapLoad.Failed(error.message.orEmpty())
+                savedTiles(site, mediaPath)?.let { MapLoad.Ready(it, offline = true) } ?: MapLoad.Failed(HostFailure.of(error))
             }
         } catch (_: IOException) {
             MapLoad.Ready(saved(site, mediaPath), offline = true)

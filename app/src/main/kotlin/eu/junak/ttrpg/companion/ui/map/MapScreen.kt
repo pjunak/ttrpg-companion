@@ -1,7 +1,6 @@
 package eu.junak.ttrpg.companion.ui.map
 
 import android.net.Uri
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,12 +9,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,11 +31,11 @@ import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.CampaignPage
 import eu.junak.ttrpg.companion.ui.campaign.CampaignMissing
 import eu.junak.ttrpg.companion.ui.campaign.CampaignStatus
+import eu.junak.ttrpg.companion.ui.campaign.hostFailureText
 import eu.junak.ttrpg.companion.ui.campaign.CampaignViewModel
 import eu.junak.ttrpg.companion.ui.components.BackButton
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.components.Notice
-import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 
 /**
  * The world map or a location's own map, natively: the host's tiles (or the
@@ -53,7 +52,6 @@ fun MapScreen(
     viewModel: MapViewModel = hiltViewModel(),
     campaign: CampaignViewModel = hiltViewModel(),
 ) {
-    val spacing = LocalSpacing.current
     val site by campaign.site.collectAsStateWithLifecycle()
     val state by campaign.state.collectAsStateWithLifecycle()
     val map by viewModel.map.collectAsStateWithLifecycle()
@@ -93,13 +91,8 @@ fun MapScreen(
                 MapBackground.Loading -> CenteredMessage(null, loading = true)
                 MapBackground.Unavailable -> CenteredMessage(stringResource(R.string.map_unavailable))
                 MapBackground.NoImage -> CenteredMessage(stringResource(if (parentId == null) R.string.map_no_world else R.string.map_no_local))
-                is MapBackground.Failed -> Column(
-                    Modifier.fillMaxSize().padding(spacing.lg),
-                    verticalArrangement = Arrangement.spacedBy(spacing.md, Alignment.CenterVertically),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(stringResource(R.string.map_failed, shown.detail))
-                    FilledTonalButton(onClick = viewModel::reload) { Text(stringResource(R.string.map_retry)) }
+                is MapBackground.Failed -> CenteredMessage(stringResource(R.string.map_failed, hostFailureText(shown.failure))) {
+                    TextButton(onClick = viewModel::reload) { Text(stringResource(R.string.action_retry)) }
                 }
                 is MapBackground.Ready -> {
                     MapView(

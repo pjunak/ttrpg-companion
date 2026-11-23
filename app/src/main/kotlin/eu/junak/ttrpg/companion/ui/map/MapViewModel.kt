@@ -7,6 +7,7 @@ import androidx.navigation.toRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import eu.junak.ttrpg.companion.core.model.CampaignMap
 import eu.junak.ttrpg.companion.core.model.campaignMap
+import eu.junak.ttrpg.companion.core.network.HostFailure
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignProblem
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignRepository
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignState
@@ -37,7 +38,7 @@ sealed interface MapBackground {
     /** The map has no image yet. */
     data object NoImage : MapBackground
 
-    data class Failed(val detail: String) : MapBackground
+    data class Failed(val failure: HostFailure) : MapBackground
 
     /** [offline] when the host could not be reached and saved details are shown. */
     data class Ready(val image: MapImage, val offline: Boolean) : MapBackground
@@ -111,7 +112,7 @@ class MapViewModel @Inject constructor(
         campaign.map { state ->
             val dataset = state.dataset
             when {
-                dataset == null -> (state.problem as? CampaignProblem.Unavailable)?.let { Source.Failed(it.detail) } ?: Source.Waiting
+                dataset == null -> (state.problem as? CampaignProblem.Unavailable)?.let { Source.Failed(it.failure) } ?: Source.Waiting
                 else -> dataset.campaignMap(parentId)?.let { map -> map.localImage?.let(Source::Local) ?: Source.Empty } ?: Source.Missing
             }
         }.distinctUntilChanged()
@@ -123,14 +124,14 @@ class MapViewModel @Inject constructor(
             Source.Waiting -> return MapBackground.Loading
             Source.Missing -> return MapBackground.Unavailable
             Source.Empty -> return MapBackground.NoImage
-            is Source.Failed -> return MapBackground.Failed(source.detail)
+            is Source.Failed -> return MapBackground.Failed(source.failure)
             Source.World -> maps.world(site)
             is Source.Local -> maps.local(site, source.mediaPath)
         }
         return when (result) {
             is MapLoad.Ready -> MapBackground.Ready(result.image, result.offline)
             MapLoad.NoImage -> MapBackground.NoImage
-            is MapLoad.Failed -> MapBackground.Failed(result.detail)
+            is MapLoad.Failed -> MapBackground.Failed(result.failure)
         }
     }
 
@@ -138,7 +139,7 @@ class MapViewModel @Inject constructor(
         data object Waiting : Source
         data object Missing : Source
         data object Empty : Source
-        data class Failed(val detail: String) : Source
+        data class Failed(val failure: HostFailure) : Source
         data object World : Source
         data class Local(val mediaPath: String) : Source
     }
