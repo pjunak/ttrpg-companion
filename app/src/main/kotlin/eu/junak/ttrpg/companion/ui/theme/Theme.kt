@@ -157,8 +157,9 @@ data class Spacing(
     val tileWidth: Dp = 80.dp,
     /** The big symbol a record without a portrait shows in its header. */
     val heroSymbol: Dp = 88.dp,
-    /** The marker before a value temporary effects change. */
+    /** The marker before a value temporary effects change, and the blur of its glow. */
     val marker: Dp = 10.dp,
+    val glow: Dp = 5.dp,
     /** An icon inside a line of small text, such as the shield beside a saving throw. */
     val iconInline: Dp = 14.dp,
     /** An icon inside a button or chip. */

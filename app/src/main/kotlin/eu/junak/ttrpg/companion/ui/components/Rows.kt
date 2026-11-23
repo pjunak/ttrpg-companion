@@ -37,7 +37,7 @@ import eu.junak.ttrpg.companion.ui.theme.Emphasis
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 
 /**
- * A list row over a fine rule: a title with small [tags] after it and an
+ * A list row over a fine rule: a title with small [tags] ([Tag]) after it and an
  * optional line under it, and a trailing value or action. A [compact] row is
  * lower, for read-only lists. A row that cannot be used now ([enabled] false)
  * keeps its text readable but dimmed.
@@ -47,7 +47,7 @@ fun ListRow(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    tags: List<String> = emptyList(),
+    tags: @Composable RowScope.() -> Unit = {},
     enabled: Boolean = true,
     compact: Boolean = false,
     trailing: @Composable RowScope.() -> Unit = {},
@@ -60,13 +60,9 @@ fun ListRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f).alpha(if (enabled) 1f else Emphasis.DIMMED)) {
-                if (tags.isEmpty()) {
-                    Text(title, style = MaterialTheme.typography.titleSmall)
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs + spacing.xxs), verticalAlignment = Alignment.CenterVertically) {
-                        Text(title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f, fill = false))
-                        tags.forEach { Tag(it) }
-                    }
+                Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs + spacing.xxs), verticalAlignment = Alignment.CenterVertically) {
+                    Text(title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f, fill = false))
+                    tags()
                 }
                 if (subtitle != null) {
                     Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

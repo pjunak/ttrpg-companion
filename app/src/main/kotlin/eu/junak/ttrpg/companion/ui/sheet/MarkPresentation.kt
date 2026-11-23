@@ -1,16 +1,22 @@
 package eu.junak.ttrpg.companion.ui.sheet
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.character.CauseKind
 import eu.junak.ttrpg.companion.core.model.character.ChangeKind
 import eu.junak.ttrpg.companion.core.model.character.EffectCause
 import eu.junak.ttrpg.companion.core.model.character.EffectChange
 import eu.junak.ttrpg.companion.core.model.character.EffectTone
+import eu.junak.ttrpg.companion.core.model.character.RollMark
 import eu.junak.ttrpg.companion.core.model.character.ValueMark
 import eu.junak.ttrpg.companion.ui.components.MarkedValue
+import eu.junak.ttrpg.companion.ui.components.Tag
+import eu.junak.ttrpg.companion.ui.components.toneColor
 
 /** A value a sheet screen shows that temporary effects can change. */
 sealed interface Shown {
@@ -74,14 +80,26 @@ fun markOf(marks: List<ValueMark>, shown: Shown): ValueMark? {
  * or cancel into this roll mark, so it matches them; null, a plain tag, when
  * no temporary cause does (armor's Stealth Disadvantage).
  */
-fun tagTone(mark: ValueMark?, disadvantage: Boolean): EffectTone? {
-    val wanted = if (disadvantage) ChangeKind.DISADVANTAGE else ChangeKind.ADVANTAGE
+fun tagTone(mark: ValueMark?, roll: RollMark): EffectTone? {
+    val wanted = if (roll == RollMark.DISADVANTAGE) ChangeKind.DISADVANTAGE else ChangeKind.ADVANTAGE
     val tones = mark?.causes.orEmpty().filter { cause -> cause.changes.any { it.kind == wanted } }.map { it.tone }.distinct()
     return when {
         tones.isEmpty() -> null
         tones.size == 1 -> tones.single()
         else -> EffectTone.MIXED
     }
+}
+
+/** A roll's Adv or Dis tag, in its cause's tone when [tagTone] gives one; a screen reader hears the whole word. */
+@Composable
+fun RollTag(roll: RollMark, mark: ValueMark?) {
+    val advantage = roll == RollMark.ADVANTAGE
+    val word = stringResource(if (advantage) R.string.sheet_advantage else R.string.sheet_disadvantage)
+    Tag(
+        stringResource(if (advantage) R.string.sheet_advantage_tag else R.string.sheet_disadvantage_tag),
+        Modifier.clearAndSetSemantics { contentDescription = word },
+        tone = tagTone(mark, roll)?.let { toneColor(it) },
+    )
 }
 
 /** The texts a cause is worded with, in the reader's language. */

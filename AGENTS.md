@@ -114,7 +114,9 @@ Dependencies point inward: `app` uses everything, `core-network` uses
   `TemporaryEffects` skips a mark it cannot read. `ui/sheet/MarkPresentation.kt`
   maps what a screen shows to the Engine's path and row; screens never derive
   a tone from conditions or roll marks. Tones are `MarkColors` in the theme,
-  shown by `ui/components/Marked.kt`.
+  shown by `ui/components/Marked.kt`. Adv and Dis tags show the sheet's own
+  net roll marks (skills, every attack) and take a tone only from
+  `tagTone`, when a temporary cause gives them.
 - Before changing the sheet, read the Character Sheets add-on's `contracts/`
   (`character.service.json` and the schemas) and `docs/`; Czech names that
   its `locales/cs.json` has are taken from there, so the phone and the website

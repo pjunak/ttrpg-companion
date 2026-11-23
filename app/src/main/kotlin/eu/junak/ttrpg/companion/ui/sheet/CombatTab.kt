@@ -37,6 +37,7 @@ import eu.junak.ttrpg.companion.core.model.character.HitDice
 import eu.junak.ttrpg.companion.core.model.character.LimitedUse
 import eu.junak.ttrpg.companion.core.model.character.PlayChange
 import eu.junak.ttrpg.companion.core.model.character.RestLength
+import eu.junak.ttrpg.companion.core.model.character.RollMark
 import eu.junak.ttrpg.companion.core.model.character.ValueMark
 import eu.junak.ttrpg.companion.ui.components.ListRow
 import eu.junak.ttrpg.companion.ui.components.MarkedText
@@ -68,7 +69,7 @@ fun CombatTab(sheet: CharacterSheet, actions: SheetActions) {
         item(key = "glance") { CombatGlance(sheet.header, sheet.marks, actions, onHitPoints = { keypad = true }, onAddCondition = { picker = true }) }
         if (combat.attacks.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.sheet_attacks)) }
-            items(combat.attacks) { AttackRow(it, sheet.marks) }
+            items(combat.attacks) { AttackRow(it, combat.attackRoll, sheet.marks) }
         }
         if (combat.limitedUses.isNotEmpty() || combat.toggles.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.sheet_limited_uses)) }
@@ -118,7 +119,7 @@ fun CombatTab(sheet: CharacterSheet, actions: SheetActions) {
 }
 
 @Composable
-private fun AttackRow(attack: Attack, marks: List<ValueMark>) {
+private fun AttackRow(attack: Attack, roll: RollMark?, marks: List<ValueMark>) {
     val resources = LocalResources.current
     val summary = attackSummary(
         attack,
@@ -129,7 +130,8 @@ private fun AttackRow(attack: Attack, marks: List<ValueMark>) {
     val description = stringResource(R.string.sheet_to_hit, toHit)
     val damage = marked(marks, Shown.Damage(attack.key), stringResource(R.string.mark_name_damage, attack.name), attack.damage)
     val attackRoll = marked(marks, Shown.AttackBonus(attack.key), stringResource(R.string.mark_name_attack, attack.name), toHit)
-    ListRow(attack.name, subtitle = summary) {
+    // The roll's Adv or Dis shows beside the name, toned only when a temporary cause gives it.
+    ListRow(attack.name, subtitle = summary, tags = { roll?.let { RollTag(it, attackRoll?.mark) } }) {
         if (damage != null) MarkedText(attack.damage, damage, MaterialTheme.typography.bodyMedium)
         MarkedText(
             toHit,

@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -50,11 +51,14 @@ fun toneColor(tone: EffectTone): Color {
     }
 }
 
-/** [style] in a tone's colour with a soft glow of it. */
-fun TextStyle.glowing(color: Color): TextStyle = copy(color = color, shadow = Shadow(color.copy(alpha = GLOW_ALPHA), blurRadius = GLOW_BLUR))
+/** This style in a tone's colour with a soft glow of it, as wide on every screen ([eu.junak.ttrpg.companion.ui.theme.Spacing.glow]). */
+@Composable
+fun TextStyle.glowing(color: Color): TextStyle {
+    val blur = with(LocalDensity.current) { LocalSpacing.current.glow.toPx() }
+    return copy(color = color, shadow = Shadow(color.copy(alpha = GLOW_ALPHA), blurRadius = blur))
+}
 
 private const val GLOW_ALPHA = 0.55f
-private const val GLOW_BLUR = 14f
 
 /** The small marker before a marked number: up for a bonus, down for a penalty, a diamond for mixed. */
 @Composable

@@ -352,6 +352,8 @@
     <string name="sheet_untrained">Untrained</string>
     <string name="sheet_proficient">Proficient</string>
     <string name="sheet_expertise">Expertise</string>
+    <string name="sheet_advantage_tag">Adv</string>
+    <string name="sheet_advantage">advantage</string>
     <string name="sheet_disadvantage_tag">Dis</string>
     <string name="sheet_disadvantage">disadvantage</string>
     <!-- Spells, Gear and More tabs; My character -->

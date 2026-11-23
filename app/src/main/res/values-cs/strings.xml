@@ -353,6 +353,8 @@
     <string name="sheet_untrained">Bez zběhlosti</string>
     <string name="sheet_proficient">Zběhlost</string>
     <string name="sheet_expertise">Zdatnost</string>
+    <string name="sheet_advantage_tag">Výh</string>
+    <string name="sheet_advantage">výhoda</string>
     <string name="sheet_disadvantage_tag">Nev</string>
     <string name="sheet_disadvantage">nevýhoda</string>
     <!-- Karty Kouzla, Výbava a Další; Moje postava -->

@@ -20,8 +20,9 @@ last changed in `3ace7f1`, Sheets 6.5.0, which adds the Engine's optional
 6.5.0 (`5e885fd`) and Engine 6.6.0 (`03cc68b`, `dnd5e.rules-engine` 6.1.0),
 while he was Poisoned, at Exhaustion 2, with Sacred Weapon on and a timed DM
 grant "Shrine blessing" (+1 Armor Class). It is trimmed as the other
-`sheet-*.json` files are and also keeps `evaluation.sheet.temporaryEffects`;
-the saved projection has none.
+`sheet-*.json` files are and also keeps `evaluation.sheet.temporaryEffects`
+and the sheet's net attack roll marks (`attackAdvantage`,
+`attackDisadvantage`); the saved projection has no temporary effects.
 
 ## The characters
 

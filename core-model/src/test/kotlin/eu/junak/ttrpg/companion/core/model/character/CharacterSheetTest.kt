@@ -290,6 +290,9 @@ class CharacterSheetTest {
         assertEquals(CauseKind.TIMED_GRANT, marks.single { it.path == "derived.armorClass" }.causes.single().kind)
         // Rows are named by the Engine's key, which the attacks carry too.
         assertEquals(listOf("unarmed", "item:sword"), CharacterSheet.read(answer).combat.attacks.map { it.key })
+        // Poisoned puts every attack roll at Disadvantage; the net mark is the sheet's, not a mark's.
+        assertEquals(RollMark.DISADVANTAGE, CharacterSheet.read(answer).combat.attackRoll)
+        assertEquals(null, sheet("load-sheet").combat.attackRoll)
         // The saved projection never holds marks; an answer without them reads none.
         assertEquals(null, answer.state!!.projection.sheet["temporaryEffects"])
         assertEquals(emptyList<ValueMark>(), sheet("load-sheet").marks)
@@ -297,6 +300,17 @@ class CharacterSheetTest {
         assertEquals(CharacterSheet.read(answer).marks, CharacterSheet.read(CharacterAnswer.parse(answer.toJson(), answer.key)).marks)
         // An answer without its own evaluation shows none, even when the caller lends the last one.
         assertEquals(emptyList<ValueMark>(), CharacterSheet.read(answer.copy(evaluation = null), answer.evaluation).marks)
+    }
+
+    @Test
+    fun theAttackRollMarkIsTheSheetsNetMark() {
+        fun roll(advantage: Boolean, disadvantage: Boolean) = CharacterSheet.read(
+            edited("sheet-bren-load") { it + mapOf("attackAdvantage" to JsonPrimitive(advantage), "attackDisadvantage" to JsonPrimitive(disadvantage)) },
+        ).combat.attackRoll
+        assertEquals(RollMark.ADVANTAGE, roll(advantage = true, disadvantage = false))
+        assertEquals(RollMark.DISADVANTAGE, roll(advantage = false, disadvantage = true))
+        assertEquals(null, roll(advantage = false, disadvantage = false))
+        assertEquals("the Engine cancels them; both would be no mark", null, roll(advantage = true, disadvantage = true))
     }
 
     @Test
@@ -323,7 +337,7 @@ class CharacterSheetTest {
         val request = Recordings.schema().getValue("\$defs").jsonObject
         val read = mapOf(
             response to mapOf(
-                "Sheet" to listOf("species", "classes", "derived", "inspiration", "concentration", "conditions", "weapons", "resources", "activations", "abilities", "saves", "skills", "spellcasting", "quickUse", "hands", "storage", "carrying", "features", "temporaryEffects"),
+                "Sheet" to listOf("species", "classes", "derived", "inspiration", "concentration", "conditions", "weapons", "resources", "activations", "abilities", "saves", "skills", "spellcasting", "quickUse", "hands", "storage", "carrying", "features", "temporaryEffects", "attackAdvantage", "attackDisadvantage"),
                 "RecordIdentity" to listOf("id", "name"),
                 "SheetClass" to listOf("classId", "name", "level", "subclass"),
                 "Derived" to listOf("maxHp", "armorClass", "speed", "initiative", "proficiencyBonus", "passivePerception"),

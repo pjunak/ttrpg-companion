@@ -45,6 +45,7 @@ import eu.junak.ttrpg.companion.ui.components.GlanceCard
 import eu.junak.ttrpg.companion.ui.components.GlanceTiles
 import eu.junak.ttrpg.companion.ui.components.GlanceValue
 import eu.junak.ttrpg.companion.ui.components.ListRow
+import eu.junak.ttrpg.companion.ui.components.Tag
 import eu.junak.ttrpg.companion.ui.components.PipRow
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
 import eu.junak.ttrpg.companion.ui.theme.ArticleTheme
@@ -146,7 +147,7 @@ private fun SpellRow(spell: CastableSpell, castable: Boolean, onCast: () -> Unit
         freeCastsLeft(spell)?.let { stringResource(R.string.sheet_free_tag, it.toString()) },
     )
     val line = listOfNotNull(spell.castingTime?.let(::shortCastingTime), spell.range).filter(String::isNotEmpty).joinToString(" · ")
-    ListRow(spell.name, subtitle = line.ifEmpty { null }, tags = tags) {
+    ListRow(spell.name, subtitle = line.ifEmpty { null }, tags = { tags.forEach { Tag(it) } }) {
         OutlinedButton(onClick = onCast, enabled = castable) { Text(stringResource(R.string.sheet_cast)) }
     }
 }

@@ -125,7 +125,12 @@ data class SheetCombat(
     /** Features switched on and off with `toggle-feature`, some spending a resource. */
     val toggles: List<FeatureToggle>,
     val hitDice: List<HitDice>,
+    /** The net mark on every attack roll (Poisoned gives Disadvantage); null when there is none. */
+    val attackRoll: RollMark? = null,
 )
+
+/** A roll's net mark, after the Engine has cancelled Advantage against Disadvantage. */
+enum class RollMark { ADVANTAGE, DISADVANTAGE }
 
 data class Attack(
     val name: String,
@@ -345,6 +350,13 @@ private class Node(val json: JsonObject, val path: String) {
 }
 
 /** An attack row's stable key, as the Engine forms it (`character.AttackKey`). */
+/** The Engine sets at most one; both or neither is no mark. */
+private fun rollMark(advantage: Boolean, disadvantage: Boolean): RollMark? = when {
+    advantage == disadvantage -> null
+    advantage -> RollMark.ADVANTAGE
+    else -> RollMark.DISADVANTAGE
+}
+
 private fun attackKey(row: Node): String = row.string("itemId")?.takeIf(String::isNotEmpty)?.let { "item:$it" }
     ?: row.string("featureAttack")?.takeIf(String::isNotEmpty)?.let { "feature:$it" }
     ?: "unarmed".takeIf { row.bool("unarmed") == true }
@@ -462,6 +474,7 @@ private class SheetReader(
             val use = resources.first { use -> use.key == it.requireString("key") }
             HitDice(use.key, it.string("die") ?: "", use.maximum, use.left, use.spent)
         },
+        attackRoll = rollMark(sheet.bool("attackAdvantage") ?: false, sheet.bool("attackDisadvantage") ?: false),
     )
 
     private fun abilities(): SheetAbilities {

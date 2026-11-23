@@ -5,6 +5,7 @@ import eu.junak.ttrpg.companion.core.model.character.ChangeKind
 import eu.junak.ttrpg.companion.core.model.character.EffectCause
 import eu.junak.ttrpg.companion.core.model.character.EffectChange
 import eu.junak.ttrpg.companion.core.model.character.EffectTone
+import eu.junak.ttrpg.companion.core.model.character.RollMark
 import eu.junak.ttrpg.companion.core.model.character.ValueMark
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -56,11 +57,22 @@ class MarkPresentationTest {
 
     @Test
     fun aRollTagTakesTheToneOfTheTemporaryCauseOnly() {
-        assertEquals(EffectTone.PENALTY, tagTone(ValueMark("skills.athletics.total", null, EffectTone.PENALTY, listOf(poisoned, exhaustion)), disadvantage = true))
+        assertEquals(EffectTone.PENALTY, tagTone(ValueMark("skills.athletics.total", null, EffectTone.PENALTY, listOf(poisoned, exhaustion)), RollMark.DISADVANTAGE))
         // Exhaustion alone does not give the Disadvantage: armor's tag stays plain.
-        assertNull(tagTone(ValueMark("skills.stealth.total", null, EffectTone.PENALTY, listOf(exhaustion)), disadvantage = true))
-        assertNull("no mark, a plain tag", tagTone(null, disadvantage = true))
-        assertNull(tagTone(ValueMark("skills.athletics.total", null, EffectTone.PENALTY, listOf(poisoned)), disadvantage = false))
+        assertNull(tagTone(ValueMark("skills.stealth.total", null, EffectTone.PENALTY, listOf(exhaustion)), RollMark.DISADVANTAGE))
+        assertNull("no mark, a plain tag", tagTone(null, RollMark.DISADVANTAGE))
+        assertNull(tagTone(ValueMark("skills.athletics.total", null, EffectTone.PENALTY, listOf(poisoned)), RollMark.ADVANTAGE))
+    }
+
+    @Test
+    fun anAttackRollTagTakesItsRowsTone() {
+        // Poisoned gives every attack roll Disadvantage; the row's mark also holds Sacred Weapon's bonus, which gives no roll mark.
+        val marks = listOf(ValueMark("weapons.attackBonus", "item:sword", EffectTone.MIXED, listOf(poisoned, exhaustion, sacred)))
+        assertEquals(EffectTone.PENALTY, tagTone(markOf(marks, Shown.AttackBonus("item:sword")), RollMark.DISADVANTAGE))
+        val blessed = EffectCause(CauseKind.TIMED_GRANT, "grant-1", "Blessing of battle", null, null, EffectTone.BONUS, listOf(EffectChange(ChangeKind.ADVANTAGE, null, null)))
+        assertEquals(EffectTone.BONUS, tagTone(ValueMark("weapons.attackBonus", "unarmed", EffectTone.BONUS, listOf(blessed)), RollMark.ADVANTAGE))
+        // A roll mark from something lasting (a feature always on) has no temporary cause: a plain tag.
+        assertNull(tagTone(markOf(marks, Shown.AttackBonus("unarmed")), RollMark.ADVANTAGE))
     }
 
     @Test

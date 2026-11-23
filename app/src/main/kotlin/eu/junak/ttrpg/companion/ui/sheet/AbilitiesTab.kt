@@ -43,6 +43,7 @@ import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.character.AbilityRow
 import eu.junak.ttrpg.companion.core.model.character.CharacterSheet
 import eu.junak.ttrpg.companion.core.model.character.Proficiency
+import eu.junak.ttrpg.companion.core.model.character.RollMark
 import eu.junak.ttrpg.companion.core.model.character.SheetAbilities
 import eu.junak.ttrpg.companion.core.model.character.SkillRow
 import eu.junak.ttrpg.companion.core.model.character.ValueMark
@@ -52,8 +53,6 @@ import eu.junak.ttrpg.companion.ui.components.GlanceValue
 import eu.junak.ttrpg.companion.ui.components.LocalMarkDetails
 import eu.junak.ttrpg.companion.ui.components.MarkedText
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
-import eu.junak.ttrpg.companion.ui.components.Tag
-import eu.junak.ttrpg.companion.ui.components.toneColor
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import eu.junak.ttrpg.companion.ui.theme.NumberStyles
 import eu.junak.ttrpg.companion.ui.theme.TitleFont
@@ -212,7 +211,7 @@ private fun SkillLine(skill: SkillRow, marks: List<ValueMark>) {
                     color = if (trained) colors.onSurface else colors.onSurfaceVariant,
                     modifier = Modifier.weight(1f, fill = false),
                 )
-                if (skill.disadvantage) Tag(stringResource(R.string.sheet_disadvantage_tag), tone = tagTone(marked?.mark, disadvantage = true)?.let { toneColor(it) })
+                if (skill.disadvantage) RollTag(RollMark.DISADVANTAGE, marked?.mark)
             }
             MarkedText(
                 signed(skill.bonus),
