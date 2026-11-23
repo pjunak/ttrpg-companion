@@ -37,6 +37,7 @@ import eu.junak.ttrpg.companion.core.model.character.CharacterSheet
 import eu.junak.ttrpg.companion.core.model.character.Proficiency
 import eu.junak.ttrpg.companion.core.model.character.SkillRow
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
+import eu.junak.ttrpg.companion.ui.components.Tag
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import eu.junak.ttrpg.companion.ui.theme.NumberStyles
 import eu.junak.ttrpg.companion.ui.theme.TitleFont
@@ -156,7 +157,7 @@ private fun SkillLine(skill: SkillRow) {
                     color = if (trained) colors.onSurface else colors.onSurfaceVariant,
                     modifier = Modifier.weight(1f, fill = false),
                 )
-                if (skill.disadvantage) DisadvantageTag()
+                if (skill.disadvantage) Tag(stringResource(R.string.sheet_disadvantage_tag))
             }
             Text(
                 signed(skill.bonus),
@@ -178,18 +179,4 @@ private fun TrainingMark(proficiency: Proficiency) {
         Proficiency.PROFICIENT -> Box(Modifier.size(spacing.sm).background(colors.primary, CircleShape))
         Proficiency.EXPERTISE -> Box(Modifier.size(spacing.sm).rotate(45f).background(colors.primary))
     }
-}
-
-@Composable
-private fun DisadvantageTag() {
-    val spacing = LocalSpacing.current
-    val colors = MaterialTheme.colorScheme
-    Text(
-        stringResource(R.string.sheet_disadvantage_tag),
-        style = MaterialTheme.typography.labelSmall,
-        color = colors.onSurfaceVariant,
-        modifier = Modifier
-            .border(spacing.hairline, colors.outline, MaterialTheme.shapes.extraSmall)
-            .padding(horizontal = spacing.xs + spacing.xxs, vertical = spacing.xxs),
-    )
 }

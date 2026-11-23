@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -171,9 +172,12 @@ fun PortraitTile(baseUrl: String, ref: RecordRef, onClick: () -> Unit) {
     }
 }
 
-/** A section title in the accent colour with a fine rule, as the website heads its panels. */
+/**
+ * A section title in the accent colour with a fine rule, as the website heads
+ * its panels; [trailing] text and [extra] content (such as slot pips) sit at its end.
+ */
 @Composable
-fun SectionHeader(title: String, modifier: Modifier = Modifier, trailing: String? = null) {
+fun SectionHeader(title: String, modifier: Modifier = Modifier, trailing: String? = null, extra: @Composable RowScope.() -> Unit = {}) {
     val spacing = LocalSpacing.current
     Column(modifier.fillMaxWidth().padding(top = spacing.md, bottom = spacing.xs)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -190,6 +194,7 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier, trailing: String
             if (trailing != null) {
                 Text(trailing, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            extra()
         }
         Spacer(Modifier.height(spacing.xs))
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

@@ -177,8 +177,9 @@ data class Spacing(
     val controlLarge: Dp = 56.dp,
     /** The hit point bar's thickness. */
     val meter: Dp = 8.dp,
-    /** A list row's least height. */
+    /** A list row's least height, and a compact row's. */
     val row: Dp = 52.dp,
+    val rowCompact: Dp = 40.dp,
     /** A use pip as drawn, and the area that takes a tap on it. */
     val pip: Dp = 16.dp,
     val pipTouch: Dp = 32.dp,
