@@ -7,7 +7,10 @@ import eu.junak.ttrpg.companion.core.model.EventSave
 import eu.junak.ttrpg.companion.core.model.Role
 import eu.junak.ttrpg.companion.core.model.prepareEventDelete
 import eu.junak.ttrpg.companion.core.model.prepareEventSave
+import eu.junak.ttrpg.companion.core.network.di.ApplicationScope
 import eu.junak.ttrpg.companion.core.network.site.Site
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,11 +35,24 @@ sealed interface EventSaveResult {
  * different fields merge; only a clash on the same field asks the user. A
  * change is prepared for the role its campaign was fetched for, and again
  * when the session's role turns out to differ.
+ *
+ * Writes run in the application's scope: a caller that is cancelled (a
+ * screen being left) stops waiting, but a request on its way still completes
+ * and the campaign is still refreshed.
  */
 @Singleton
-class EventWriter @Inject constructor(private val campaigns: CampaignRepository) {
+class EventWriter @Inject constructor(
+    private val campaigns: CampaignRepository,
+    @param:ApplicationScope private val scope: CoroutineScope,
+) {
 
-    suspend fun save(site: Site, base: EventBase, fields: EventFields, overwrite: Boolean = false): EventSaveResult {
+    suspend fun save(site: Site, base: EventBase, fields: EventFields, overwrite: Boolean = false): EventSaveResult =
+        scope.async { saveNow(site, base, fields, overwrite) }.await()
+
+    /** Deletes the event the editor opened as [base], unless it changed since. */
+    suspend fun delete(site: Site, base: EventBase): EventSaveResult = scope.async { deleteNow(site, base) }.await()
+
+    private suspend fun saveNow(site: Site, base: EventBase, fields: EventFields, overwrite: Boolean): EventSaveResult {
         repeat(MAX_ATTEMPTS) {
             val state = campaigns.state(site).value
             val dataset = state.dataset ?: return EventSaveResult.NotSaved(WriteResult.Failed(""))
@@ -56,8 +72,7 @@ class EventWriter @Inject constructor(private val campaigns: CampaignRepository)
         return EventSaveResult.NotSaved(WriteResult.Conflict)
     }
 
-    /** Deletes the event the editor opened as [base], unless it changed since. */
-    suspend fun delete(site: Site, base: EventBase): EventSaveResult {
+    private suspend fun deleteNow(site: Site, base: EventBase): EventSaveResult {
         repeat(MAX_ATTEMPTS) {
             val state = campaigns.state(site).value
             val dataset = state.dataset ?: return EventSaveResult.NotSaved(WriteResult.Failed(""))

@@ -6,7 +6,12 @@ import eu.junak.ttrpg.companion.core.network.FakeHost.Companion.campaign
 import eu.junak.ttrpg.companion.core.network.FakeHost.Companion.event
 import eu.junak.ttrpg.companion.core.network.campaign.EventSaveResult
 import eu.junak.ttrpg.companion.core.network.site.Site
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
@@ -14,10 +19,13 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class EventWriterTest {
 
@@ -125,6 +133,29 @@ class EventWriterTest {
         assertEquals(listOf("kael", "spy"), value["characters"]!!.jsonArray.map { it.jsonPrimitive.content })
         assertEquals("secret", value["notes"]?.jsonPrimitive?.content)
         assertEquals("Rain and fog.", value["description"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun leavingTheScreenDoesNotCancelASaveOnItsWay() = runBlocking {
+        val (site, base) = openEditor()
+        val arrived = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        f.host.onCommit = {
+            f.host.campaign = campaign(event("arrival", 3, """{"name":"Arrival","sitting":3,"order":2,"description":"Rain and fog."}"""))
+            arrived.countDown()
+            release.await(5, TimeUnit.SECONDS)
+        }
+        val caller = launch(Dispatchers.Default) {
+            f.writer.save(site, base, EventFields.of(base.value).copy(description = "Rain and fog."))
+        }
+        assertTrue(arrived.await(5, TimeUnit.SECONDS))
+
+        caller.cancel()
+        release.countDown()
+
+        // The write completes and the campaign is refreshed though nobody waits any more.
+        withTimeout(5_000) { f.campaigns.state(site).first { it.dataset?.record("events", "arrival")?.revision == 3L } }
+        assertEquals(1, f.host.commits.size)
     }
 
     @Test

@@ -8,6 +8,10 @@ import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
 import eu.junak.ttrpg.companion.core.network.site.Site
 import eu.junak.ttrpg.companion.core.network.site.SiteRepository
 import eu.junak.ttrpg.companion.core.network.site.SiteStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -186,7 +190,8 @@ class Fixture(directory: File) : Closeable {
     val store = SiteStore(MemoryPreferences(), directory)
     val campaigns = CampaignRepository(client, store, cookies)
     val sites = SiteRepository(client, store, cookies, campaigns)
-    val writer = EventWriter(campaigns)
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    val writer = EventWriter(campaigns, scope)
     val baseUrl = server.url("/").toString().trimEnd('/')
 
     /** A saved site, signed in as [role] (with a session the host knows) or read signed out. */
@@ -200,5 +205,8 @@ class Fixture(directory: File) : Closeable {
 
     fun state(site: Site) = campaigns.state(site).value
 
-    override fun close() = server.close()
+    override fun close() {
+        scope.cancel()
+        server.close()
+    }
 }

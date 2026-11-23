@@ -10,11 +10,20 @@ import eu.junak.ttrpg.companion.core.network.session.EncryptedSessionVault
 import eu.junak.ttrpg.companion.core.network.session.SessionVault
 import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
 import eu.junak.ttrpg.companion.core.network.site.SiteStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
 import javax.inject.Named
+import javax.inject.Qualifier
 import javax.inject.Singleton
+
+/** The scope that lives as long as the app, for work a screen being left must not cancel, such as writes. */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ApplicationScope
 
 /**
  * One OkHttp client for every site: REST, images and (with a longer read
@@ -40,6 +49,11 @@ object NetworkModule {
     @Named("events")
     fun provideEventClient(client: OkHttpClient): OkHttpClient =
         client.newBuilder().readTimeout(60, TimeUnit.SECONDS).build()
+
+    @Provides
+    @Singleton
+    @ApplicationScope
+    fun provideApplicationScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 }
 
 @Module
