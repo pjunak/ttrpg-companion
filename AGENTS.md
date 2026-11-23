@@ -20,14 +20,21 @@ simple, clear code over extra hardening or process.
   lists every route this app may use, including add-on services by contract
   (host 2.2.0 and newer).
 - Maps follow the host's `docs/reference/MAPS.md` and
-  `frontend/src/app/campaign-map.ts` (which pins a map shows, marker sizes,
-  the event trail); `core-model` `CampaignMap.kt`, `MapTiles.kt` and
-  `MapViewport.kt` mirror them.
-- Record pages, subtitle and article fields follow the host's
-  `frontend/src/app/routes.ts` and `campaign-projection.ts`; the dashboard,
-  facts and settings lists follow `campaign-projection.ts`,
-  `campaign-party.ts` and the record views. `core-model` turns them into
-  `CampaignOverview`, `RecordDetails` and `CampaignSettings`.
+  `frontend/src/app/campaign-map.ts` (which pins a map shows, marker sizes
+  and the hash that picks random marker images, the event trail);
+  `core-model` `CampaignMap.kt`, `MapTiles.kt` and `MapViewport.kt` mirror
+  them.
+- Record pages, list subtitles, excerpts and icons follow the host's
+  `frontend/src/app/routes.ts` and `campaign-projection.ts`; the dashboard
+  and settings lists follow `campaign-projection.ts`, `campaign-party.ts`
+  and the record views; record facts follow `codex-record-page.ts` and, for
+  characters, `codex-character-profile.ts`. `core-model` turns them into
+  `CampaignPages`, `CampaignOverview`, `RecordDetails` and
+  `CampaignSettings`.
+- Public/DM twins are grouped as `campaign-twins.ts` does
+  (`CampaignTwins.kt`), search follows `campaign-search.ts`
+  (`CampaignSearch.kt`) and sessions follow `campaign-timeline.ts`
+  (`SessionNotes.kt`).
 
 ## Commands
 
