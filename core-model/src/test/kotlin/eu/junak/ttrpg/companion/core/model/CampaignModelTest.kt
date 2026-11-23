@@ -72,7 +72,8 @@ class CampaignModelTest {
         assertEquals(CampaignPage.CHARACTERS to "c2", CampaignMarkdown.resolve("Ines", "character", dataset))
         assertNull(CampaignMarkdown.resolve("Ines", "locations", dataset))
         assertEquals(listOf("Kael Vor", "Old Kael"), dataset.search("kael").map { it.name })
-        assertEquals(listOf("Inés"), dataset.search("INES").map { it.name })
+        // Inés by name; Kael Vor because his excerpt links to "Ines".
+        assertEquals(listOf("Inés", "Kael Vor"), dataset.search("INES").map { it.name })
     }
 
     @Test
