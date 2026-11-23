@@ -31,6 +31,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import java.io.IOException
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -227,8 +228,12 @@ class CharacterSession internal constructor(
 
         data object Reload : Command
 
-        /** Something changed on the host (an event); load once the session is idle and the pause is over. */
-        data object Changed : Command
+        /**
+         * Something changed on the host (an event); load once the session is
+         * idle and the pause is over. [answered] is how many loads the host
+         * had answered when the event arrived.
+         */
+        class Changed(val hello: Boolean, val answered: Long) : Command
 
         data object ChangedDue : Command
 
@@ -257,6 +262,13 @@ class CharacterSession internal constructor(
     private var evaluationStale = false
     private var retryTimer: Job? = null
     private var eventTimer: Job? = null
+
+    /** Loads the host answered; counted here and read where events arrive, so it is shared. */
+    private val loadsAnswered = AtomicLong()
+
+    /** Within one pause after events: whether one was not a `hello`, and [loadsAnswered] when the last `hello` came. */
+    private var changedBeyondHello = false
+    private var lastHello: Long? = null
     private var copyTimer: Job? = null
     private var copyFailures = 0
     private lateinit var loop: CoroutineScope
@@ -264,7 +276,9 @@ class CharacterSession internal constructor(
 
     init {
         job = scope.launch {
-            launch { events.collect { if (concerns(it)) commands.trySend(Command.Changed) } }
+            launch {
+                events.collect { if (concerns(it)) commands.trySend(Command.Changed(it is HostEvent.Hello, loadsAnswered.get())) }
+            }
             run(this)
         }
     }
@@ -341,13 +355,26 @@ class CharacterSession internal constructor(
             } else {
                 load(LoadMode.FIRST)
             }
-            Command.Changed -> if (eventTimer?.isActive != true) {
-                eventTimer = scope.launch {
-                    delay(timing.eventPauseMs)
-                    commands.trySend(Command.ChangedDue)
+            is Command.Changed -> {
+                if (command.hello) lastHello = command.answered else changedBeyondHello = true
+                if (eventTimer?.isActive != true) {
+                    eventTimer = scope.launch {
+                        delay(timing.eventPauseMs)
+                        commands.trySend(Command.ChangedDue)
+                    }
                 }
             }
-            Command.ChangedDue -> loadDue = true
+            Command.ChangedDue -> {
+                // A `hello` (the stream connected or reconnected) only stands for changes missed
+                // while the stream was down. A load answered since it arrived already shows the
+                // sheet as of the reconnect, so it starts none; this accepts a change made between
+                // the host reading that load and the stream subscribing, if the load was asked just
+                // before. Other events always load: a load begun before them may predate the change.
+                val hello = lastHello
+                if (changedBeyondHello || hello == null || loadsAnswered.get() == hello) loadDue = true
+                changedBeyondHello = false
+                lastHello = null
+            }
             Command.LoadAgain -> if (_state.value.copy != null) load(LoadMode.FIRST)
         }
     }
@@ -546,6 +573,7 @@ class CharacterSession internal constructor(
             is ServiceResult.Failure -> return if (showingCopy) copyLoadFailed(result.failure) else loadFailed(result.failure)
             is ServiceResult.Success -> result.value
         }
+        loadsAnswered.incrementAndGet()
         if (showingCopy) {
             // The host answered: whatever it says replaces the device's copy.
             copyFailures = 0

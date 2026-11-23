@@ -50,6 +50,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeUnit
 
 /**
  * The character session against [FakeHost], answered with the recordings in
@@ -539,6 +540,65 @@ class CharacterSessionTest {
             events.emit(event)
             session.until { it.answer?.revision == revision }
         }
+    }
+
+    /** [response], answered only after a while, so an event can arrive while its load runs. */
+    private fun late(response: MockResponse) = response.newBuilder().headersDelay(400, TimeUnit.MILLISECONDS).build()
+
+    /** Waits off the test thread until the host has [count] service calls. */
+    private suspend fun callsReach(count: Int) = withContext(Dispatchers.Default) { while (calls().size < count) Thread.sleep(5) }
+
+    /** Lets the pause after events end and any load it starts be asked and answered. */
+    private suspend fun CharacterSession.settled(): CharacterSessionState {
+        withContext(Dispatchers.Default) { Thread.sleep(300) }
+        return until { !it.refreshing }
+    }
+
+    @Test
+    fun aHelloDuringALoadStartsNoSecondOne() = runTest {
+        // Opening: the stream connects while the first load runs.
+        val opened = open(late(answer("load-sheet")))
+        events.subscriptionCount.first { it > 0 }
+        callsReach(1)
+        events.emit(HostEvent.Hello(1))
+        opened.loaded()
+        opened.settled()
+        assertEquals("one load on opening", listOf("load"), methods())
+
+        // Back from the background: the screen's reload and the reconnect's hello.
+        opened.reload()
+        f.host.serviceAnswers += late(answer("load-sheet"))
+        callsReach(2)
+        events.emit(HostEvent.Hello(2))
+        opened.settled()
+        assertEquals("one load on a return", listOf("load", "load"), methods())
+    }
+
+    @Test
+    fun aHelloWithNoLoadSinceStillLoads() = runTest {
+        // A failed load comes back on a reconnect.
+        val session = open(error(503, "SERVICE_UNAVAILABLE"), answer("load-sheet"), answer("save-play-damage"))
+        assertEquals(SheetLoad.Failed(ServiceFailure.ServiceUnavailable), session.until { it.load != SheetLoad.Loading }.load)
+        events.subscriptionCount.first { it > 0 }
+        events.emit(HostEvent.Hello(1))
+        assertEquals(1L, session.loaded().answer!!.revision)
+
+        // Long after the last load, a reconnect may have missed changes.
+        events.emit(HostEvent.Hello(2))
+        assertEquals(3L, session.until { it.answer?.revision == 3L }.answer!!.revision)
+        assertEquals(listOf("load", "load", "load"), methods())
+    }
+
+    @Test
+    fun anAddonDataEventDuringALoadStillLoads() = runTest {
+        val session = open(late(answer("load-sheet")), answer("save-play-damage"))
+        events.subscriptionCount.first { it > 0 }
+        callsReach(1)
+        events.emit(HostEvent.Hello(1))
+        events.emit(HostEvent.AddonDataChanged(2, "${provider.addonId}/record-extension/${provider.addonId}"))
+        session.loaded()
+        assertEquals("the load may predate the change", 3L, session.until { it.answer?.revision == 3L }.answer!!.revision)
+        assertEquals(listOf("load", "load"), methods())
     }
 
     @Test
