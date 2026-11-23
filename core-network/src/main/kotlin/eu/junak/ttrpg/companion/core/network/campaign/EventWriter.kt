@@ -1,7 +1,7 @@
 package eu.junak.ttrpg.companion.core.network.campaign
 
-import eu.junak.ttrpg.companion.core.model.CampaignMutation
 import eu.junak.ttrpg.companion.core.model.EventBase
+import eu.junak.ttrpg.companion.core.model.EventDelete
 import eu.junak.ttrpg.companion.core.model.EventFields
 import eu.junak.ttrpg.companion.core.model.EventSave
 import eu.junak.ttrpg.companion.core.model.Role
@@ -19,6 +19,9 @@ sealed interface EventSaveResult {
     data class Conflict(val fields: List<String>) : EventSaveResult
 
     data object Gone : EventSaveResult
+
+    /** Someone changed the event since the editor opened, so it was not deleted. */
+    data object Changed : EventSaveResult
 
     data class NotSaved(val reason: WriteResult) : EventSaveResult
 }
@@ -49,13 +52,22 @@ class EventWriter @Inject constructor(private val campaigns: CampaignRepository)
         return EventSaveResult.NotSaved(WriteResult.Conflict)
     }
 
-    suspend fun delete(site: Site, key: String): EventSaveResult {
-        val dataset = campaigns.state(site).value.dataset ?: return EventSaveResult.NotSaved(WriteResult.Failed(""))
-        val mutation: CampaignMutation = dataset.prepareEventDelete(key) ?: return EventSaveResult.Saved
-        return when (val result = campaigns.commit(site, listOf(mutation))) {
-            WriteResult.Saved -> EventSaveResult.Saved
-            else -> EventSaveResult.NotSaved(result)
+    /** Deletes the event the editor opened as [base], unless it changed since. */
+    suspend fun delete(site: Site, base: EventBase): EventSaveResult {
+        repeat(MAX_ATTEMPTS) {
+            val dataset = campaigns.state(site).value.dataset ?: return EventSaveResult.NotSaved(WriteResult.Failed(""))
+            val mutation = when (val prepared = dataset.prepareEventDelete(base)) {
+                is EventDelete.Ready -> prepared.mutation
+                EventDelete.Changed -> return EventSaveResult.Changed
+                EventDelete.AlreadyGone -> return EventSaveResult.Saved
+            }
+            when (val result = campaigns.commit(site, listOf(mutation))) {
+                WriteResult.Saved -> return EventSaveResult.Saved
+                WriteResult.Conflict -> Unit // The campaign was refreshed; preparing again shows what changed.
+                else -> return EventSaveResult.NotSaved(result)
+            }
         }
+        return EventSaveResult.NotSaved(WriteResult.Conflict)
     }
 
     private companion object {

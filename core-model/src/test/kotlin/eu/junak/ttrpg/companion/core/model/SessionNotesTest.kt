@@ -125,8 +125,9 @@ class SessionNotesTest {
         assertEquals(EventSave.AlreadySaved, campaign.prepareEventSave(retry, EventFields(name = "Arrival", sitting = 3), true))
     }
 
+    /** The limits follow the website's event editor, not rules the host enforces. */
     @Test
-    fun checksFieldsLikeTheHost() {
+    fun checksFieldsLikeTheWebsiteEditor() {
         assertEquals(EventProblem.NAME_MISSING, EventFields(name = " ").problem)
         assertEquals(EventProblem.NAME_TOO_LONG, EventFields(name = "x".repeat(201)).problem)
         assertEquals(EventProblem.SESSION_INVALID, EventFields(name = "A", sitting = 0).problem)
@@ -140,6 +141,52 @@ class SessionNotesTest {
         val mutation = body["mutations"]!!.jsonArray.single().jsonObject
         assertEquals("delete", mutation["operation"]?.jsonPrimitive?.content)
         assertTrue("value" !in mutation)
-        assertEquals(CampaignMutation.Delete("events", "brawl", 1), campaign.prepareEventDelete("brawl"))
+    }
+
+    @Test
+    fun deletesOnlyTheEventTheUserSaw() {
+        val opened = EventBase.of(campaign.record("events", "brawl")!!)
+        assertEquals(EventDelete.Ready(CampaignMutation.Delete("events", "brawl", 1)), campaign.prepareEventDelete(opened))
+        val renamed = dataset("""{"key": "brawl", "revision": 2, "value": {"name": "Tavern brawl", "sitting": 3}}""")
+        assertEquals("a change made after the editor opened is not deleted unseen", EventDelete.Changed, renamed.prepareEventDelete(opened))
+        assertEquals(EventDelete.AlreadyGone, dataset("").prepareEventDelete(opened))
+    }
+
+    @Test
+    fun keepsAMoveMadeElsewhere() {
+        val opened = campaign.record("events", "arrival")!!
+        val moved = dataset(
+            """{"key": "arrival", "revision": 3, "value": {"name": "Arrival", "sitting": 5, "order": 7, "description": "Rain."}},
+               {"key": "other", "revision": 1, "value": {"name": "Other", "sitting": 5, "order": 9}}""",
+        )
+        val mine = EventFields.of(opened.value).copy(description = "Rain and fog.")
+        val put = (moved.prepareEventSave(EventBase.of(opened), mine, true) as EventSave.Ready).mutation
+        assertEquals(5, put.value["sitting"]?.jsonPrimitive?.content?.toInt())
+        assertEquals("only the user moving the event places it last", 7L, put.value["order"]?.jsonPrimitive?.content?.toLong())
+
+        val sameMove = EventFields.of(opened.value).copy(sitting = 5)
+        val both = (moved.prepareEventSave(EventBase.of(opened), sameMove, true) as EventSave.Ready).mutation
+        assertEquals("a move both sides made keeps the stored order", 7L, both.value["order"]?.jsonPrimitive?.content?.toLong())
+    }
+
+    @Test
+    fun retryingOnesOwnSaveIsNoConflict() {
+        val opened = campaign.record("events", "arrival")!!
+        val saved = dataset("""{"key": "arrival", "revision": 3, "value": {"name": "Arrival at night", "sitting": 3, "order": 2}}""")
+        val mine = EventFields.of(opened.value).copy(name = "Arrival at night ")
+        val put = (saved.prepareEventSave(EventBase.of(opened), mine, true) as EventSave.Ready).mutation
+        assertEquals(3L, put.expectedRevision)
+        assertEquals("Arrival at night", put.value["name"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun keepsMarkdownAsTyped() {
+        val stored = dataset("""{"key": "storm", "revision": 1, "value": {"name": "Storm", "description": "Rain.\n\n"}}""")
+        val opened = stored.record("events", "storm")!!
+        val untouched = (stored.prepareEventSave(EventBase.of(opened), EventFields.of(opened.value).copy(name = "Big storm"), true) as EventSave.Ready).mutation
+        assertEquals("an untouched description is not rewritten", "Rain.\n\n", untouched.value["description"]?.jsonPrimitive?.content)
+        val typed = "  - fog\n  - wind\n"
+        val edited = (stored.prepareEventSave(EventBase.of(opened), EventFields.of(opened.value).copy(description = typed), true) as EventSave.Ready).mutation
+        assertEquals(typed, edited.value["description"]?.jsonPrimitive?.content)
     }
 }

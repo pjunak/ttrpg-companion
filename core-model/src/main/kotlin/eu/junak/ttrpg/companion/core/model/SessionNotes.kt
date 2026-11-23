@@ -51,7 +51,11 @@ data class EventFields(
     val locations: List<String> = emptyList(),
     val dmOnly: Boolean = false,
 ) {
-    /** Why the host would refuse these fields, or null when they are fine. */
+    /**
+     * Why the website's event editor would refuse these fields, or null when
+     * they are fine. These limits follow that editor
+     * (`campaign-record-editor.ts` in the host), not rules the host enforces.
+     */
     val problem: EventProblem?
         get() = when {
             name.isBlank() -> EventProblem.NAME_MISSING
@@ -158,14 +162,20 @@ fun CampaignDataset.prepareEventSave(
     val changes = changedFields(baseFields, edited, canManageVisibility)
     val current = latest?.value ?: JsonObject(emptyMap())
     if (latest != null && latest.revision != base.revision && !overwrite) {
-        val clashes = changes.keys.filter { current[it].orNull() != base.value[it].orNull() }
+        // A field already holding the user's value is no clash, such as on a
+        // retry of a save whose answer was lost.
+        val clashes = changes.filter { (field, mine) ->
+            val stored = current[field].orNull()
+            stored != base.value[field].orNull() && stored != mine
+        }.keys.toList()
         if (clashes.isNotEmpty()) return EventSave.Conflict(clashes)
     }
     val value = current.toMutableMap()
     value.putAll(changes)
     // A missing session reads as session 1, but a new event states its session.
     if (base.creating) value["sitting"] = JsonPrimitive(edited.sitting)
-    if (base.creating || edited.sitting != sitting(current)) {
+    // Only the user moving the event places it last; a move made elsewhere keeps its order.
+    if (base.creating || ("sitting" in changes && edited.sitting != sitting(current))) {
         value["order"] = JsonPrimitive(nextOrder(edited.sitting, base.key))
     }
     value["id"] = JsonPrimitive(base.key)
@@ -187,7 +197,8 @@ private fun changedFields(base: EventFields, edited: EventFields, canManageVisib
     }
     text("name", base.name, edited.name)
     text("short", base.short, edited.short)
-    if (base.description != edited.description.trim()) changes["description"] = JsonPrimitive(edited.description.trim())
+    // Markdown is kept as typed, as on the website.
+    if (base.description != edited.description) changes["description"] = JsonPrimitive(edited.description)
     text("date", base.date, edited.date)
     text("priority", base.priority, edited.priority)
     if (base.sitting != edited.sitting) changes["sitting"] = JsonPrimitive(edited.sitting)
@@ -201,9 +212,27 @@ private fun changedFields(base: EventFields, edited: EventFields, canManageVisib
 
 private fun JsonElement?.orNull(): JsonElement? = this?.takeUnless { it is JsonNull }
 
-/** Deletes the stored event [key], or null when it is already gone. */
-fun CampaignDataset.prepareEventDelete(key: String): CampaignMutation.Delete? =
-    record(CampaignPage.EVENTS.collection, key)?.let { CampaignMutation.Delete(CampaignPage.EVENTS.collection, key, it.revision) }
+/** The outcome of preparing an event delete against the latest campaign. */
+sealed interface EventDelete {
+    data class Ready(val mutation: CampaignMutation.Delete) : EventDelete
+
+    /** Someone changed the event since the editor opened; deleting it would discard that change unseen. */
+    data object Changed : EventDelete
+
+    data object AlreadyGone : EventDelete
+}
+
+/**
+ * Prepares deleting the event the editor opened as [base]. The delete expects
+ * the revision the user saw, as on the website, so a change made meanwhile is
+ * never deleted unseen.
+ */
+fun CampaignDataset.prepareEventDelete(base: EventBase): EventDelete {
+    val collection = CampaignPage.EVENTS.collection
+    val latest = record(collection, base.key) ?: return EventDelete.AlreadyGone
+    if (latest.revision != base.revision) return EventDelete.Changed
+    return EventDelete.Ready(CampaignMutation.Delete(collection, base.key, base.revision))
+}
 
 /** A record key like the website's `createCampaignRecordKey`: `<name slug>-<12 letters or digits>`. */
 fun newRecordKey(name: String, token: String): String {

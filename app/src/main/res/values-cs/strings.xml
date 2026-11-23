@@ -192,6 +192,7 @@
     <string name="save_conflict_title">Změněno jinde</string>
     <string name="save_conflict_text">Během úprav někdo změnil: %1$s. Přepsat to tvou verzí?</string>
     <string name="save_gone">Tato událost byla mezitím smazána.</string>
+    <string name="delete_changed">Nesmazáno: někdo tuto událost od otevření změnil. Otevři ji znovu a podívej se na změnu.</string>
     <string name="save_signed_out">Neuloženo: nejdřív se znovu přihlas.</string>
     <string name="save_forbidden">Neuloženo: web tuto změnu nedovolí.</string>
     <string name="save_busy">Neuloženo: událost se jinde stále mění. Zkus to znovu.</string>

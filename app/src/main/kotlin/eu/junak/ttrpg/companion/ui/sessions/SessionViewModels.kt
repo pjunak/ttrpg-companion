@@ -34,6 +34,7 @@ sealed interface SaveProblem {
     data class Invalid(val problem: EventProblem) : SaveProblem
     data class Conflict(val fields: List<String>) : SaveProblem
     data object Gone : SaveProblem
+    data object ChangedBeforeDelete : SaveProblem
     data class NotSaved(val reason: WriteResult) : SaveProblem
 }
 
@@ -185,10 +186,10 @@ class EventEditorViewModel @Inject constructor(
 
     fun delete() {
         val site = site ?: return
-        val key = route.key ?: return
+        val opening = base?.takeUnless { it.creating } ?: return
         viewModelScope.launch {
             _status.value = EditorStatus.Saving
-            val result = writer.delete(site, key)
+            val result = writer.delete(site, opening)
             _status.value = if (result == EventSaveResult.Saved) EditorStatus.Done else EditorStatus.Problem(result.problem())
         }
     }
@@ -242,6 +243,7 @@ class EventEditorViewModel @Inject constructor(
 private fun EventSaveResult.problem(): SaveProblem = when (this) {
     is EventSaveResult.Conflict -> SaveProblem.Conflict(fields)
     EventSaveResult.Gone -> SaveProblem.Gone
+    EventSaveResult.Changed -> SaveProblem.ChangedBeforeDelete
     is EventSaveResult.NotSaved -> SaveProblem.NotSaved(reason)
     EventSaveResult.Saved -> error("a saved event has no problem")
 }

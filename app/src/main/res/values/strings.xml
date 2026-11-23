@@ -192,6 +192,7 @@
     <string name="save_conflict_title">Changed elsewhere</string>
     <string name="save_conflict_text">Someone changed %1$s while you were editing. Save your version over it?</string>
     <string name="save_gone">This event was deleted elsewhere.</string>
+    <string name="delete_changed">Not deleted: someone changed this event since you opened it. Open it again to see the change.</string>
     <string name="save_signed_out">Not saved: sign in again first.</string>
     <string name="save_forbidden">Not saved: the site doesn’t allow this change.</string>
     <string name="save_busy">Not saved: the event keeps changing elsewhere. Try again.</string>

@@ -20,6 +20,7 @@ fun saveProblemText(problem: SaveProblem): String = when (problem) {
     )
     is SaveProblem.Conflict -> stringResource(R.string.save_conflict_title)
     SaveProblem.Gone -> stringResource(R.string.save_gone)
+    SaveProblem.ChangedBeforeDelete -> stringResource(R.string.delete_changed)
     is SaveProblem.NotSaved -> when (val reason = problem.reason) {
         WriteResult.SignedOut -> stringResource(R.string.save_signed_out)
         WriteResult.Forbidden -> stringResource(R.string.save_forbidden)
