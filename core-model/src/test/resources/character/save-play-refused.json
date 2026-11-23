@@ -1,0 +1,42 @@
+{
+ "method": "save",
+ "params": {
+  "contractVersion": "character.v3",
+  "key": "mira-quill",
+  "operation": "play",
+  "operationId": "mira-play-0010",
+  "expectedRevision": 10,
+  "change": {
+   "operation": "cast-spell",
+   "classId": "wizard",
+   "ref": "fireball",
+   "slot": "slot-3"
+  }
+ },
+ "http": 200,
+ "ms": 107,
+ "response": {
+  "contractVersion": "client-service-result.v1",
+  "providerAddonId": "dnd-sheets",
+  "providerGeneration": "f9417c265c5abf294de452b47d3b2059594396e1c0448ced06e8f84aca2383b7",
+  "result": {
+   "contractVersion": "character-response.v3",
+   "status": "invalid",
+   "message": "No uses remain for this resource.",
+   "messageText": {
+    "text": "No uses remain for this resource.",
+    "key": "No uses remain for this resource.",
+    "addon": "dnd-engine"
+   },
+   "key": "mira-quill",
+   "revision": 10,
+   "actorId": "player-actor-1",
+   "role": "player",
+   "rulesChanged": false,
+   "state": {
+    "schemaVersion": "6.2.0",
+    "operationId": "mira-play-0009"
+   }
+  }
+ }
+}

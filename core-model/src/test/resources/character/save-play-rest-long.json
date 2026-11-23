@@ -1,0 +1,68 @@
+{
+ "method": "save",
+ "params": {
+  "contractVersion": "character.v3",
+  "key": "mira-quill",
+  "operation": "play",
+  "operationId": "mira-play-0001",
+  "expectedRevision": 1,
+  "change": {
+   "operation": "rest",
+   "rest": "long"
+  }
+ },
+ "http": 200,
+ "ms": 210,
+ "response": {
+  "contractVersion": "client-service-result.v1",
+  "providerAddonId": "dnd-sheets",
+  "providerGeneration": "f9417c265c5abf294de452b47d3b2059594396e1c0448ced06e8f84aca2383b7",
+  "result": {
+   "contractVersion": "character-response.v3",
+   "status": "ready",
+   "message": "Saved",
+   "key": "mira-quill",
+   "revision": 2,
+   "actorId": "player-actor-1",
+   "role": "player",
+   "rulesChanged": false,
+   "policy": {
+    "conditionRules": "conditions-conditions",
+    "distanceUnit": "ft",
+    "maximumLevel": 20,
+    "minimumHpGain": 1,
+    "rollDice": 4,
+    "rollKeep": 3,
+    "rollSides": 6,
+    "standardArray": [
+     15,
+     14,
+     13,
+     12,
+     10,
+     8
+    ],
+    "uniqueAttunement": true
+   },
+   "state": {
+    "schemaVersion": "6.2.0",
+    "operationId": "mira-play-0001",
+    "inputs": {
+     "play": {
+      "hp": 32,
+      "resourceUses": {
+       "arcane-recovery": 0,
+       "charge:feat:magic-initiate@background%3Asage:mi-spell": 0,
+       "charge:species:elf:detect-magic": 0,
+       "charge:species:elf:misty-step": 0,
+       "hit-dice-d6": 0,
+       "slot-1": 0,
+       "slot-2": 0,
+       "slot-3": 0
+      }
+     }
+    }
+   }
+  }
+ }
+}

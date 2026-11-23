@@ -1,0 +1,79 @@
+{
+ "http": 200,
+ "response": {
+  "contractVersion": "rules-engine-query-result.v1",
+  "identity": {
+   "providerAddonId": "dnd-2024-compendium",
+   "providerContractVersion": "3.0.0",
+   "providerGeneration": "0bc50c2e68702d6c59cd428500c15315294f481df14596c2023a824dd6769a82",
+   "contentRevision": "a9bb91a3bf41ab94e11bc4e034111a4fa943a03e20b86f584dca9961d7f53913"
+  },
+  "records": [
+   {
+    "providerAddonId": "dnd-2024-compendium",
+    "kind": "spell",
+    "id": "acid-splash",
+    "value": {
+     "id": "acid-splash",
+     "kind": "spell",
+     "name": "Acid Splash",
+     "edition": "2024",
+     "level": 0,
+     "school": "Evocation",
+     "classes": [
+      "artificer",
+      "sorcerer",
+      "wizard"
+     ],
+     "ritual": false,
+     "concentration": false,
+     "castingTime": "Action",
+     "range": "60 feet",
+     "components": [
+      "V",
+      "S"
+     ],
+     "material": "Placeholder: compendium text removed.",
+     "duration": "Instantaneous",
+     "text": "Placeholder: compendium text removed.",
+     "book": "phb"
+    }
+   },
+   {
+    "providerAddonId": "dnd-2024-compendium",
+    "kind": "spell",
+    "id": "aid",
+    "value": {
+     "id": "aid",
+     "kind": "spell",
+     "name": "Aid",
+     "edition": "2024",
+     "level": 2,
+     "school": "Abjuration",
+     "classes": [
+      "artificer",
+      "bard",
+      "cleric",
+      "druid",
+      "paladin",
+      "ranger"
+     ],
+     "ritual": false,
+     "concentration": false,
+     "castingTime": "Action",
+     "range": "30 feet",
+     "components": [
+      "V",
+      "S",
+      "M"
+     ],
+     "material": "Placeholder: compendium text removed.",
+     "duration": "8 hours",
+     "text": "Placeholder: compendium text removed.",
+     "book": "phb"
+    }
+   }
+  ],
+  "nextCursor": "8PGLjRssgGQo94Y8PERhMwAACpQ"
+ }
+}

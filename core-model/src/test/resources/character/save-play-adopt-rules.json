@@ -1,0 +1,73 @@
+{
+ "method": "save",
+ "params": {
+  "contractVersion": "character.v3",
+  "key": "mira-quill",
+  "operation": "play",
+  "operationId": "mira-adopt-play-01",
+  "expectedRevision": 24,
+  "change": {
+   "operation": "heal",
+   "amount": 1
+  },
+  "adoptRules": true
+ },
+ "http": 200,
+ "ms": 219,
+ "response": {
+  "contractVersion": "client-service-result.v1",
+  "providerAddonId": "dnd-sheets",
+  "providerGeneration": "f9417c265c5abf294de452b47d3b2059594396e1c0448ced06e8f84aca2383b7",
+  "result": {
+   "contractVersion": "character-response.v3",
+   "status": "ready",
+   "message": "Saved",
+   "key": "mira-quill",
+   "revision": 25,
+   "actorId": "player-actor-3",
+   "role": "player",
+   "rulesChanged": false,
+   "policy": {
+    "conditionRules": "conditions-conditions",
+    "distanceUnit": "ft",
+    "maximumLevel": 20,
+    "minimumHpGain": 1,
+    "rollDice": 4,
+    "rollKeep": 3,
+    "rollSides": 6,
+    "standardArray": [
+     15,
+     14,
+     13,
+     12,
+     10,
+     8
+    ],
+    "uniqueAttunement": true
+   },
+   "state": {
+    "schemaVersion": "6.2.0",
+    "operationId": "mira-adopt-play-01",
+    "inputs": {
+     "play": {
+      "temporaryHp": 0
+     }
+    },
+    "rules": {
+     "engineId": "dnd-engine",
+     "engineVersion": "6.0.0",
+     "engineGeneration": "c62c3bed851b0cbf0e73f12a5dca2878189b520e6b92c85c5b24737c5ae165e3",
+     "identity": {
+      "contentRevision": "5d2089edef3d1e9aed98e55942e3dcb975e523e80f11576799df2dca2ebce3e0",
+      "edition": "2024",
+      "providerAddonId": "dnd-2024-compendium",
+      "providerContractVersion": "3.0.0",
+      "providerGeneration": "0bc50c2e68702d6c59cd428500c15315294f481df14596c2023a824dd6769a82",
+      "rulesetId": "dnd-2024",
+      "rulesetVersion": 4
+     }
+    }
+   }
+  }
+ }
+}

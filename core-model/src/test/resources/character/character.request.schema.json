@@ -1,0 +1,1257 @@
+{
+  "$defs": {
+    "Build": {
+      "additionalProperties": false,
+      "properties": {
+        "background": {
+          "type": "string"
+        },
+        "baseScores": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "type": "object"
+        },
+        "choices": {
+          "items": {
+            "$ref": "#/$defs/Choice"
+          },
+          "type": "array"
+        },
+        "levels": {
+          "items": {
+            "$ref": "#/$defs/Level"
+          },
+          "type": "array"
+        },
+        "lineage": {
+          "type": "string"
+        },
+        "method": {
+          "enum": [
+            "array",
+            "point-buy",
+            "rolled"
+          ],
+          "type": "string"
+        },
+        "replacements": {
+          "items": {
+            "$ref": "#/$defs/ClassReplacement"
+          },
+          "type": "array"
+        },
+        "rolls": {
+          "items": {
+            "$ref": "#/$defs/Roll"
+          },
+          "type": "array"
+        },
+        "species": {
+          "type": "string"
+        },
+        "spells": {
+          "$ref": "#/$defs/SpellDecisions"
+        },
+        "subclasses": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "method",
+        "baseScores",
+        "rolls",
+        "species",
+        "lineage",
+        "background",
+        "levels",
+        "subclasses",
+        "choices",
+        "spells"
+      ],
+      "type": "object"
+    },
+    "Choice": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "slot": {
+          "type": "integer"
+        },
+        "value": {
+          "oneOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "additionalProperties": {
+                "maximum": 30,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "maxProperties": 6,
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "slot",
+        "value"
+      ],
+      "type": "object"
+    },
+    "ClassReplacement": {
+      "additionalProperties": false,
+      "properties": {
+        "classId": {
+          "type": "string"
+        },
+        "classLevel": {
+          "type": "integer"
+        },
+        "in": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "feat",
+            "spell"
+          ],
+          "type": "string"
+        },
+        "origin": {
+          "type": "string"
+        },
+        "out": {
+          "type": "string"
+        },
+        "slot": {
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/$defs/Reference"
+        }
+      },
+      "required": [
+        "source",
+        "classId",
+        "classLevel",
+        "kind",
+        "key",
+        "slot",
+        "out",
+        "in"
+      ],
+      "type": "object"
+    },
+    "Concentration": {
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "type": "string"
+        },
+        "saveDC": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "ref"
+      ],
+      "type": "object"
+    },
+    "Condition": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "level": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "level"
+      ],
+      "type": "object"
+    },
+    "Container": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "itemId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "type": "object"
+    },
+    "Effect": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "add",
+            "maximum",
+            "minimum",
+            "set"
+          ],
+          "type": "string"
+        },
+        "target": {
+          "enum": [
+            "abilityCap",
+            "abilityScore",
+            "armorClass",
+            "attunementLimit",
+            "initiative",
+            "maxHp",
+            "proficiency",
+            "resourceMax",
+            "savingThrow",
+            "sense",
+            "speed",
+            "spellAttack",
+            "spellSaveDC"
+          ],
+          "type": "string"
+        },
+        "value": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "target",
+        "mode",
+        "value"
+      ],
+      "type": "object"
+    },
+    "Grant": {
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "type": "boolean"
+        },
+        "actorId": {
+          "type": "string"
+        },
+        "condition": {
+          "enum": [
+            "always",
+            "attuned",
+            "equipped"
+          ],
+          "type": "string"
+        },
+        "effectiveLevel": {
+          "type": "integer"
+        },
+        "effects": {
+          "items": {
+            "$ref": "#/$defs/Effect"
+          },
+          "type": "array"
+        },
+        "expiresAt": {
+          "type": "string"
+        },
+        "feat": {
+          "$ref": "#/$defs/Reference"
+        },
+        "grantedAt": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "itemId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "waivers": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "reason",
+        "actorId",
+        "grantedAt",
+        "active",
+        "effectiveLevel",
+        "condition",
+        "effects",
+        "waivers"
+      ],
+      "type": "object"
+    },
+    "Hands": {
+      "additionalProperties": false,
+      "properties": {
+        "grip": {
+          "enum": [
+            "one",
+            "two"
+          ],
+          "type": "string"
+        },
+        "main": {
+          "type": "string"
+        },
+        "off": {
+          "type": "string"
+        },
+        "suspendedOff": {
+          "$ref": "#/$defs/SuspendedHand"
+        }
+      },
+      "required": [
+        "main",
+        "off",
+        "grip"
+      ],
+      "type": "object"
+    },
+    "Inputs": {
+      "additionalProperties": false,
+      "properties": {
+        "build": {
+          "$ref": "#/$defs/Build"
+        },
+        "grants": {
+          "items": {
+            "$ref": "#/$defs/Grant"
+          },
+          "type": "array"
+        },
+        "play": {
+          "$ref": "#/$defs/Play"
+        }
+      },
+      "required": [
+        "build",
+        "play",
+        "grants"
+      ],
+      "type": "object"
+    },
+    "Item": {
+      "additionalProperties": false,
+      "properties": {
+        "acquisition": {
+          "type": "string"
+        },
+        "attuned": {
+          "type": "boolean"
+        },
+        "baseItemId": {
+          "type": "string"
+        },
+        "bodyPlacement": {
+          "type": "string"
+        },
+        "bonus": {
+          "type": "integer"
+        },
+        "containerId": {
+          "type": "string"
+        },
+        "grantId": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "integer"
+        },
+        "reference": {
+          "$ref": "#/$defs/Reference"
+        },
+        "spellId": {
+          "type": "string"
+        },
+        "weightLb": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "quantity",
+        "location",
+        "attuned",
+        "acquisition",
+        "notes"
+      ],
+      "type": "object"
+    },
+    "Level": {
+      "additionalProperties": false,
+      "properties": {
+        "classId": {
+          "type": "string"
+        },
+        "hitPoints": {
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "classId"
+      ],
+      "type": "object"
+    },
+    "Play": {
+      "additionalProperties": false,
+      "properties": {
+        "activeFeatures": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "type": "object"
+        },
+        "asOf": {
+          "type": "string"
+        },
+        "coinWeight": {
+          "type": "boolean"
+        },
+        "concentration": {
+          "$ref": "#/$defs/Concentration"
+        },
+        "conditions": {
+          "items": {
+            "$ref": "#/$defs/Condition"
+          },
+          "type": "array"
+        },
+        "containers": {
+          "items": {
+            "$ref": "#/$defs/Container"
+          },
+          "type": "array"
+        },
+        "currency": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "type": "object"
+        },
+        "hands": {
+          "$ref": "#/$defs/Hands"
+        },
+        "hp": {
+          "type": "integer"
+        },
+        "inspiration": {
+          "type": "boolean"
+        },
+        "inventory": {
+          "items": {
+            "$ref": "#/$defs/Item"
+          },
+          "type": "array"
+        },
+        "preparedSpells": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": "object"
+        },
+        "quickUse": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "resourceUses": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "type": "object"
+        },
+        "rolls": {
+          "items": {
+            "$ref": "#/$defs/PlayRoll"
+          },
+          "type": "array"
+        },
+        "temporaryHp": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "rolls",
+        "hp",
+        "temporaryHp",
+        "inventory",
+        "currency",
+        "resourceUses",
+        "activeFeatures",
+        "preparedSpells",
+        "asOf"
+      ],
+      "type": "object"
+    },
+    "PlayCommand": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "operation": {
+              "const": "cast-granted-spell"
+            },
+            "slot": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "key",
+            "slot"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "classId": {
+              "type": "string"
+            },
+            "operation": {
+              "const": "cast-ritual"
+            },
+            "ref": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "classId",
+            "ref"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "classId": {
+              "type": "string"
+            },
+            "operation": {
+              "const": "cast-spell"
+            },
+            "ref": {
+              "type": "string"
+            },
+            "slot": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "classId",
+            "ref",
+            "slot"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "itemId": {
+              "type": "string"
+            },
+            "operation": {
+              "const": "consume-item"
+            }
+          },
+          "required": [
+            "operation",
+            "itemId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "acquisitionId": {
+              "type": "string"
+            },
+            "classId": {
+              "type": "string"
+            },
+            "operation": {
+              "const": "copy-spell"
+            },
+            "ref": {
+              "type": "string"
+            },
+            "scrollId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "classId",
+            "ref",
+            "scrollId",
+            "acquisitionId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "amount": {
+              "type": "integer"
+            },
+            "operation": {
+              "const": "damage"
+            }
+          },
+          "required": [
+            "operation",
+            "amount"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operation": {
+              "const": "end-concentration"
+            }
+          },
+          "required": [
+            "operation"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "amount": {
+              "type": "integer"
+            },
+            "operation": {
+              "const": "heal"
+            }
+          },
+          "required": [
+            "operation",
+            "amount"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operation": {
+              "const": "keep-concentration"
+            }
+          },
+          "required": [
+            "operation"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "feat",
+                "spell"
+              ],
+              "type": "string"
+            },
+            "operation": {
+              "const": "replace-class-choice"
+            },
+            "out": {
+              "type": "string"
+            },
+            "ref": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "kind",
+            "key",
+            "out",
+            "ref"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operation": {
+              "const": "rest"
+            },
+            "rest": {
+              "enum": [
+                "long",
+                "short"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "rest"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "ability": {
+              "type": "string"
+            },
+            "key": {
+              "type": "string"
+            },
+            "operation": {
+              "const": "select-casting-ability"
+            }
+          },
+          "required": [
+            "operation",
+            "key",
+            "ability"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "operation": {
+              "const": "select-grant-spell"
+            },
+            "ref": {
+              "type": "string"
+            },
+            "selected": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "operation",
+            "key",
+            "ref",
+            "selected"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "classId": {
+              "type": "string"
+            },
+            "operation": {
+              "const": "select-spell"
+            },
+            "ref": {
+              "type": "string"
+            },
+            "selected": {
+              "type": "boolean"
+            },
+            "selection": {
+              "enum": [
+                "cantrips",
+                "preparedSpells",
+                "spellbook"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "classId",
+            "ref",
+            "selection",
+            "selected"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "grip": {
+              "enum": [
+                "one",
+                "two"
+              ],
+              "type": "string"
+            },
+            "operation": {
+              "const": "set-grip"
+            }
+          },
+          "required": [
+            "operation",
+            "grip"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "hand": {
+              "enum": [
+                "main",
+                "off"
+              ],
+              "type": "string"
+            },
+            "itemId": {
+              "type": "string"
+            },
+            "operation": {
+              "const": "set-hand"
+            }
+          },
+          "required": [
+            "operation",
+            "hand",
+            "itemId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "amount": {
+              "type": "integer"
+            },
+            "operation": {
+              "const": "set-hp"
+            }
+          },
+          "required": [
+            "operation",
+            "amount"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "amount": {
+              "type": "integer"
+            },
+            "operation": {
+              "const": "set-temporary-hp"
+            }
+          },
+          "required": [
+            "operation",
+            "amount"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "operation": {
+              "const": "spend-hit-die"
+            },
+            "result": {
+              "type": "integer"
+            },
+            "rollId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "key",
+            "result",
+            "rollId"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "classId": {
+              "type": "string"
+            },
+            "operation": {
+              "const": "swap-spell"
+            },
+            "out": {
+              "type": "string"
+            },
+            "ref": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "operation",
+            "classId",
+            "out",
+            "ref"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "key": {
+              "type": "string"
+            },
+            "operation": {
+              "const": "toggle-feature"
+            }
+          },
+          "required": [
+            "operation",
+            "key",
+            "enabled"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "PlayRoll": {
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "type": "string"
+        },
+        "die": {
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "type": "string"
+        },
+        "resource": {
+          "type": "string"
+        },
+        "result": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "resource",
+        "die",
+        "result",
+        "at"
+      ],
+      "type": "object"
+    },
+    "Reference": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "type": "object"
+    },
+    "Roll": {
+      "additionalProperties": false,
+      "properties": {
+        "ability": {
+          "type": "string"
+        },
+        "dice": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kept": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "origin": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "ability",
+        "dice",
+        "kept"
+      ],
+      "type": "object"
+    },
+    "SpellAcquisition": {
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "type": "string"
+        },
+        "classId": {
+          "type": "string"
+        },
+        "costGp": {
+          "type": "number"
+        },
+        "id": {
+          "type": "string"
+        },
+        "level": {
+          "type": "integer"
+        },
+        "origin": {
+          "type": "string"
+        },
+        "scrollId": {
+          "type": "string"
+        },
+        "spellId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "classId",
+        "spellId",
+        "level",
+        "at",
+        "costGp"
+      ],
+      "type": "object"
+    },
+    "SpellDecisions": {
+      "additionalProperties": false,
+      "properties": {
+        "acquisitions": {
+          "items": {
+            "$ref": "#/$defs/SpellAcquisition"
+          },
+          "type": "array"
+        },
+        "cantrips": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": "object"
+        },
+        "castingAbilities": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "grantChoices": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": "object"
+        },
+        "spellbook": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": "object"
+        },
+        "swaps": {
+          "items": {
+            "$ref": "#/$defs/SpellSwap"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "cantrips",
+        "spellbook",
+        "grantChoices",
+        "castingAbilities",
+        "swaps",
+        "acquisitions"
+      ],
+      "type": "object"
+    },
+    "SpellSwap": {
+      "additionalProperties": false,
+      "properties": {
+        "classId": {
+          "type": "string"
+        },
+        "classLevel": {
+          "type": "integer"
+        },
+        "in": {
+          "type": "string"
+        },
+        "level": {
+          "type": "integer"
+        },
+        "origin": {
+          "type": "string"
+        },
+        "out": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "level",
+        "classLevel",
+        "classId",
+        "out",
+        "in"
+      ],
+      "type": "object"
+    },
+    "SuspendedHand": {
+      "additionalProperties": false,
+      "properties": {
+        "bodyPlacement": {
+          "type": "string"
+        },
+        "expectedItemSha256": {
+          "type": "string"
+        },
+        "itemId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "itemId",
+        "expectedItemSha256"
+      ],
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "adoptRules": {
+      "type": "boolean"
+    },
+    "change": {
+      "$ref": "#/$defs/PlayCommand"
+    },
+    "contractVersion": {
+      "type": "string"
+    },
+    "expectedRevision": {
+      "type": "integer"
+    },
+    "grant": {
+      "$ref": "#/$defs/Grant"
+    },
+    "grantId": {
+      "type": "string"
+    },
+    "inputs": {
+      "$ref": "#/$defs/Inputs"
+    },
+    "key": {
+      "type": "string"
+    },
+    "operation": {
+      "type": "string"
+    },
+    "operationId": {
+      "type": "string"
+    },
+    "reauthorizeGrants": {
+      "type": "boolean"
+    },
+    "token": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "contractVersion",
+    "key"
+  ],
+  "type": "object"
+}

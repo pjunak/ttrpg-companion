@@ -1,0 +1,116 @@
+{
+ "method": "save",
+ "params": {
+  "contractVersion": "character.v3",
+  "key": "mira-quill",
+  "operation": "play",
+  "operationId": "mira-play-0013",
+  "expectedRevision": 12,
+  "change": {
+   "operation": "consume-item",
+   "itemId": "potion"
+  }
+ },
+ "http": 200,
+ "ms": 213,
+ "response": {
+  "contractVersion": "client-service-result.v1",
+  "providerAddonId": "dnd-sheets",
+  "providerGeneration": "f9417c265c5abf294de452b47d3b2059594396e1c0448ced06e8f84aca2383b7",
+  "result": {
+   "contractVersion": "character-response.v3",
+   "status": "ready",
+   "message": "Saved",
+   "key": "mira-quill",
+   "revision": 13,
+   "actorId": "player-actor-1",
+   "role": "player",
+   "rulesChanged": false,
+   "policy": {
+    "conditionRules": "conditions-conditions",
+    "distanceUnit": "ft",
+    "maximumLevel": 20,
+    "minimumHpGain": 1,
+    "rollDice": 4,
+    "rollKeep": 3,
+    "rollSides": 6,
+    "standardArray": [
+     15,
+     14,
+     13,
+     12,
+     10,
+     8
+    ],
+    "uniqueAttunement": true
+   },
+   "state": {
+    "schemaVersion": "6.2.0",
+    "operationId": "mira-play-0013",
+    "inputs": {
+     "play": {
+      "inventory": [
+       {
+        "id": "staff",
+        "reference": {
+         "kind": "weapon",
+         "id": "quarterstaff"
+        },
+        "name": "Quarterstaff",
+        "quantity": 1,
+        "location": "equipped",
+        "attuned": false,
+        "acquisition": "",
+        "notes": ""
+       },
+       {
+        "id": "dagger",
+        "reference": {
+         "kind": "weapon",
+         "id": "dagger"
+        },
+        "name": "Dagger",
+        "quantity": 2,
+        "location": "carried",
+        "attuned": false,
+        "acquisition": "",
+        "notes": ""
+       },
+       {
+        "id": "potion",
+        "reference": {
+         "kind": "magic-item",
+         "id": "potion-of-healing"
+        },
+        "name": "Potion of Healing",
+        "quantity": 1,
+        "location": "carried",
+        "attuned": false,
+        "acquisition": "",
+        "notes": ""
+       }
+      ]
+     }
+    },
+    "projection": {
+     "sheet": {
+      "quickUse": [
+       {
+        "itemId": "potion",
+        "name": "Potion of Healing",
+        "quantity": 1,
+        "location": "carried",
+        "reference": {
+         "kind": "magic-item",
+         "id": "potion-of-healing"
+        },
+        "available": true,
+        "reason": ""
+       }
+      ]
+     }
+    }
+   }
+  }
+ }
+}

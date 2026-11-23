@@ -1,0 +1,241 @@
+{
+ "method": "save",
+ "params": {
+  "contractVersion": "character.v3",
+  "key": "mira-quill",
+  "operation": "play",
+  "operationId": "mira-play-0012",
+  "expectedRevision": 11,
+  "change": {
+   "operation": "spend-hit-die",
+   "key": "hit-dice-d6",
+   "result": 4,
+   "rollId": "mira-roll-0001"
+  }
+ },
+ "http": 200,
+ "ms": 208,
+ "response": {
+  "contractVersion": "client-service-result.v1",
+  "providerAddonId": "dnd-sheets",
+  "providerGeneration": "f9417c265c5abf294de452b47d3b2059594396e1c0448ced06e8f84aca2383b7",
+  "result": {
+   "contractVersion": "character-response.v3",
+   "status": "ready",
+   "message": "Saved",
+   "key": "mira-quill",
+   "revision": 12,
+   "actorId": "player-actor-1",
+   "role": "player",
+   "rulesChanged": false,
+   "policy": {
+    "conditionRules": "conditions-conditions",
+    "distanceUnit": "ft",
+    "maximumLevel": 20,
+    "minimumHpGain": 1,
+    "rollDice": 4,
+    "rollKeep": 3,
+    "rollSides": 6,
+    "standardArray": [
+     15,
+     14,
+     13,
+     12,
+     10,
+     8
+    ],
+    "uniqueAttunement": true
+   },
+   "state": {
+    "schemaVersion": "6.2.0",
+    "operationId": "mira-play-0012",
+    "inputs": {
+     "play": {
+      "rolls": [
+       {
+        "origin": "recorded",
+        "id": "mira-roll-0001",
+        "resource": "hit-dice-d6",
+        "die": 6,
+        "result": 4,
+        "at": "2026-11-23T10:37:05Z"
+       }
+      ],
+      "hp": 32,
+      "resourceUses": {
+       "arcane-recovery": 0,
+       "charge:feat:magic-initiate@background%3Asage:mi-spell": 0,
+       "charge:species:elf:detect-magic": 0,
+       "charge:species:elf:misty-step": 0,
+       "hit-dice-d6": 1,
+       "slot-1": 0,
+       "slot-2": 1,
+       "slot-3": 2
+      }
+     }
+    },
+    "projection": {
+     "sheet": {
+      "resources": [
+       {
+        "key": "arcane-recovery",
+        "name": "Arcane Recovery",
+        "max": 1,
+        "kind": "pool",
+        "recharge": [
+         {
+          "on": "long",
+          "amount": "full"
+         }
+        ],
+        "source": {
+         "type": "class",
+         "id": "wizard",
+         "level": 5
+        },
+        "spent": 0,
+        "remaining": 1
+       },
+       {
+        "key": "hit-dice-d6",
+        "name": "Hit Dice (d6)",
+        "max": 5,
+        "kind": "hitdice",
+        "die": "d6",
+        "recharge": [
+         {
+          "on": "long",
+          "amount": "full"
+         }
+        ],
+        "source": {
+         "type": "class"
+        },
+        "spent": 1,
+        "remaining": 4
+       },
+       {
+        "key": "slot-1",
+        "name": "Spell Slots (1st)",
+        "max": 4,
+        "kind": "slot",
+        "level": 1,
+        "recharge": [
+         {
+          "on": "long",
+          "amount": "full"
+         }
+        ],
+        "source": {
+         "type": "spellcasting"
+        },
+        "spent": 0,
+        "remaining": 4
+       },
+       {
+        "key": "slot-2",
+        "name": "Spell Slots (2nd)",
+        "max": 3,
+        "kind": "slot",
+        "level": 2,
+        "recharge": [
+         {
+          "on": "long",
+          "amount": "full"
+         }
+        ],
+        "source": {
+         "type": "spellcasting"
+        },
+        "spent": 1,
+        "remaining": 2
+       },
+       {
+        "key": "slot-3",
+        "name": "Spell Slots (3rd)",
+        "max": 2,
+        "kind": "slot",
+        "level": 3,
+        "recharge": [
+         {
+          "on": "long",
+          "amount": "full"
+         }
+        ],
+        "source": {
+         "type": "spellcasting"
+        },
+        "spent": 2,
+        "remaining": 0
+       },
+       {
+        "key": "charge:species:elf:detect-magic",
+        "name": "Detect Magic (free cast)",
+        "max": 1,
+        "kind": "charge",
+        "recharge": [
+         {
+          "on": "long",
+          "amount": "full"
+         }
+        ],
+        "source": {
+         "type": "species",
+         "id": "elf",
+         "level": 5
+        },
+        "spent": 0,
+        "remaining": 1
+       },
+       {
+        "key": "charge:species:elf:misty-step",
+        "name": "Misty Step (free cast)",
+        "max": 1,
+        "kind": "charge",
+        "recharge": [
+         {
+          "on": "long",
+          "amount": "full"
+         }
+        ],
+        "source": {
+         "type": "species",
+         "id": "elf",
+         "level": 5
+        },
+        "spent": 0,
+        "remaining": 1
+       },
+       {
+        "key": "charge:feat:magic-initiate@background%3Asage:mi-spell",
+        "name": "Feather Fall (free cast)",
+        "max": 1,
+        "kind": "charge",
+        "recharge": [
+         {
+          "on": "long",
+          "amount": "full"
+         }
+        ],
+        "source": {
+         "type": "feat",
+         "id": "magic-initiate",
+         "level": 5,
+         "name": "Magic Initiate",
+         "acquisition": {
+          "id": "background:sage",
+          "name": "Sage",
+          "classId": "",
+          "level": 1
+         }
+        },
+        "spent": 0,
+        "remaining": 1
+       }
+      ]
+     }
+    }
+   }
+  }
+ }
+}

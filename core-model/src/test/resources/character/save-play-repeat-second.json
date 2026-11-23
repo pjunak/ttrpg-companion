@@ -1,0 +1,35 @@
+{
+ "method": "save",
+ "params": {
+  "contractVersion": "character.v3",
+  "key": "mira-quill",
+  "operation": "play",
+  "operationId": "mira-play-twice-01",
+  "change": {
+   "operation": "damage",
+   "amount": 2
+  },
+  "expectedRevision": 13
+ },
+ "http": 200,
+ "ms": 22,
+ "response": {
+  "contractVersion": "client-service-result.v1",
+  "providerAddonId": "dnd-sheets",
+  "providerGeneration": "f9417c265c5abf294de452b47d3b2059594396e1c0448ced06e8f84aca2383b7",
+  "result": {
+   "contractVersion": "character-response.v3",
+   "status": "ready",
+   "message": "",
+   "key": "mira-quill",
+   "revision": 14,
+   "actorId": "player-actor-1",
+   "role": "player",
+   "rulesChanged": false,
+   "state": {
+    "schemaVersion": "6.2.0",
+    "operationId": "mira-play-twice-01"
+   }
+  }
+ }
+}

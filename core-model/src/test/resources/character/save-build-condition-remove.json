@@ -1,0 +1,299 @@
+{
+ "method": "save",
+ "params": {
+  "contractVersion": "character.v3",
+  "key": "mira-quill",
+  "operation": "build",
+  "operationId": "mira-build-0016",
+  "expectedRevision": 16,
+  "inputs": {
+   "build": {
+    "method": "array",
+    "baseScores": {
+     "CHA": 10,
+     "CON": 13,
+     "DEX": 14,
+     "INT": 15,
+     "STR": 8,
+     "WIS": 12
+    },
+    "rolls": [],
+    "species": "elf",
+    "lineage": "high-elf",
+    "background": "sage",
+    "levels": [
+     {
+      "id": "level-1",
+      "classId": "wizard"
+     },
+     {
+      "id": "level-2",
+      "classId": "wizard"
+     },
+     {
+      "id": "level-3",
+      "classId": "wizard"
+     },
+     {
+      "id": "level-4",
+      "classId": "wizard"
+     },
+     {
+      "id": "level-5",
+      "classId": "wizard"
+     }
+    ],
+    "subclasses": {
+     "wizard": "evoker"
+    },
+    "choices": [
+     {
+      "id": "species:elf:elf-keen-senses",
+      "slot": 0,
+      "value": "perception"
+     },
+     {
+      "id": "feat:magic-initiate@background%3Asage:spell-list",
+      "slot": 0,
+      "value": "wizard"
+     },
+     {
+      "id": "bgasi",
+      "slot": 0,
+      "value": {
+       "INT": 2,
+       "CON": 1
+      }
+     },
+     {
+      "id": "skills:wizard",
+      "slot": 0,
+      "value": "insight"
+     },
+     {
+      "id": "skills:wizard",
+      "slot": 1,
+      "value": "investigation"
+     },
+     {
+      "id": "wizard-scholar",
+      "slot": 0,
+      "value": "arcana"
+     },
+     {
+      "id": "asi:wizard:4",
+      "slot": 0,
+      "value": "asi"
+     },
+     {
+      "id": "asi:wizard:4:ability",
+      "slot": 0,
+      "value": {
+       "INT": 1,
+       "DEX": 1
+      }
+     }
+    ],
+    "spells": {
+     "cantrips": {
+      "wizard": [
+       "fire-bolt",
+       "mage-hand",
+       "light",
+       "prestidigitation"
+      ]
+     },
+     "spellbook": {
+      "wizard": [
+       "detect-magic",
+       "find-familiar",
+       "identify",
+       "comprehend-languages",
+       "magic-missile",
+       "shield",
+       "mage-armor",
+       "thunderwave",
+       "misty-step",
+       "hold-person",
+       "scorching-ray",
+       "shatter",
+       "web",
+       "invisibility",
+       "fireball",
+       "counterspell",
+       "lightning-bolt"
+      ]
+     },
+     "grantChoices": {
+      "feat:magic-initiate@background%3Asage:mi-cantrips": [
+       "minor-illusion",
+       "ray-of-frost"
+      ],
+      "feat:magic-initiate@background%3Asage:mi-spell": [
+       "feather-fall"
+      ],
+      "species:elf:he-cantrip": [
+       "mending"
+      ]
+     },
+     "castingAbilities": {
+      "feat:magic-initiate@background%3Asage:magic-initiate-casting": "INT"
+     },
+     "swaps": [],
+     "acquisitions": []
+    }
+   },
+   "play": {
+    "conditions": [],
+    "quickUse": [
+     "potion"
+    ],
+    "rolls": [
+     {
+      "origin": "recorded",
+      "id": "mira-roll-0001",
+      "resource": "hit-dice-d6",
+      "die": 6,
+      "result": 4,
+      "at": "2026-11-23T10:37:05Z"
+     }
+    ],
+    "hp": 32,
+    "temporaryHp": 3,
+    "inventory": [
+     {
+      "id": "staff",
+      "reference": {
+       "kind": "weapon",
+       "id": "quarterstaff"
+      },
+      "name": "Quarterstaff",
+      "quantity": 1,
+      "location": "equipped",
+      "attuned": false,
+      "acquisition": "",
+      "notes": ""
+     },
+     {
+      "id": "dagger",
+      "reference": {
+       "kind": "weapon",
+       "id": "dagger"
+      },
+      "name": "Dagger",
+      "quantity": 2,
+      "location": "carried",
+      "attuned": false,
+      "acquisition": "",
+      "notes": ""
+     },
+     {
+      "id": "potion",
+      "reference": {
+       "kind": "magic-item",
+       "id": "potion-of-healing"
+      },
+      "name": "Potion of Healing",
+      "quantity": 1,
+      "location": "carried",
+      "attuned": false,
+      "acquisition": "",
+      "notes": ""
+     }
+    ],
+    "currency": {
+     "cp": 5,
+     "gp": 37,
+     "sp": 12
+    },
+    "resourceUses": {
+     "arcane-recovery": 0,
+     "charge:feat:magic-initiate@background%3Asage:mi-spell": 0,
+     "charge:species:elf:detect-magic": 0,
+     "charge:species:elf:misty-step": 0,
+     "hit-dice-d6": 1,
+     "slot-1": 0,
+     "slot-2": 1,
+     "slot-3": 2
+    },
+    "activeFeatures": {},
+    "preparedSpells": {
+     "wizard": [
+      "magic-missile",
+      "shield",
+      "mage-armor",
+      "detect-magic",
+      "misty-step",
+      "hold-person",
+      "web",
+      "fireball",
+      "counterspell"
+     ]
+    },
+    "asOf": "2026-11-23T10:37:06Z"
+   },
+   "grants": []
+  }
+ },
+ "http": 200,
+ "ms": 148,
+ "response": {
+  "contractVersion": "client-service-result.v1",
+  "providerAddonId": "dnd-sheets",
+  "providerGeneration": "f9417c265c5abf294de452b47d3b2059594396e1c0448ced06e8f84aca2383b7",
+  "result": {
+   "contractVersion": "character-response.v3",
+   "status": "ready",
+   "message": "Saved",
+   "key": "mira-quill",
+   "revision": 17,
+   "actorId": "player-actor-1",
+   "role": "player",
+   "rulesChanged": false,
+   "policy": {
+    "conditionRules": "conditions-conditions",
+    "distanceUnit": "ft",
+    "maximumLevel": 20,
+    "minimumHpGain": 1,
+    "rollDice": 4,
+    "rollKeep": 3,
+    "rollSides": 6,
+    "standardArray": [
+     15,
+     14,
+     13,
+     12,
+     10,
+     8
+    ],
+    "uniqueAttunement": true
+   },
+   "state": {
+    "schemaVersion": "6.2.0",
+    "operationId": "mira-build-0016",
+    "inputs": {
+     "play": {}
+    },
+    "projection": {
+     "sheet": {
+      "derived": {
+       "armorClass": 12,
+       "hitDie": "d6",
+       "initiative": 2,
+       "maxHp": 32,
+       "passivePerception": 14,
+       "proficiencyBonus": 3,
+       "speed": 30,
+       "size": "Medium"
+      },
+      "speed": 30,
+      "conditions": [],
+      "conditionEffects": {
+       "d20Adjustment": 0
+      }
+     }
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,15 @@
+{
+ "http": 200,
+ "response": {
+  "contract": "dnd5e.rules-engine",
+  "contractVersion": "client-service-connection.v1",
+  "providers": [
+   {
+    "addonId": "dnd-engine",
+    "contractVersion": "6.0.0",
+    "generation": "c62c3bed851b0cbf0e73f12a5dca2878189b520e6b92c85c5b24737c5ae165e3"
+   }
+  ],
+  "range": "^6.0.0"
+ }
+}

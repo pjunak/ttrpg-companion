@@ -1,0 +1,9 @@
+{
+ "http": 200,
+ "response": {
+  "contract": "dnd5e.character",
+  "contractVersion": "client-service-connection.v1",
+  "providers": [],
+  "range": "^4.0.0"
+ }
+}

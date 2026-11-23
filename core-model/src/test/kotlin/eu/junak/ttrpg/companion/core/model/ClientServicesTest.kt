@@ -4,9 +4,14 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class ClientServicesTest {
 
@@ -70,6 +75,43 @@ class ClientServicesTest {
         assertThrows(IllegalArgumentException::class.java) { call.copy(deadlineMs = 0) }
         assertThrows(IllegalArgumentException::class.java) { call.copy(deadlineMs = 30_001) }
         assertThrows(IllegalArgumentException::class.java) { call.copy(method = "") }
+    }
+
+    /** A recording from `src/test/resources/character` (see its README). */
+    private fun recorded(name: String): JsonObject =
+        Json.parseToJsonElement(checkNotNull(javaClass.getResource("/character/$name.json")).readText()).jsonObject
+
+    private fun recordedConnection(name: String) =
+        ClientServiceConnection.parse(recorded(name).getValue("response"), "dnd5e.character", "^4.0.0")
+
+    @Test
+    fun recordedConnectionsParse() {
+        assertEquals(emptyList<ClientServiceProvider>(), recordedConnection("connect-absent").providers)
+        val provider = recordedConnection("connect-present").providers.single()
+        assertEquals("4.0.0", provider.contractVersion)
+        assertEquals(64, provider.generation.length)
+    }
+
+    @Test
+    fun everyRecordedCallAnswerIsTheCharacterServicesResult() {
+        val provider = recordedConnection("connect-present").providers.single()
+        val files = File(checkNotNull(javaClass.getResource("/character")).toURI()).listFiles().orEmpty()
+            .map { it.name.removeSuffix(".json") }
+            .filter { it.startsWith("load-") || it.startsWith("save-") }
+        assertTrue(files.size > 30)
+        for (name in files) {
+            val recording = recorded(name)
+            val params = recording.getValue("params").jsonObject
+            val call = ClientServiceCall("dnd5e.character", provider, recording.getValue("method").jsonPrimitive.content, params, 30_000)
+            val response = recording.getValue("response")
+            if (recording.getValue("http").jsonPrimitive.int != 200) {
+                assertThrows(name, HostFormatException::class.java) { call.result(response) }
+                continue
+            }
+            val result = call.result(response).jsonObject
+            assertEquals(name, "character-response.v3", result.getValue("contractVersion").jsonPrimitive.content)
+            assertEquals(name, params.getValue("key"), result.getValue("key"))
+        }
     }
 
     @Test

@@ -1,0 +1,40 @@
+{
+ "method": "save",
+ "params": {
+  "contractVersion": "character.v3",
+  "key": "mira-quill",
+  "operation": "play",
+  "operationId": "mira-play-101",
+  "expectedRevision": 24,
+  "change": {
+   "operation": "damage",
+   "amount": 1
+  }
+ },
+ "http": 200,
+ "ms": 20,
+ "response": {
+  "contractVersion": "client-service-result.v1",
+  "providerAddonId": "dnd-sheets",
+  "providerGeneration": "f9417c265c5abf294de452b47d3b2059594396e1c0448ced06e8f84aca2383b7",
+  "result": {
+   "contractVersion": "character-response.v3",
+   "status": "unavailable",
+   "message": "Compatible rules are unavailable. The saved character remains readable, printable and exportable.",
+   "key": "mira-quill",
+   "revision": 24,
+   "actorId": "player-actor-2",
+   "role": "player",
+   "rulesChanged": false,
+   "state": {
+    "schemaVersion": "6.2.0",
+    "operationId": "mira-time-4-0000",
+    "inputs": {
+     "play": {
+      "temporaryHp": 0
+     }
+    }
+   }
+  }
+ }
+}

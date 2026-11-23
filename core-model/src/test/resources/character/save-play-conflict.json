@@ -1,0 +1,35 @@
+{
+ "method": "save",
+ "params": {
+  "contractVersion": "character.v3",
+  "key": "mira-quill",
+  "operation": "play",
+  "operationId": "mira-play-stale-01",
+  "expectedRevision": 12,
+  "change": {
+   "operation": "damage",
+   "amount": 1
+  }
+ },
+ "http": 200,
+ "ms": 19,
+ "response": {
+  "contractVersion": "client-service-result.v1",
+  "providerAddonId": "dnd-sheets",
+  "providerGeneration": "f9417c265c5abf294de452b47d3b2059594396e1c0448ced06e8f84aca2383b7",
+  "result": {
+   "contractVersion": "character-response.v3",
+   "status": "conflict",
+   "message": "The character changed in another session. Reload before editing the same values.",
+   "key": "mira-quill",
+   "revision": 13,
+   "actorId": "player-actor-1",
+   "role": "player",
+   "rulesChanged": false,
+   "state": {
+    "schemaVersion": "6.2.0",
+    "operationId": "mira-play-0013"
+   }
+  }
+ }
+}

@@ -1,0 +1,81 @@
+{
+ "method": "load",
+ "params": {
+  "contractVersion": "character.v3",
+  "key": "no-such-character"
+ },
+ "http": 200,
+ "ms": 16,
+ "response": {
+  "contractVersion": "client-service-result.v1",
+  "providerAddonId": "dnd-sheets",
+  "providerGeneration": "f9417c265c5abf294de452b47d3b2059594396e1c0448ced06e8f84aca2383b7",
+  "result": {
+   "contractVersion": "character-response.v3",
+   "status": "ready",
+   "message": "",
+   "key": "no-such-character",
+   "revision": 0,
+   "actorId": "player-actor-1",
+   "role": "player",
+   "rulesChanged": false,
+   "policy": {
+    "conditionRules": "conditions-conditions",
+    "distanceUnit": "ft",
+    "maximumLevel": 20,
+    "minimumHpGain": 1,
+    "rollDice": 4,
+    "rollKeep": 3,
+    "rollSides": 6,
+    "standardArray": [
+     15,
+     14,
+     13,
+     12,
+     10,
+     8
+    ],
+    "uniqueAttunement": true
+   },
+   "evaluation": {
+    "inputs": {
+     "build": {
+      "method": "point-buy",
+      "baseScores": {},
+      "rolls": [],
+      "species": "",
+      "lineage": "",
+      "background": "",
+      "levels": [],
+      "subclasses": {},
+      "choices": [],
+      "spells": {
+       "cantrips": {},
+       "spellbook": {},
+       "grantChoices": {},
+       "castingAbilities": {},
+       "swaps": [],
+       "acquisitions": []
+      }
+     },
+     "play": {
+      "rolls": [],
+      "hp": 0,
+      "temporaryHp": 0,
+      "inventory": [],
+      "currency": {},
+      "resourceUses": {},
+      "activeFeatures": {},
+      "preparedSpells": {},
+      "asOf": "2026-11-23T10:37:03Z"
+     },
+     "grants": []
+    },
+    "ready": false,
+    "sheet": {
+     "status": "needs-choices"
+    }
+   }
+  }
+ }
+}
