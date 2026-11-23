@@ -164,7 +164,12 @@ sealed interface EditorStatus {
     data object Loading : EditorStatus
     data object Editing : EditorStatus
     data object Saving : EditorStatus
-    data object Done : EditorStatus
+
+    /** The event was saved; the editor closes. */
+    data object Saved : EditorStatus
+
+    /** The event was deleted; the editor closes and so does the deleted event's page. */
+    data object Deleted : EditorStatus
     data class Problem(val problem: SaveProblem) : EditorStatus
 
     /** The campaign could not be loaded, so there is no event to edit yet; [problem] says why when known. */
@@ -271,7 +276,7 @@ class EventEditorViewModel @Inject constructor(
         viewModelScope.launch {
             _status.value = EditorStatus.Saving
             val result = writer.save(site, opening, fields, overwrite)
-            _status.value = if (result == EventSaveResult.Saved) EditorStatus.Done else EditorStatus.Problem(result.problem())
+            _status.value = if (result == EventSaveResult.Saved) EditorStatus.Saved else EditorStatus.Problem(result.problem())
             settleLeave(result)
         }
     }
@@ -282,13 +287,34 @@ class EventEditorViewModel @Inject constructor(
         viewModelScope.launch {
             _status.value = EditorStatus.Saving
             val result = writer.delete(site, opening)
-            _status.value = if (result == EventSaveResult.Saved) EditorStatus.Done else EditorStatus.Problem(result.problem())
+            _status.value = if (result == EventSaveResult.Saved) EditorStatus.Deleted else EditorStatus.Problem(result.problem())
             settleLeave(result)
         }
     }
 
     fun dismissProblem() {
         if (_status.value is EditorStatus.Problem) _status.value = EditorStatus.Editing
+    }
+
+    /**
+     * After a delete refused because the event changed: starts again from the
+     * event as it is stored now, replacing the draft, so the user sees the
+     * change and can delete it or keep editing.
+     */
+    fun reload() {
+        val key = base?.takeUnless { it.creating }?.key ?: return
+        val record = campaign.value.dataset?.record(CampaignPage.EVENTS.collection, key)
+        if (record == null) {
+            _status.value = EditorStatus.Problem(SaveProblem.Gone)
+            return
+        }
+        val opening = EventBase.of(record)
+        remember(opening)
+        val latest = EventFields.of(opening.value)
+        initial = latest
+        fields = latest
+        saveDraft(latest)
+        _status.value = EditorStatus.Editing
     }
 
     /** Leaving the editor: at once, unless changes would be lost or a save is still on its way. */

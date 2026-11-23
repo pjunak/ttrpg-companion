@@ -101,7 +101,7 @@ class EventEditorViewModelTest {
 
         assertEquals(draft, second.fields)
         assertTrue("the draft still differs from the event as it opened", second.dirty)
-        assertEquals(EditorStatus.Done, write(second) { second.save() })
+        assertEquals(EditorStatus.Saved, write(second) { second.save() })
         // Saving merges against the event as it first opened, so the rename made meanwhile stays.
         val value = mutation(0)["value"]!!.jsonObject
         assertEquals("Arrival at dusk", value["name"]?.jsonPrimitive?.content)
@@ -146,7 +146,7 @@ class EventEditorViewModelTest {
         assertTrue(write(editor) { editor.save() } is EditorStatus.Problem)
 
         editor.update(EventFields(name = "Ambush at the ford", sitting = 3))
-        assertEquals(EditorStatus.Done, write(editor) { editor.save() })
+        assertEquals(EditorStatus.Saved, write(editor) { editor.save() })
 
         val key = mutation(0)["key"]?.jsonPrimitive?.content!!
         assertTrue(key.startsWith("ambush-"))
@@ -167,6 +167,46 @@ class EventEditorViewModelTest {
 
         assertEquals(EditorStatus.Problem(SaveProblem.ChangedBeforeDelete), write(editor) { editor.delete() })
         assertTrue(f.host.commits.isEmpty())
+    }
+
+    @Test
+    fun aDeletedEventEndsAsDeletedNotSaved() = runTest {
+        val editor = editor(handle("key" to "arrival"))
+        assertEquals(EditorStatus.Deleted, write(editor) { editor.delete() })
+        assertEquals("delete", mutation(0)["operation"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun aRefusedDeleteCanLoadTheLatestEventAndDeleteThat() = runTest {
+        val editor = editor(handle("key" to "arrival"))
+        editor.update(editor.fields!!.copy(description = "Rain and fog."))
+        f.host.campaign = campaign(renamed)
+        f.campaigns.refresh(site)
+        assertEquals(EditorStatus.Problem(SaveProblem.ChangedBeforeDelete), write(editor) { editor.delete() })
+
+        editor.reload()
+
+        assertEquals(EditorStatus.Editing, editor.status.value)
+        assertEquals("the latest version replaces the draft", "Arrival at dusk", editor.fields?.name)
+        assertEquals("Rain.", editor.fields?.description)
+        assertFalse(editor.dirty)
+        assertEquals(EditorStatus.Deleted, write(editor) { editor.delete() })
+        assertEquals(3L, mutation(0)["expectedRevision"]?.jsonPrimitive?.content?.toLong())
+    }
+
+    @Test
+    fun theLatestEventSurvivesProcessDeathAfterReloading() = runTest {
+        val state = handle("key" to "arrival")
+        val editor = editor(state)
+        f.host.campaign = campaign(renamed)
+        f.campaigns.refresh(site)
+        write(editor) { editor.delete() }
+        editor.reload()
+
+        val restored = editor(restored(state))
+
+        assertEquals("Arrival at dusk", restored.fields?.name)
+        assertFalse(restored.dirty)
     }
 
     @Test
@@ -202,7 +242,7 @@ class EventEditorViewModelTest {
         editor.update(draft.copy(description = "Typed while saving."))
         assertEquals(draft, editor.fields)
         release.countDown()
-        assertEquals(EditorStatus.Done, editor.status.first { it != EditorStatus.Saving })
+        assertEquals(EditorStatus.Saved, editor.status.first { it != EditorStatus.Saving })
     }
 
     @Test

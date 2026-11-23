@@ -82,11 +82,12 @@ import eu.junak.ttrpg.companion.ui.theme.optionColor
  * Creates or edits one event: name, session, date, priority, summary,
  * Markdown description, the characters and places involved and, for the DM,
  * whether only the DM sees it. Saving merges with changes made elsewhere;
- * leaving with unsaved changes asks first.
+ * leaving with unsaved changes asks first. [onDeleted] replaces [onClose]
+ * after a delete, so the deleted event's page can be left too.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EventEditScreen(onClose: () -> Unit, viewModel: EventEditorViewModel = hiltViewModel()) {
+fun EventEditScreen(onClose: () -> Unit, onDeleted: () -> Unit, viewModel: EventEditorViewModel = hiltViewModel()) {
     val spacing = LocalSpacing.current
     val status by viewModel.status.collectAsStateWithLifecycle()
     val draft = viewModel.fields
@@ -94,9 +95,12 @@ fun EventEditScreen(onClose: () -> Unit, viewModel: EventEditorViewModel = hiltV
     val saving = status == EditorStatus.Saving
     val leaving by viewModel.leave.collectAsStateWithLifecycle()
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
-    val closing = status == EditorStatus.Done || leaving == Leave.GO
-    LaunchedEffect(closing) { if (closing) onClose() }
-    BackHandler(enabled = !closing, onBack = viewModel::requestLeave)
+    val deleted = status == EditorStatus.Deleted
+    val closing = !deleted && (status == EditorStatus.Saved || leaving == Leave.GO)
+    LaunchedEffect(closing, deleted) {
+        if (deleted) onDeleted() else if (closing) onClose()
+    }
+    BackHandler(enabled = !closing && !deleted, onBack = viewModel::requestLeave)
 
     Scaffold(
         topBar = {
@@ -140,7 +144,7 @@ fun EventEditScreen(onClose: () -> Unit, viewModel: EventEditorViewModel = hiltV
                 .verticalScroll(rememberScrollState()).padding(spacing.md),
             verticalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
-            (status as? EditorStatus.Problem)?.problem?.takeUnless { it is SaveProblem.Conflict }?.let {
+            (status as? EditorStatus.Problem)?.problem?.takeUnless { it is SaveProblem.Conflict || it is SaveProblem.ChangedBeforeDelete }?.let {
                 Text(saveProblemText(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             }
             // Locked while saving, so nothing typed meanwhile is dropped when the editor closes.
@@ -148,16 +152,26 @@ fun EventEditScreen(onClose: () -> Unit, viewModel: EventEditorViewModel = hiltV
         }
     }
 
-    (status as? EditorStatus.Problem)?.problem?.let { problem ->
-        if (problem is SaveProblem.Conflict) {
-            AlertDialog(
-                onDismissRequest = viewModel::dismissProblem,
-                title = { Text(stringResource(R.string.save_conflict_title)) },
-                text = { Text(stringResource(R.string.save_conflict_text, problem.fields.map { storedFieldLabel(it) }.joinToString(", "))) },
-                confirmButton = { TextButton(onClick = { viewModel.save(overwrite = true) }) { Text(stringResource(R.string.action_overwrite)) } },
-                dismissButton = { TextButton(onClick = viewModel::dismissProblem) { Text(stringResource(R.string.action_keep_editing)) } },
-            )
-        }
+    when (val problem = (status as? EditorStatus.Problem)?.problem) {
+        is SaveProblem.Conflict -> AlertDialog(
+            onDismissRequest = viewModel::dismissProblem,
+            title = { Text(stringResource(R.string.save_conflict_title)) },
+            text = { Text(stringResource(R.string.save_conflict_text, problem.fields.map { storedFieldLabel(it) }.joinToString(", "))) },
+            confirmButton = { TextButton(onClick = { viewModel.save(overwrite = true) }) { Text(stringResource(R.string.action_overwrite)) } },
+            dismissButton = { TextButton(onClick = viewModel::dismissProblem) { Text(stringResource(R.string.action_keep_editing)) } },
+        )
+        SaveProblem.ChangedBeforeDelete -> AlertDialog(
+            onDismissRequest = viewModel::dismissProblem,
+            title = { Text(stringResource(R.string.save_conflict_title)) },
+            text = {
+                val reload = stringResource(R.string.delete_reload_text)
+                val replaces = if (viewModel.dirty) " " + stringResource(R.string.delete_reload_replaces) else ""
+                Text(stringResource(R.string.delete_changed) + " " + reload + replaces)
+            },
+            confirmButton = { TextButton(onClick = viewModel::reload) { Text(stringResource(R.string.action_load_latest)) } },
+            dismissButton = { TextButton(onClick = viewModel::dismissProblem) { Text(stringResource(R.string.action_keep_editing)) } },
+        )
+        else -> Unit
     }
     LeaveDialog(
         leave = leaving,

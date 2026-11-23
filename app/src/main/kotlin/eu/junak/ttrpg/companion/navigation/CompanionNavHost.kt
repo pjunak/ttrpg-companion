@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -145,8 +146,21 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?, updatePen
                 )
             }
         }
-        composable<EventEditRoute> {
-            SiteScope { EventEditScreen(onClose = navController::popBackStack) }
+        composable<EventEditRoute> { backStack ->
+            val route = backStack.toRoute<EventEditRoute>()
+            SiteScope {
+                EventEditScreen(
+                    onClose = navController::popBackStack,
+                    onDeleted = {
+                        // Leave the deleted event's page too when the editor was opened from it.
+                        val below = navController.previousBackStackEntry
+                        val itsPage = below != null && below.destination.hasRoute<RecordRoute>() &&
+                            below.toRoute<RecordRoute>().let { it.pageId == CampaignPage.EVENTS.id && it.key == route.key }
+                        navController.popBackStack()
+                        if (itsPage) navController.popBackStack()
+                    },
+                )
+            }
         }
         composable<MapRoute> { backStack ->
             val siteId = backStack.toRoute<MapRoute>().siteId
