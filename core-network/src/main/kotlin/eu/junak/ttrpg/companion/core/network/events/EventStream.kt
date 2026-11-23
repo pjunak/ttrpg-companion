@@ -3,9 +3,11 @@ package eu.junak.ttrpg.companion.core.network.events
 import eu.junak.ttrpg.companion.core.model.HostEvent
 import eu.junak.ttrpg.companion.core.model.HostJson
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
@@ -26,6 +28,11 @@ import javax.inject.Singleton
  * Follows a site's shared event stream (`GET /api/events`). The flow reconnects
  * with a growing delay and resumes from the last cursor, so the host replays
  * what was missed or sends `reset`. Collect it only while the app is visible.
+ *
+ * Nothing is dropped: the host bounds a replay to 256 events and a collector
+ * that only reloads keeps up, so the buffer stays small. An event the app
+ * cannot read is passed on as [HostEvent.Other] with its cursor, so the stream
+ * moves past it instead of replaying it on every reconnect.
  */
 @Singleton
 class EventStream @Inject constructor(@param:Named("events") private val client: OkHttpClient) {
@@ -57,9 +64,10 @@ class EventStream @Inject constructor(@param:Named("events") private val client:
             request,
             object : EventSourceListener() {
                 override fun onEvent(eventSource: EventSource, id: String?, type: String?, data: String) {
-                    runCatching { HostEvent.parse(type ?: "message", HostJson.parseToJsonElement(data), id) }
-                        .onSuccess { trySend(it) }
-                        .onFailure { close(IOException("Malformed event: ${it.message}")) }
+                    val name = type ?: "message"
+                    val event = runCatching { HostEvent.parse(name, HostJson.parseToJsonElement(data), id) }.getOrNull()
+                        ?: id?.toLongOrNull()?.let { HostEvent.Other(it, name) }
+                    if (event != null) trySend(event)
                 }
 
                 override fun onClosed(eventSource: EventSource) {
@@ -72,7 +80,7 @@ class EventStream @Inject constructor(@param:Named("events") private val client:
             },
         )
         awaitClose { source.cancel() }
-    }
+    }.buffer(Channel.UNLIMITED)
 
     private companion object {
         const val INITIAL_BACKOFF_MS = 2_000L

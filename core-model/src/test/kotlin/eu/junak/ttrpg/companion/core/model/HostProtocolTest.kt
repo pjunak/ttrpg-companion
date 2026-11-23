@@ -70,4 +70,11 @@ class HostProtocolTest {
             HostEvent.parse("browser-addons-changed", Json.parseToJsonElement("{}"), "43"),
         )
     }
+
+    /** The host's recovery restore (`docs/reference/EVENT_STREAM.md`, "Campaign recovery"). */
+    @Test
+    fun aRestoreAsksForAReload() {
+        val restored = """{"sequence":44,"topic":"campaign-restored","revision":"3","occurredAt":"2026-11-23T10:00:00Z","metadata":{}}"""
+        assertEquals(HostEvent.CampaignRestored(44), HostEvent.parse("campaign-restored", Json.parseToJsonElement(restored), "44"))
+    }
 }

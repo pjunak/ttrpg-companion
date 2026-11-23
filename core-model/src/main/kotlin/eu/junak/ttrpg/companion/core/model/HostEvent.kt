@@ -17,7 +17,10 @@ sealed interface HostEvent {
 
     data class CampaignChanged(override val cursor: Long, val collection: String) : HostEvent
 
-    /** Add-on, recovery and other topics the app does not act on yet. */
+    /** The campaign was restored from a recovery point: reload everything (`campaign-restored`). */
+    data class CampaignRestored(override val cursor: Long) : HostEvent
+
+    /** Add-on and other topics the app does not act on, and events it cannot read; only their cursor counts. */
     data class Other(override val cursor: Long, val name: String) : HostEvent
 
     companion object {
@@ -34,6 +37,7 @@ sealed interface HostEvent {
                 "hello" -> Hello(cursor)
                 "reset" -> Reset(cursor)
                 "campaign-data-changed" -> CampaignChanged(cursor, body.text("resourceId"))
+                "campaign-restored" -> CampaignRestored(cursor)
                 else -> Other(cursor, name)
             }
         }
