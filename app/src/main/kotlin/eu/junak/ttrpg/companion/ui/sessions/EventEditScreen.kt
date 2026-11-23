@@ -140,13 +140,17 @@ fun EventEditScreen(onClose: () -> Unit, onDeleted: () -> Unit, viewModel: Event
             }
             return@Scaffold
         }
+        val scroll = rememberScrollState()
+        val inlineProblem = (status as? EditorStatus.Problem)?.problem?.takeUnless { it is SaveProblem.Conflict || it is SaveProblem.ChangedBeforeDelete }
+        // Save sits in the top bar; scroll up so its problem shows even when the form was scrolled down.
+        LaunchedEffect(inlineProblem) { if (inlineProblem != null) scroll.animateScrollTo(0) }
         Column(
             // The scaffold's padding holds the navigation bar, which the keyboard's inset covers too.
             Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize().imePadding()
-                .readableWidth().verticalScroll(rememberScrollState()).padding(spacing.md),
+                .readableWidth().verticalScroll(scroll).padding(spacing.md),
             verticalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
-            (status as? EditorStatus.Problem)?.problem?.takeUnless { it is SaveProblem.Conflict || it is SaveProblem.ChangedBeforeDelete }?.let {
+            inlineProblem?.let {
                 Text(saveProblemText(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             }
             // Locked while saving, so nothing typed meanwhile is dropped when the editor closes.
