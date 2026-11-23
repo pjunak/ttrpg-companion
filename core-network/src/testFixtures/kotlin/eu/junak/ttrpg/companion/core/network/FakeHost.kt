@@ -1,8 +1,11 @@
 package eu.junak.ttrpg.companion.core.network
 
 import android.content.SharedPreferences
+import eu.junak.ttrpg.companion.core.model.ClientServiceProvider
+import eu.junak.ttrpg.companion.core.model.HostJson
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignRepository
 import eu.junak.ttrpg.companion.core.network.campaign.EventWriter
+import eu.junak.ttrpg.companion.core.network.services.AddonServices
 import eu.junak.ttrpg.companion.core.network.session.SessionVault
 import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
 import eu.junak.ttrpg.companion.core.network.site.Site
@@ -12,6 +15,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import mockwebserver3.Dispatcher
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -61,6 +69,26 @@ class FakeHost : Dispatcher() {
     /** The bodies of every transaction received, committed or not. */
     val commits = CopyOnWriteArrayList<String>()
 
+    /** The session's CSRF token; changing it stands for a new session, as after signing in again. */
+    @Volatile var csrfToken = "t".repeat(43)
+
+    /**
+     * The live providers `POST /api/services/connect` lists for each contract,
+     * in the host's order; a contract missing here has none. A call reaches
+     * only a provider listed here with the same version and generation; any
+     * other answers `STALE_BINDING`, as on the real host.
+     */
+    val providers = ConcurrentHashMap<String, List<ClientServiceProvider>>()
+
+    /** Answers for the next service calls that pass the session check, in order. */
+    val serviceAnswers = ConcurrentLinkedQueue<MockResponse>()
+
+    /** The `result` of a service call without a scripted answer. */
+    @Volatile var serviceResult = """{"ok":true}"""
+
+    /** Every request to the service routes, with or without a session. */
+    val serviceRequests = CopyOnWriteArrayList<RecordedRequest>()
+
     private val passwords = mapOf("dm-secret" to "dm", "player-secret" to "player")
 
     override fun dispatch(request: RecordedRequest): MockResponse {
@@ -92,12 +120,58 @@ class FakeHost : Dispatcher() {
                 if (role.takeIf { hasCookie } == null) return error(403, "FORBIDDEN")
                 commitAnswers.poll() ?: json(RECEIPT)
             }
+            "/api/services/connect", "/api/services/call" -> service(request, session)
             else -> error(404, "NOT_FOUND")
         }
     }
 
+    private fun service(request: RecordedRequest, session: String?): MockResponse {
+        // Hosts before 2.2.0 have no such route; Go's router answers 405 in plain text.
+        if (!clientServices()) {
+            return MockResponse.Builder().code(405).body("Method Not Allowed\n").addHeader("Content-Type", "text/plain; charset=utf-8").build()
+        }
+        serviceRequests += request
+        if (session == null || request.headers["X-Codex-CSRF"] != csrfToken) return error(403, "FORBIDDEN")
+        val body = HostJson.parseToJsonElement(request.body?.utf8().orEmpty()).jsonObject
+        fun field(name: String) = body[name]?.jsonPrimitive?.content.orEmpty()
+        val listed = providers[field("contract")].orEmpty()
+        if (request.url.encodedPath.endsWith("/connect")) {
+            val answer = buildJsonObject {
+                put("contractVersion", JsonPrimitive("client-service-connection.v1"))
+                put("contract", JsonPrimitive(field("contract")))
+                put("range", JsonPrimitive(field("range")))
+                put(
+                    "providers",
+                    JsonArray(
+                        listed.map {
+                            buildJsonObject {
+                                put("addonId", JsonPrimitive(it.addonId))
+                                put("contractVersion", JsonPrimitive(it.contractVersion))
+                                put("generation", JsonPrimitive(it.generation))
+                            }
+                        },
+                    ),
+                )
+            }
+            return json(answer.toString())
+        }
+        serviceAnswers.poll()?.let { return it }
+        val chosen = ClientServiceProvider(field("providerAddonId"), field("providerVersion"), field("providerGeneration"))
+        if (chosen !in listed) return error(409, "STALE_BINDING")
+        return json(
+            """{"contractVersion":"client-service-result.v1","providerAddonId":"${chosen.addonId}",""" +
+                """"providerGeneration":"${chosen.generation}","result":$serviceResult}""",
+        )
+    }
+
+    /** Whether [version] has the client service routes (2.2.0 and newer). */
+    private fun clientServices(): Boolean {
+        val (major, minor) = version.split('.').map { it.toInt() }
+        return major > 2 || major == 2 && minor >= 2
+    }
+
     private fun auth(role: String?) =
-        if (role == null) """{"role":null}""" else """{"ok":true,"role":"$role","csrfToken":"${"t".repeat(43)}","expiresAt":"2026-12-09T10:00:00Z"}"""
+        if (role == null) """{"role":null}""" else """{"ok":true,"role":"$role","csrfToken":"$csrfToken","expiresAt":"2026-12-09T10:00:00Z"}"""
 
     companion object {
         const val RECEIPT = """{"contractVersion":"campaign-commit.v1","commitId":42,"occurredAt":"2026-11-10T10:00:00Z","results":[],"collectionRevisions":{}}"""
@@ -105,9 +179,16 @@ class FakeHost : Dispatcher() {
         fun json(body: String): MockResponse =
             MockResponse.Builder().body(body).addHeader("Content-Type", "application/json; charset=utf-8").build()
 
-        fun error(code: Int, kind: String): MockResponse =
-            MockResponse.Builder().code(code).body("""{"error":{"kind":"$kind","message":"$kind"}}""")
+        /** The host's error body; add-on services may add a one-line [issue]. */
+        fun error(code: Int, kind: String, issue: String? = null): MockResponse {
+            val extra = issue?.let { ""","issue":"$it"""" }.orEmpty()
+            return MockResponse.Builder().code(code).body("""{"error":{"kind":"$kind","message":"$kind"$extra}}""")
                 .addHeader("Content-Type", "application/json").build()
+        }
+
+        /** A provider as the host lists it, with a generation made from [mark]. */
+        fun provider(addonId: String, version: String = "4.0.0", mark: Char = 'a') =
+            ClientServiceProvider(addonId, version, mark.toString().repeat(64))
 
         /** A `campaign-data.v1` body named Asurai with these [events] (see [event]). */
         fun campaign(vararg events: String): String =
@@ -196,6 +277,7 @@ class Fixture(directory: File) : Closeable {
     val sites = SiteRepository(client, store, cookies, campaigns)
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val writer = EventWriter(campaigns, scope)
+    val services = AddonServices(client)
     val baseUrl = server.url("/").toString().trimEnd('/')
 
     /** A saved site, signed in as [role] (with a session the host knows) or read signed out. */

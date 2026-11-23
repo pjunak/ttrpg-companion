@@ -3,6 +3,8 @@ package eu.junak.ttrpg.companion.core.network
 import eu.junak.ttrpg.companion.core.model.AuthState
 import eu.junak.ttrpg.companion.core.model.CampaignDataset
 import eu.junak.ttrpg.companion.core.model.CampaignMutation
+import eu.junak.ttrpg.companion.core.model.ClientServiceCall
+import eu.junak.ttrpg.companion.core.model.ClientServiceConnection
 import eu.junak.ttrpg.companion.core.model.HostFormatException
 import eu.junak.ttrpg.companion.core.model.HostJson
 import eu.junak.ttrpg.companion.core.model.MapTileManifest
@@ -27,14 +29,16 @@ import java.io.InterruptedIOException
 import java.net.ConnectException
 import java.net.NoRouteToHostException
 import java.net.UnknownHostException
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * A host answer the app cannot use: an HTTP error status (with the host's
  * error [kind], such as `WRITE_CONFLICT`, when it sent one) or a malformed body.
+ * [issue] is an add-on service's one-line explanation of a rejected request.
  */
-class HostException(val status: Int?, message: String, val kind: String? = null) : IOException(message) {
+class HostException(val status: Int?, message: String, val kind: String? = null, val issue: String? = null) : IOException(message) {
     val isUnauthorized: Boolean get() = status == 401 || status == 403
 }
 
@@ -134,6 +138,28 @@ class CodexClient @Inject constructor(private val client: OkHttpClient) {
         return hostFormat(boundary) { MapTileManifest.parse(getJson(baseUrl, MapTileManifest.manifestPath(mediaPath), boundary), mediaPath) }
     }
 
+    /**
+     * The live providers of an add-on service [contract] within [range]
+     * (host 2.2.0 and newer; older hosts answer 405). Needs the session's
+     * [csrfToken], as every service route does.
+     */
+    suspend fun connectService(baseUrl: String, csrfToken: String, contract: String, range: String): ClientServiceConnection {
+        val boundary = "POST /api/services/connect"
+        val body = ClientServiceConnection.request(contract, range).toString().toRequestBody(JSON)
+        val builder = Request.Builder().url(baseUrl + "/api/services/connect").post(body).header(CSRF_HEADER, csrfToken)
+        val answer = parse(request(builder, boundary), boundary)
+        return hostFormat(boundary) { ClientServiceConnection.parse(answer, contract, range) }
+    }
+
+    /** Calls one method of a provider from [connectService] and returns its `result`. */
+    suspend fun callService(baseUrl: String, csrfToken: String, call: ClientServiceCall): JsonElement {
+        val boundary = "POST /api/services/call"
+        val body = call.body().toString().toRequestBody(JSON)
+        val builder = Request.Builder().url(baseUrl + "/api/services/call").post(body).header(CSRF_HEADER, csrfToken)
+        val answer = parse(request(builder, boundary, serviceClient), boundary)
+        return hostFormat(boundary) { call.result(answer) }
+    }
+
     private inline fun <T> hostFormat(boundary: String, read: () -> T): T = try {
         read()
     } catch (error: HostFormatException) {
@@ -146,22 +172,31 @@ class CodexClient @Inject constructor(private val client: OkHttpClient) {
     private suspend fun send(baseUrl: String, path: String, boundary: String, body: RequestBody): JsonElement =
         parse(request(Request.Builder().url(baseUrl + path).post(body), boundary), boundary)
 
-    private suspend fun request(builder: Request.Builder, boundary: String): String = withContext(Dispatchers.IO) {
-        client.newCall(builder.header("Accept", "application/json").build()).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw HostException(response.code, "$boundary returned ${response.code}", errorKind(response))
-            }
+    /**
+     * The client for service calls: a method may take up to its 30-second
+     * deadline before the host answers, so the read timeout leaves room.
+     */
+    private val serviceClient by lazy {
+        client.newBuilder().readTimeout(ClientServiceCall.MAX_DEADLINE_MS + SERVICE_READ_MARGIN_MS, TimeUnit.MILLISECONDS).build()
+    }
+
+    private suspend fun request(builder: Request.Builder, boundary: String, http: OkHttpClient = client): String = withContext(Dispatchers.IO) {
+        http.newCall(builder.header("Accept", "application/json").build()).execute().use { response ->
+            if (!response.isSuccessful) throw hostError(response, boundary)
             readBounded(response, boundary)
         }
     }
 
-    /** The `kind` of the host's `{"error":{"kind","message"}}` body, if it sent one. */
-    private fun errorKind(response: Response): String? = runCatching {
-        val source = response.body.source()
-        if (source.request(MAX_ERROR_BYTES + 1)) return null
-        val error = HostJson.parseToJsonElement(source.readUtf8()) as? JsonObject
-        ((error?.get("error") as? JsonObject)?.get("kind") as? JsonPrimitive)?.contentOrNull
-    }.getOrNull()
+    /** The error status with the `kind` and `issue` of the host's `{"error":{"kind","message","issue"}}` body, if it sent one. */
+    private fun hostError(response: Response, boundary: String): HostException {
+        val error = runCatching {
+            val source = response.body.source()
+            if (source.request(MAX_ERROR_BYTES + 1)) return@runCatching null
+            (HostJson.parseToJsonElement(source.readUtf8()) as? JsonObject)?.get("error") as? JsonObject
+        }.getOrNull()
+        fun text(field: String) = (error?.get(field) as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
+        return HostException(response.code, "$boundary returned ${response.code}", text("kind"), text("issue"))
+    }
 
     private fun readBounded(response: Response, boundary: String): String {
         val type = response.body.contentType()
@@ -185,6 +220,7 @@ class CodexClient @Inject constructor(private val client: OkHttpClient) {
         private const val MAX_ERROR_BYTES = 64L * 1024
         private const val CSRF_HEADER = "X-Codex-CSRF"
         private const val COMMIT_CONTRACT = "campaign-commit.v1"
+        private const val SERVICE_READ_MARGIN_MS = 15_000L
         private val mediaSlot = Regex("^[a-z][a-z0-9-]{0,63}$")
 
         /** Parses a campaign body, from the network or the cache. */
