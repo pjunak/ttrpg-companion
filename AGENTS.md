@@ -51,7 +51,7 @@ $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
 ```text
 app/             Compose UI, navigation, ViewModels, theme, live updates
 core-model/      Pure Kotlin: host wire formats, record pages, wiki links, search, map math
-core-network/    OkHttp client and per-site cookies, host client, sites, campaign cache, maps, events
+core-network/    OkHttp client and per-site cookies, host client, sites, campaign cache, maps, events, add-on services
 feature-update/  GitHub release check, verified download, installer handoff
 ```
 
