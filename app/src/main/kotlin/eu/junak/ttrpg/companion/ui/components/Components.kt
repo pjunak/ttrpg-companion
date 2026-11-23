@@ -262,9 +262,9 @@ fun ActionButton(label: String, icon: ImageVector, onClick: () -> Unit) {
     )
 }
 
-/** A centred message for empty or loading screens, with an optional [action] such as "Try again". */
+/** A centred message for empty or loading screens, with an optional [title] and [action] such as "Try again". */
 @Composable
-fun CenteredMessage(text: String?, loading: Boolean = false, action: (@Composable () -> Unit)? = null) {
+fun CenteredMessage(text: String?, loading: Boolean = false, title: String? = null, action: (@Composable () -> Unit)? = null) {
     val spacing = LocalSpacing.current
     Column(
         Modifier.fillMaxSize().padding(spacing.lg),
@@ -272,6 +272,9 @@ fun CenteredMessage(text: String?, loading: Boolean = false, action: (@Composabl
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (loading) CircularProgressIndicator()
+        if (title != null) {
+            Text(title, textAlign = TextAlign.Center, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+        }
         if (text != null) {
             Text(text, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }

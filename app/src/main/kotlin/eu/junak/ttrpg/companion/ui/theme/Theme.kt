@@ -171,6 +171,12 @@ data class Spacing(
     val markerTouch: Dp = 48.dp,
     /** A map event marker's drawn size. */
     val eventMarker: Dp = 28.dp,
+    /** A chip or button's height: the accessibility minimum touch area. */
+    val control: Dp = 48.dp,
+    /** A large square control, such as the hit point button or a keypad key. */
+    val controlLarge: Dp = 56.dp,
+    /** The hit point bar's thickness. */
+    val meter: Dp = 8.dp,
     /** The widest a map marker's name label grows. */
     val markerLabelWidth: Dp = 160.dp,
 )
@@ -185,9 +191,47 @@ object Emphasis {
 
     /** A badge's outline is softer than its text. */
     const val BADGE_OUTLINE = 0.6f
+
+    /** Content that stays readable but cannot be used now, such as a sheet whose rules changed. */
+    const val DIMMED = 0.45f
 }
 
 val LocalSpacing = staticCompositionLocalOf { Spacing() }
+
+/**
+ * Colours for hit points that the site palettes do not name: healing (and the
+ * hit point bar) in green, temporary hit points in blue. Damage uses the
+ * palette's tertiary colours.
+ */
+@Immutable
+data class VitalColors(
+    val health: Color,
+    val healContainer: Color,
+    val onHealContainer: Color,
+    val temporary: Color,
+    val temporaryContainer: Color,
+    val onTemporaryContainer: Color,
+)
+
+private val DarkVitals = VitalColors(
+    health = Color(0xFF86C06F),
+    healContainer = Color(0xFF22301A),
+    onHealContainer = Color(0xFFCDEBBE),
+    temporary = Color(0xFF90CAF9),
+    temporaryContainer = Color(0xFF14263A),
+    onTemporaryContainer = Color(0xFFCFE6FB),
+)
+
+private val LightVitals = VitalColors(
+    health = Color(0xFF3B6E2A),
+    healContainer = Color(0xFFD6EBCB),
+    onHealContainer = Color(0xFF10230A),
+    temporary = Color(0xFF2C5F8A),
+    temporaryContainer = Color(0xFFD3E5F7),
+    onTemporaryContainer = Color(0xFF0A1E30),
+)
+
+val LocalVitalColors = staticCompositionLocalOf { DarkVitals }
 
 private val CompanionShapes = Shapes(
     extraSmall = RoundedCornerShape(4.dp),
@@ -222,7 +266,7 @@ fun CompanionTheme(
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
     }
-    CompositionLocalProvider(LocalThemeMode provides mode) {
+    CompositionLocalProvider(LocalThemeMode provides mode, LocalVitalColors provides if (dark) DarkVitals else LightVitals) {
         MaterialTheme(
             colorScheme = colorScheme(siteTheme, dark),
             typography = CompanionTypography,
