@@ -57,7 +57,8 @@ fun CampaignDataset.campaignMap(parentId: String?): CampaignMap? {
     val parent = parentId?.let { record(CampaignPage.LOCATIONS.collection, it) ?: return null }
     val definitions = (record("settings", "pinTypes")?.element as? JsonArray).orEmpty().filterIsInstance<JsonObject>()
     val attitudes = settings.attitudes
-    val pins = representatives(records(CampaignPage.LOCATIONS.collection)).mapNotNull { record ->
+    // One pin per twin pair, as the website projects locations.
+    val pins = groupedRecords(CampaignPage.LOCATIONS.collection).mapNotNull { record ->
         val value = record.value
         val x = value.number("x")
         val y = value.number("y")
@@ -136,20 +137,6 @@ private fun CampaignDataset.markerZoomRatio(parentId: String?): Double {
     val config = configs[if (parentId == null) "world" else "local-$parentId"] as? JsonObject ?: return 0.0
     val ratio = (config["zoomScaleRatio"] as? JsonPrimitive)?.takeIf { !it.isString }?.doubleOrNull ?: return 0.0
     return if (ratio.isFinite()) ratio.coerceIn(0.0, 1.0) else 0.0
-}
-
-/**
- * Drops the public half of a DM's reciprocal public/DM twin pair, so a DM
- * sees one marker for it, as the website groups twins.
- */
-private fun representatives(records: List<CampaignRecord>): List<CampaignRecord> {
-    val byKey = records.associateBy { it.key }
-    return records.filter { record ->
-        val other = byKey[record.value.text("linkedTwinId")] ?: return@filter true
-        val reciprocal = other.key != record.key && other.value.text("linkedTwinId") == record.key &&
-            (record.value.text("visibility") == "dm") != (other.value.text("visibility") == "dm")
-        !(reciprocal && other.value.text("visibility") == "dm")
-    }
 }
 
 /** The location's own size, else its type's, else the bundled default; anything that is not a number is 28, as on the website. */

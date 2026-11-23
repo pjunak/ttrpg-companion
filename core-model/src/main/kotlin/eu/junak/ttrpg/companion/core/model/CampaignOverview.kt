@@ -16,7 +16,9 @@ data class RecentChange(val summary: RecordSummary, val activity: RecordActivity
 /**
  * What a site's start screen shows, as the website's dashboard does: the
  * campaign's identity, the party with its companions, the last session's
- * events, recent changes and how many records each page holds.
+ * events, recent changes and how many records each page holds. A DM sees one
+ * entry per public/DM twin pair (`projectDashboard` in the host's
+ * `campaign-projection.ts`).
  */
 data class CampaignOverview(
     val name: String,
@@ -31,14 +33,14 @@ data class CampaignOverview(
 
 fun CampaignDataset.overview(recentLimit: Int = 8): CampaignOverview {
     val collator = Collator.getInstance(Locale.forLanguageTag("cs")).apply { strength = Collator.SECONDARY }
-    val characters = records(CampaignPage.CHARACTERS.collection)
-    val partyRecords = characters.filter { it.value.text("faction") == "party" }
-    val partyKeys = partyRecords.mapTo(HashSet()) { it.key }
-    val companions = records(CampaignPage.COMPANIONS.collection).filter {
+    val partyRecords = groupedRecords(CampaignPage.CHARACTERS.collection).filter { it.value.text("faction") == "party" }
+    // A companion may belong to either half of a party member's twin pair.
+    val partyKeys = records(CampaignPage.CHARACTERS.collection).filter { it.value.text("faction") == "party" }.mapTo(HashSet()) { it.key }
+    val companions = groupedRecords(CampaignPage.COMPANIONS.collection).filter {
         val owner = it.value.text("ownerType")
         owner == "party" || (owner == "character" && it.value.text("ownerId") in partyKeys)
     }
-    val events = records(CampaignPage.EVENTS.collection)
+    val events = groupedRecords(CampaignPage.EVENTS.collection)
     val lastSession = events.maxOfOrNull { it.value.positiveInt("sitting") ?: 0 }?.takeIf { it > 0 }
     val sessionEvents = if (lastSession == null) {
         emptyList()
@@ -54,17 +56,25 @@ fun CampaignDataset.overview(recentLimit: Int = 8): CampaignOverview {
         lastSession = lastSession,
         lastSessionEvents = sessionEvents.map { it.summary(CampaignPage.EVENTS) },
         recent = recentChanges(recentLimit),
-        counts = CampaignPage.entries.associateWith { records(it.collection).size },
+        counts = CampaignPage.entries.associateWith { groupedRecords(it.collection).size },
     )
 }
 
-/** Visible records by their newest change, newest first. */
+/**
+ * Visible records by their newest change, newest first, with one entry per
+ * twin pair: whichever half changed last (`recentCampaignActivity`).
+ */
 fun CampaignDataset.recentChanges(limit: Int): List<RecentChange> =
     CampaignPage.entries.flatMap { page ->
+        val representatives = twinRepresentatives(records(page.collection))
         records(page.collection).mapNotNull { record ->
-            record.activity()?.let { RecentChange(record.summary(page), it) }
+            record.activity()?.let { page to representatives[record.key] to RecentChange(record.summary(page), it) }
         }
-    }.sortedByDescending { it.activity.at }.take(limit)
+    }.sortedWith(compareByDescending<Pair<Pair<CampaignPage, String?>, RecentChange>> { it.second.activity.at }
+        .thenBy { it.second.summary.page.recordPath(it.second.summary.key) })
+        .distinctBy { it.first }
+        .take(limit)
+        .map { it.second }
 
 /** The record's `lastChange` activity, or its `updatedAt` time when it has none. */
 fun CampaignRecord.activity(): RecordActivity? {

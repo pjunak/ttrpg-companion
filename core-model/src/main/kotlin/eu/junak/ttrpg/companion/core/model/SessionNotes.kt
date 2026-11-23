@@ -17,7 +17,7 @@ data class Session(val number: Int, val events: List<RecordSummary>)
 
 /** The campaign's sessions, newest first; empty sessions between occupied ones are kept, as the website shows them. */
 fun CampaignDataset.sessions(): List<Session> {
-    val events = records(CampaignPage.EVENTS.collection)
+    val events = groupedRecords(CampaignPage.EVENTS.collection)
     val bySession = events.groupBy { sitting(it.value) }
     val latest = bySession.keys.maxOrNull() ?: return emptyList()
     // Keep corrupt or very sparse session numbers from listing millions of empty sessions.
@@ -29,7 +29,7 @@ fun CampaignDataset.sessions(): List<Session> {
 
 /** The newest session number with events, or 0 before the first event. */
 fun CampaignDataset.latestSession(): Int =
-    records(CampaignPage.EVENTS.collection).maxOfOrNull { sitting(it.value) } ?: 0
+    groupedRecords(CampaignPage.EVENTS.collection).maxOfOrNull { sitting(it.value) } ?: 0
 
 /** A session number as the website reads it: a missing or invalid one counts as session 1. */
 fun sitting(value: JsonObject): Int = value.positiveInt("sitting") ?: 1

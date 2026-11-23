@@ -39,6 +39,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.junak.ttrpg.companion.R
 import eu.junak.ttrpg.companion.core.model.CampaignPage
+import eu.junak.ttrpg.companion.core.model.groupedRecords
 import eu.junak.ttrpg.companion.core.model.Choice
 import eu.junak.ttrpg.companion.core.model.normalizeIdentity
 import eu.junak.ttrpg.companion.core.model.summary
@@ -76,7 +77,8 @@ fun CollectionScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     var searching by rememberSaveable { mutableStateOf(false) }
-    val records = remember(state.dataset, page) { state.dataset?.records(page.collection).orEmpty() }
+    // One row per public/DM twin pair, as the website lists them.
+    val records = remember(state.dataset, page) { state.dataset?.groupedRecords(page.collection).orEmpty() }
     val shown = remember(records, query, filter) {
         val needle = normalizeIdentity(query)
         records.filter { record ->
