@@ -1,5 +1,8 @@
 package eu.junak.ttrpg.companion.core.model
 
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.text.Normalizer
@@ -18,16 +21,19 @@ enum class CampaignPage(
      * as known facts and questions are shown from [RecordDetails] instead.
      */
     val articleFields: List<String>,
+    /** Fields a list row's excerpt comes from; the first non-empty one wins, a list by its first item. */
+    val excerptFields: List<String>,
 ) {
-    CHARACTERS("characters", "characters", listOf("title", "species"), listOf("description", "circumstances")),
-    LOCATIONS("locations", "locations", listOf("region", "type"), listOf("description", "history", "mapNotes")),
-    EVENTS("events", "events", listOf("date", "short"), listOf("short", "description")),
-    MYSTERIES("mysteries", "mysteries", listOf("priority"), listOf("description")),
-    FACTIONS("factions", "factions", emptyList(), listOf("description")),
-    PANTHEON("pantheon", "pantheon", listOf("domain", "title"), listOf("description")),
-    ARTIFACTS("artifacts", "artifacts", emptyList(), listOf("description")),
-    HISTORY("history", "historicalEvents", listOf("start", "end"), listOf("summary", "body")),
-    COMPANIONS("companions", "companions", listOf("species"), listOf("note")),
+    // Subtitles and excerpts follow `secondaryFields` and `excerptFields` in the host's campaign-projection.ts.
+    CHARACTERS("characters", "characters", listOf("title", "species"), listOf("description", "circumstances"), listOf("description", "known", "circumstances")),
+    LOCATIONS("locations", "locations", listOf("region", "type"), listOf("description", "history", "mapNotes"), listOf("description", "history", "mapNotes")),
+    EVENTS("events", "events", listOf("date", "short"), listOf("short", "description"), listOf("short", "description")),
+    MYSTERIES("mysteries", "mysteries", listOf("priority"), listOf("description"), listOf("description", "questions")),
+    FACTIONS("factions", "factions", emptyList(), listOf("description"), listOf("description")),
+    PANTHEON("pantheon", "pantheon", listOf("domain", "title"), listOf("description"), listOf("description")),
+    ARTIFACTS("artifacts", "artifacts", emptyList(), listOf("description"), listOf("description")),
+    HISTORY("history", "historicalEvents", listOf("start", "end"), listOf("summary", "body"), listOf("summary", "body")),
+    COMPANIONS("companions", "companions", listOf("species", "ownerType"), listOf("note"), listOf("note")),
     ;
 
     /** The web app's address of a record on this page. */
@@ -69,24 +75,59 @@ data class RecordSummary(
     val icon: String = "",
 )
 
-fun CampaignRecord.summary(page: CampaignPage): RecordSummary {
+/**
+ * A record's list row, as the website projects it (`projectEntityWithContext`
+ * in the host's `campaign-projection.ts`). A party member shows the party's
+ * [partyBadge] (the campaign settings' badge); other records their own icon,
+ * or else their badge, when it is at most four characters.
+ */
+fun CampaignRecord.summary(page: CampaignPage, partyBadge: String = ""): RecordSummary {
     val subtitle = page.subtitleFields.map(value::text).firstOrNull(String::isNotEmpty).orEmpty()
-    val excerpt = page.articleFields.map(value::text).firstOrNull(String::isNotEmpty).orEmpty()
+    val icon = if (page == CampaignPage.CHARACTERS && value.text("faction") == "party") {
+        partyBadge.ifEmpty { DEFAULT_PARTY_BADGE }
+    } else {
+        // `icon ?? badge`: only a missing icon falls back, an empty one does not.
+        shortIcon((value["icon"]?.takeUnless { it is JsonNull } ?: value["badge"]).stringOrNull())
+    }
     return RecordSummary(
         page = page,
         key = key,
         name = value.text("name").ifEmpty { key },
         subtitle = subtitle,
-        excerpt = plainExcerpt(excerpt),
+        excerpt = plainExcerpt(excerptSource(page)),
         portrait = value.text("portrait").takeIf(::isMediaPath),
-        icon = value.text("icon").takeIf { it.length <= MAX_ICON_LENGTH }.orEmpty(),
+        icon = icon,
     )
 }
 
-private const val MAX_ICON_LENGTH = 16
+/** The Markdown a record's excerpt comes from (`firstExcerpt`): a field's text, or a list's first item or answer. */
+internal fun CampaignRecord.excerptSource(page: CampaignPage): String {
+    for (field in page.excerptFields) {
+        value.text(field).takeIf(String::isNotEmpty)?.let { return it }
+        for (item in value[field] as? JsonArray ?: continue) {
+            item.stringOrNull()?.trim()?.takeIf(String::isNotEmpty)?.let { return it }
+            val entry = item as? JsonObject ?: continue
+            // `text ?? answer`: an empty text does not fall back to the answer.
+            (entry["text"]?.takeUnless { it is JsonNull } ?: entry["answer"]).stringOrNull()?.trim()?.takeIf(String::isNotEmpty)?.let { return it }
+        }
+    }
+    return ""
+}
 
-fun CampaignDataset.summaries(page: CampaignPage): List<RecordSummary> =
-    records(page.collection).map { it.summary(page) }
+/** The party's badge when the campaign sets none (`campaign-party.ts`). */
+const val DEFAULT_PARTY_BADGE = "🛡"
+
+private const val MAX_ICON_CODE_POINTS = 4
+
+private fun shortIcon(value: String?): String {
+    val icon = value?.trim().orEmpty()
+    return if (icon.codePointCount(0, icon.length) <= MAX_ICON_CODE_POINTS) icon else ""
+}
+
+fun CampaignDataset.summaries(page: CampaignPage): List<RecordSummary> {
+    val badge = settings.party.badge
+    return records(page.collection).map { it.summary(page, badge) }
+}
 
 /** Case-, accent- and spacing-insensitive identity, as the web app compares names. */
 fun normalizeIdentity(value: String): String =

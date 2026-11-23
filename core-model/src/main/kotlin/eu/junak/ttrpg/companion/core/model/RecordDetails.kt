@@ -140,7 +140,7 @@ fun CampaignDataset.details(page: CampaignPage, key: String): RecordDetails? {
     }
 
     return RecordDetails(
-        summary = record.summary(page),
+        summary = record.summary(page, settings.party.badge),
         facts = facts,
         attitudes = (value["attitudes"] as? JsonArray).orEmpty()
             .mapNotNull { (it as? JsonObject)?.text("id") }
@@ -167,7 +167,10 @@ fun CampaignDataset.mentionsOf(page: CampaignPage, key: String): List<RecordRef>
 
 /** A link to the visible record [key] on [page], or null when this session cannot see it. */
 fun CampaignDataset.recordRef(page: CampaignPage, key: String): RecordRef? =
-    key.takeIf(String::isNotEmpty)?.let { record(page.collection, it) }?.ref(page)
+    key.takeIf(String::isNotEmpty)?.let { record(page.collection, it) }?.let { record ->
+        val party = page == CampaignPage.CHARACTERS && record.value.text("faction") == "party"
+        record.ref(page, if (party) settings.party.badge else "")
+    }
 
 /** A link to the record at a `<page id>/<key>` address, as the recently opened list stores them. */
 fun CampaignDataset.recordRef(address: String): RecordRef? {
@@ -177,8 +180,8 @@ fun CampaignDataset.recordRef(address: String): RecordRef? {
 
 private fun CampaignDataset.ref(page: CampaignPage, key: String): RecordRef? = recordRef(page, key)
 
-private fun CampaignRecord.ref(page: CampaignPage): RecordRef {
-    val summary = summary(page)
+private fun CampaignRecord.ref(page: CampaignPage, partyBadge: String = ""): RecordRef {
+    val summary = summary(page, partyBadge)
     return RecordRef(page, key, summary.name, summary.portrait, summary.icon)
 }
 

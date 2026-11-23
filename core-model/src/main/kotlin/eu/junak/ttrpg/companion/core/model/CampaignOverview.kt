@@ -51,7 +51,7 @@ fun CampaignDataset.overview(recentLimit: Int = 8): CampaignOverview {
     return CampaignOverview(
         name = name,
         tagline = record("campaign", "main")?.value?.text("tagline").orEmpty(),
-        party = partyRecords.map { it.summary(CampaignPage.CHARACTERS) }.sortedWith(compareBy(collator) { it.name }),
+        party = partyRecords.map { it.summary(CampaignPage.CHARACTERS, settings.party.badge) }.sortedWith(compareBy(collator) { it.name }),
         companions = companions.map { it.summary(CampaignPage.COMPANIONS) },
         lastSession = lastSession,
         lastSessionEvents = sessionEvents.map { it.summary(CampaignPage.EVENTS) },

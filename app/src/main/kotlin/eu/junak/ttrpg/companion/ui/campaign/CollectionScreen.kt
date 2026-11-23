@@ -179,7 +179,7 @@ fun CollectionScreen(
                             val status = settings?.characterStatus(record.value.text("status"))?.takeIf { it.id != usualStatus }
                             RecordRow(
                                 baseUrl,
-                                record.summary(page),
+                                record.summary(page, settings?.party?.badge.orEmpty()),
                                 trailing = status?.let { { StatusMark(it) } },
                             ) { onOpenRecord(page, record.key) }
                         }
