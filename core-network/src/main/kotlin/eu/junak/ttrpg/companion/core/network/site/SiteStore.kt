@@ -18,6 +18,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import java.io.File
 import java.io.IOException
+import java.net.URLEncoder
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -37,8 +38,8 @@ data class Site(
 }
 
 /**
- * The saved site list and each site's cached campaign and map details, on
- * this device only. A site's files are written and removed under one lock per
+ * The saved site list and each site's cached campaign, map details and
+ * character sheets, on this device only. A site's files are written and removed under one lock per
  * site, so writers never mix their files and nothing is written after removal.
  */
 @Singleton
@@ -122,6 +123,16 @@ class SiteStore internal constructor(
     /** Replaces the cached campaign atomically, so a crash never leaves half a file. */
     fun writeCampaign(id: String, json: String) = writeAtomically(id, campaignFile(id), json)
 
+    /** The last character sheet kept for record [key] of site [id], as the character session wrote it. */
+    fun readCharacter(id: String, key: String): String? = characterFile(id, key).takeIf(File::isFile)?.readText()
+
+    /** Replaces the kept character sheet of [key] atomically; nothing is written once the site is removed. */
+    fun writeCharacter(id: String, key: String, json: String) = writeAtomically(id, characterFile(id, key), json)
+
+    fun removeCharacter(id: String, key: String) {
+        withSiteLock(id) { characterFile(id, key).delete() }
+    }
+
     /** What the site's maps need offline (the world map's image and tile manifests), as JSON. */
     override fun readMaps(id: String): String? = mapsFile(id).takeIf(File::isFile)?.readText()
 
@@ -146,6 +157,10 @@ class SiteStore internal constructor(
     private fun campaignFile(id: String) = File(siteDirectory(id), "campaign.json")
 
     private fun mapsFile(id: String) = File(siteDirectory(id), "maps.json")
+
+    /** Record keys are encoded so that any key is one plain file name. */
+    private fun characterFile(id: String, key: String) =
+        File(siteDirectory(id), "characters/" + URLEncoder.encode(key, "UTF-8").replace("*", "%2A").replace(".", "%2E") + ".json")
 
     private fun readSites(): List<Site> {
         val text = preferences.getString(KEY_SITES, null) ?: return emptyList()

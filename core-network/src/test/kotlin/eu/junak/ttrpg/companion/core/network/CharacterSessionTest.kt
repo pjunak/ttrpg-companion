@@ -7,6 +7,13 @@ import eu.junak.ttrpg.companion.core.model.character.CharacterSheet
 import eu.junak.ttrpg.companion.core.model.character.PlayChange
 import eu.junak.ttrpg.companion.core.model.character.RestLength
 import eu.junak.ttrpg.companion.core.network.FakeHost.Companion.error
+import eu.junak.ttrpg.companion.core.network.SheetAnswers.CONTRACT
+import eu.junak.ttrpg.companion.core.network.SheetAnswers.KEY
+import eu.junak.ttrpg.companion.core.network.SheetAnswers.answer
+import eu.junak.ttrpg.companion.core.network.SheetAnswers.params
+import eu.junak.ttrpg.companion.core.network.SheetAnswers.provider
+import eu.junak.ttrpg.companion.core.network.SheetAnswers.result
+import eu.junak.ttrpg.companion.core.network.SheetAnswers.wrap
 import eu.junak.ttrpg.companion.core.network.character.CharacterNotice
 import eu.junak.ttrpg.companion.core.network.character.CharacterSession
 import eu.junak.ttrpg.companion.core.network.character.CharacterSessionState
@@ -15,6 +22,7 @@ import eu.junak.ttrpg.companion.core.network.character.CharacterSessions
 import eu.junak.ttrpg.companion.core.network.character.SaveState
 import eu.junak.ttrpg.companion.core.network.character.SheetLoad
 import eu.junak.ttrpg.companion.core.network.services.ServiceFailure
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
@@ -23,6 +31,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -39,7 +48,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -69,7 +77,7 @@ class CharacterSessionTest {
     private fun TestScope.open(vararg answers: MockResponse): CharacterSession {
         f.host.serviceAnswers += answers
         val site = f.site("player")
-        return CharacterSessions(f.services).open(site, KEY, backgroundScope, events, { ids.removeFirst() }, timing)
+        return CharacterSessions(f.services, f.store).open(site, KEY, backgroundScope, events, { ids.removeFirst() }, timing)
     }
 
     private fun TestScope.noticesOf(session: CharacterSession): List<CharacterNotice> {
@@ -86,7 +94,8 @@ class CharacterSessionTest {
 
     private suspend fun CharacterSession.until(what: (CharacterSessionState) -> Boolean) = state.first(what)
 
-    private suspend fun CharacterSession.loaded() = until { it.load is SheetLoad.Sheet }
+    /** The live sheet, after any copy kept by an earlier session in the same test. */
+    private suspend fun CharacterSession.loaded() = until { it.load is SheetLoad.Sheet && it.copy == null }
 
     private val CharacterSessionState.sheet get() = (load as SheetLoad.Sheet).sheet
 
@@ -165,7 +174,7 @@ class CharacterSessionTest {
 
         val signedOut = open()
         f.host.role = null
-        assertEquals(SheetLoad.SignedOut, signedOut.until { it.load != SheetLoad.Loading }.load)
+        assertEquals(SheetLoad.SignedOut, signedOut.until { it.load != SheetLoad.Loading && it.copy == null }.load)
     }
 
     @Test
@@ -491,9 +500,9 @@ class CharacterSessionTest {
         val first = session.loaded().answer
         events.subscriptionCount.first { it > 0 }
         events.emit(HostEvent.Hello(1))
-        advanceTimeBy(1_000)
-        while (methods().size < 2) Thread.sleep(10)
-        runCurrent()
+        // Wait off the test thread: the session needs it to load.
+        withContext(Dispatchers.Default) { while (methods().size < 2) Thread.sleep(10) }
+        session.until { !it.refreshing }
         assertSame(first, session.state.value.answer)
     }
 
@@ -536,37 +545,5 @@ class CharacterSessionTest {
         assertEquals("no resend after closing", listOf("load", "save"), methods())
         assertFalse(session.play(PlayChange.Damage(1)))
         assertNotNull(session.state.value.answer)
-    }
-
-    private companion object {
-        const val KEY = "mira-quill"
-        const val CONTRACT = "dnd5e.character"
-        val recordings = File("../core-model/src/test/resources/character")
-
-        fun recording(name: String): JsonObject = Json.parseToJsonElement(File(recordings, "$name.json").readText()).jsonObject
-
-        fun params(name: String): JsonObject = recording(name).getValue("params").jsonObject
-
-        fun result(name: String): JsonObject = recording(name).getValue("response").jsonObject.getValue("result").jsonObject
-
-        /** The host's answer recorded for [name]. */
-        fun answer(name: String): MockResponse = FakeHost.json(recording(name).getValue("response").toString())
-
-        /** [result] in the recorded provider's `client-service-result.v1` envelope. */
-        fun wrap(result: JsonObject): MockResponse {
-            val envelope = recording("load-sheet").getValue("response").jsonObject
-            return FakeHost.json(JsonObject(envelope + ("result" to result)).toString())
-        }
-
-        /** The Character Sheets provider the recordings answered from. */
-        val provider: ClientServiceProvider = recording("connect-present").getValue("response").jsonObject.getValue("providers")
-            .let { (it as kotlinx.serialization.json.JsonArray).single().jsonObject }
-            .let {
-                ClientServiceProvider(
-                    it.getValue("addonId").jsonPrimitive.content,
-                    it.getValue("contractVersion").jsonPrimitive.content,
-                    it.getValue("generation").jsonPrimitive.content,
-                )
-            }
     }
 }
