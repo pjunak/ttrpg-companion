@@ -4,6 +4,7 @@ import android.app.Application
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
+import coil3.annotation.ExperimentalCoilApi
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import dagger.hilt.android.HiltAndroidApp
 import okhttp3.OkHttpClient
@@ -16,8 +17,9 @@ class CompanionApplication : Application(), SingletonImageLoader.Factory {
     lateinit var client: OkHttpClient
 
     /** Images load through the shared client, so DM-only media carry the site session. */
+    @OptIn(ExperimentalCoilApi::class)
     override fun newImageLoader(context: PlatformContext): ImageLoader =
         ImageLoader.Builder(context)
-            .components { add(OkHttpNetworkFetcherFactory(callFactory = { client })) }
+            .components { add(OkHttpNetworkFetcherFactory(callFactory = { client }, cacheStrategy = { ImageCacheStrategy })) }
             .build()
 }
