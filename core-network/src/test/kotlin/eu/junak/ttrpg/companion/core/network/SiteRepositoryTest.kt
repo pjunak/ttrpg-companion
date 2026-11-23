@@ -5,6 +5,7 @@ import eu.junak.ttrpg.companion.core.network.FakeHost.Companion.campaign
 import eu.junak.ttrpg.companion.core.network.FakeHost.Companion.event
 import eu.junak.ttrpg.companion.core.network.site.SiteException
 import eu.junak.ttrpg.companion.core.network.site.SiteProblem
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -93,6 +94,23 @@ class SiteRepositoryTest {
 
         assertNull(f.store.readCampaign(site.id))
         assertFalse(File(directory, "sites/${site.id}").exists())
+    }
+
+    @Test
+    fun myCharacterIsOnePerSiteAndGoesWithTheSite() = runTest {
+        val site = f.site()
+        assertNull(f.store.myCharacter(site.id).first())
+        f.store.setMyCharacter(site.id, "bren-ashcroft")
+        f.store.setMyCharacter(site.id, "mira-quill")
+        assertEquals("switching it on for another replaces the first", "mira-quill", f.store.myCharacter(site.id).first())
+        assertEquals("kept on the device", "mira-quill", f.reopenedStore().myCharacter(site.id).first())
+        f.store.setMyCharacter(site.id, null)
+        assertNull(f.store.myCharacter(site.id).first())
+
+        f.store.setMyCharacter(site.id, "bren-ashcroft")
+        f.sites.remove(site)
+        assertNull("removed with the site", f.store.myCharacter(site.id).first())
+        assertNull(f.reopenedStore().myCharacter(site.id).first())
     }
 
     @Test

@@ -56,6 +56,7 @@ class SiteStore internal constructor(
     private val _sites = MutableStateFlow(readSites())
     val sites: StateFlow<List<Site>> = _sites.asStateFlow()
     private val recent = MutableStateFlow<Map<String, List<String>>>(emptyMap())
+    private val mine = MutableStateFlow<Map<String, String?>>(emptyMap())
 
     fun site(id: String): Site? = _sites.value.firstOrNull { it.id == id }
 
@@ -79,6 +80,20 @@ class SiteStore internal constructor(
         val list = (listOf(address) + current.filterNot { it == address }).take(MAX_RECENT)
         preferences.edit().putString(recentKey(siteId), HostJson.encodeToString(ListSerializer(String.serializer()), list)).apply()
         recent.update { it + (siteId to list) }
+    }
+
+    /**
+     * The record key of the character the user marked as theirs on [siteId]
+     * ("My character"), shown on the site's home screen; null when none is.
+     */
+    fun myCharacter(siteId: String): Flow<String?> =
+        mine.map { if (siteId in it) it[siteId] else preferences.getString(myCharacterKey(siteId), null) }.distinctUntilChanged()
+
+    /** Marks [key] as the user's character on [siteId], replacing any other; null marks none. */
+    @Synchronized
+    fun setMyCharacter(siteId: String, key: String?) {
+        preferences.edit().apply { if (key == null) remove(myCharacterKey(siteId)) else putString(myCharacterKey(siteId), key) }.apply()
+        mine.update { it + (siteId to key) }
     }
 
     private fun readRecent(siteId: String): List<String> {
@@ -108,8 +123,9 @@ class SiteStore internal constructor(
         withSiteLock(id) {
             _sites.update { current -> current.filterNot { it.id == id } }
             writeSites(_sites.value)
-            preferences.edit().remove(recentKey(id)).apply()
+            preferences.edit().remove(recentKey(id)).remove(myCharacterKey(id)).apply()
             recent.update { it - id }
+            mine.update { it - id }
             siteDirectory(id).deleteRecursively()
         }
     }
@@ -176,6 +192,8 @@ class SiteStore internal constructor(
     }
 
     private fun recentKey(siteId: String) = "recent:$siteId"
+
+    private fun myCharacterKey(siteId: String) = "myCharacter:$siteId"
 
     private companion object {
         const val KEY_SITES = "sites"

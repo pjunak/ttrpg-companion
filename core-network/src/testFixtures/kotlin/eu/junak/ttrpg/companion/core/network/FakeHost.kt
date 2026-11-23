@@ -263,7 +263,7 @@ class MemoryPreferences : SharedPreferences {
 }
 
 /** The real repositories against a [FakeHost] on a local server, with site files in [directory]. */
-class Fixture(directory: File) : Closeable {
+class Fixture(private val directory: File) : Closeable {
     val host = FakeHost()
     val server = MockWebServer().apply {
         dispatcher = host
@@ -272,7 +272,8 @@ class Fixture(directory: File) : Closeable {
     val vault = MemoryVault()
     val cookies = SiteCookieJar(vault)
     val client = CodexClient(OkHttpClient.Builder().cookieJar(cookies).build())
-    val store = SiteStore(MemoryPreferences(), directory)
+    private val preferences = MemoryPreferences()
+    val store = SiteStore(preferences, directory)
     val campaigns = CampaignRepository(client, store, cookies)
     val sites = SiteRepository(client, store, cookies, campaigns)
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -290,6 +291,9 @@ class Fixture(directory: File) : Closeable {
     }
 
     fun state(site: Site) = campaigns.state(site).value
+
+    /** The same saved preferences and files read again, as after the app restarts. */
+    fun reopenedStore() = SiteStore(preferences, directory)
 
     override fun close() {
         scope.cancel()
