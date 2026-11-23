@@ -53,6 +53,14 @@ class RecordSummaryTest {
     }
 
     @Test
+    fun theDetailLineShowsAnEventsShortTextOnce() {
+        val short = summary(CampaignPage.EVENTS, """{"name": "Ambush", "short": "On the road."}""")
+        assertEquals("On the road.", short.detailLine)
+        val dated = summary(CampaignPage.EVENTS, """{"name": "Ambush", "date": "Spring", "short": "On the road."}""")
+        assertEquals("Spring · On the road.", dated.detailLine)
+    }
+
+    @Test
     fun anIconFallsBackToTheBadgeOnlyWhenMissing() {
         assertEquals("⚔", summary(CampaignPage.FACTIONS, """{"name": "Guard", "badge": "⚔"}""").icon)
         assertEquals("🏰", summary(CampaignPage.FACTIONS, """{"name": "Guard", "icon": "🏰", "badge": "⚔"}""").icon)

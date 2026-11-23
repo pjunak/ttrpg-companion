@@ -295,7 +295,7 @@ private fun EventCard(
                     Spacer(Modifier.size(spacing.md))
                 }
             }
-            val text = listOf(event.subtitle, event.excerpt).filter(String::isNotEmpty).distinct().joinToString(" · ")
+            val text = event.detailLine
             if (text.isNotEmpty()) {
                 Text(
                     text,

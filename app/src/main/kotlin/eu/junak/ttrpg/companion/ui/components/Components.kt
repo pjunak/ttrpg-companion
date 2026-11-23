@@ -125,7 +125,7 @@ fun RecordRow(
     onClick: () -> Unit,
 ) {
     val spacing = LocalSpacing.current
-    val secondLine = supporting ?: listOf(summary.subtitle, summary.excerpt).filter(String::isNotEmpty).joinToString(" · ")
+    val secondLine = supporting ?: summary.detailLine
     ListItem(
         headlineContent = { Text(summary.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = secondLine.takeIf(String::isNotEmpty)?.let { { Text(it, maxLines = 2, overflow = TextOverflow.Ellipsis) } },

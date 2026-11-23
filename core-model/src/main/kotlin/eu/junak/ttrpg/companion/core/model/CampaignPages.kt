@@ -91,7 +91,10 @@ data class RecordSummary(
     val portrait: String?,
     /** A short symbol (usually an emoji) the record sets for itself, or "". */
     val icon: String = "",
-)
+) {
+    /** The row's second line: the subtitle and the excerpt, each once (an event's `short` can be both). */
+    val detailLine: String get() = listOf(subtitle, excerpt).filter(String::isNotEmpty).distinct().joinToString(" · ")
+}
 
 /**
  * A record's list row, as the website projects it (`projectEntityWithContext`
