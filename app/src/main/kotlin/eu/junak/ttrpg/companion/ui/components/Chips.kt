@@ -2,9 +2,11 @@ package eu.junak.ttrpg.companion.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
@@ -168,7 +170,13 @@ enum class BannerTone { ALERT, INFO }
 
 /** A strip above a screen's content that says what is wrong and offers [actions], such as Retry. */
 @Composable
-fun Banner(text: String, tone: BannerTone, modifier: Modifier = Modifier, actions: @Composable RowScope.() -> Unit = {}) {
+fun Banner(
+    text: String,
+    tone: BannerTone,
+    modifier: Modifier = Modifier,
+    actionsBelow: Boolean = false,
+    actions: @Composable RowScope.() -> Unit = {},
+) {
     val spacing = LocalSpacing.current
     val colors = MaterialTheme.colorScheme
     Surface(
@@ -177,13 +185,26 @@ fun Banner(text: String, tone: BannerTone, modifier: Modifier = Modifier, action
         shape = MaterialTheme.shapes.medium,
         modifier = modifier,
     ) {
-        Row(
-            Modifier.padding(spacing.md - spacing.xs),
-            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            actions()
+        if (actionsBelow) {
+            // Several actions beside the text would squeeze it into a narrow column.
+            Column(Modifier.padding(spacing.md - spacing.xs), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                Text(text, style = MaterialTheme.typography.bodyMedium)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(spacing.sm, Alignment.End),
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = actions,
+                )
+            }
+        } else {
+            Row(
+                Modifier.padding(spacing.md - spacing.xs),
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                actions()
+            }
         }
     }
 }

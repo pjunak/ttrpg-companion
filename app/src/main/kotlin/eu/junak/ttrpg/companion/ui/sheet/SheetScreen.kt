@@ -264,7 +264,7 @@ private fun SheetBannerView(banner: SheetBanner?, name: String, refreshing: Bool
     val spacing = LocalSpacing.current
     val place = Modifier.padding(start = spacing.md, end = spacing.md, top = spacing.md - spacing.xs, bottom = spacing.sm)
     when (banner) {
-        is SheetBanner.NotSaved -> Banner(stringResource(R.string.sheet_banner_not_saved), BannerTone.ALERT, place) {
+        is SheetBanner.NotSaved -> Banner(stringResource(R.string.sheet_banner_not_saved), BannerTone.ALERT, place, actionsBelow = true) {
             if (banner.retrying) {
                 CircularProgressIndicator(Modifier.size(LocalSpacing.current.progressInline))
             } else {
