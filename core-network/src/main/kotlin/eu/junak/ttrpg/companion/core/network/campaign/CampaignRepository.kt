@@ -4,6 +4,7 @@ import eu.junak.ttrpg.companion.core.model.AuthState
 import eu.junak.ttrpg.companion.core.model.CampaignDataset
 import eu.junak.ttrpg.companion.core.model.CampaignMutation
 import eu.junak.ttrpg.companion.core.model.HostVersion
+import eu.junak.ttrpg.companion.core.model.Role
 import eu.junak.ttrpg.companion.core.network.CodexClient
 import eu.junak.ttrpg.companion.core.network.HostException
 import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
@@ -32,6 +33,11 @@ data class CampaignState(
     val fetchedAt: Long? = null,
     val refreshing: Boolean = false,
     val problem: CampaignProblem? = null,
+    /**
+     * The session role the host projected [dataset] for; null when it was read
+     * signed out or came from the cache, whose role is not known.
+     */
+    val role: Role? = null,
 )
 
 sealed interface CampaignProblem {
@@ -49,7 +55,10 @@ sealed interface CampaignProblem {
 sealed interface WriteResult {
     data object Saved : WriteResult
 
-    /** The records changed since they were read; the campaign was refreshed so the change can be prepared again. */
+    /**
+     * The records or the session's role changed since the change was
+     * prepared; the campaign was refreshed so it can be prepared again.
+     */
     data object Conflict : WriteResult
 
     /** The site has no signed-in session for this app any more. */
@@ -108,7 +117,8 @@ class CampaignRepository @Inject constructor(
                     state.update { it.copy(problem = CampaignProblem.UnsupportedHost(unsupported)) }
                     return@withLock false
                 }
-                val expired = site.role != null && client.auth(site.baseUrl) == AuthState.Anonymous
+                val auth = if (cookies.hasSession(site.baseUrl)) client.auth(site.baseUrl) else AuthState.Anonymous
+                val expired = site.role != null && auth == AuthState.Anonymous
                 if (expired) cookies.clear(site.baseUrl)
                 val (json, dataset) = client.campaign(site.baseUrl)
                 withContext(Dispatchers.IO) { store.writeCampaign(site.id, json) }
@@ -116,6 +126,7 @@ class CampaignRepository @Inject constructor(
                     dataset = dataset,
                     fetchedAt = System.currentTimeMillis(),
                     problem = if (expired) CampaignProblem.SessionExpired else null,
+                    role = (auth as? AuthState.SignedIn)?.role,
                 )
                 true
             } catch (error: IOException) {
@@ -141,9 +152,15 @@ class CampaignRepository @Inject constructor(
      * then refreshes the campaign so the screens show the saved records and
      * their new revisions. A committed write is [WriteResult.Saved] even when
      * that refresh fails.
+     *
+     * [role] is the [CampaignState.role] the mutations were prepared for. The
+     * host restores references hidden from a player's projection but not from
+     * a DM's, so a change prepared for another role than the session's is not
+     * sent: the campaign is refreshed and the result is [WriteResult.Conflict],
+     * to prepare it again.
      */
-    suspend fun commit(site: Site, mutations: List<CampaignMutation>): WriteResult {
-        val result = send(site, mutations)
+    suspend fun commit(site: Site, mutations: List<CampaignMutation>, role: Role?): WriteResult {
+        val result = send(site, mutations, role)
         if (result == WriteResult.Saved || result == WriteResult.Conflict) {
             val refreshed = reload(site)
             // Preparing again on a campaign that could not be refreshed would only conflict again.
@@ -152,9 +169,10 @@ class CampaignRepository @Inject constructor(
         return result
     }
 
-    private suspend fun send(site: Site, mutations: List<CampaignMutation>): WriteResult {
+    private suspend fun send(site: Site, mutations: List<CampaignMutation>, role: Role?): WriteResult {
         return try {
             val session = client.auth(site.baseUrl) as? AuthState.SignedIn ?: return WriteResult.SignedOut
+            if (session.role != role) return WriteResult.Conflict
             client.commit(site.baseUrl, session.csrfToken, mutations)
             WriteResult.Saved
         } catch (error: HostException) {

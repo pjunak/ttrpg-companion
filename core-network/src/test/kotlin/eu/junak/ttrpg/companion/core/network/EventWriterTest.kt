@@ -109,6 +109,25 @@ class EventWriterTest {
     }
 
     @Test
+    fun aChangeIsPreparedAgainForTheSessionsRole() = runTest {
+        // The DM's view of the event has a DM-only link and private notes the public view lacks.
+        f.host.dmCampaign = campaign(
+            event("arrival", 2, """{"name":"Arrival","sitting":3,"order":2,"description":"Rain.","characters":["kael","spy"],"notes":"secret"}"""),
+        )
+        val (site, base) = openEditor()
+        // Signed in again as the DM, but that sign-in could not fetch the campaign.
+        f.host.role = "dm"
+
+        assertEquals(EventSaveResult.Saved, f.writer.save(site, base, EventFields.of(base.value).copy(description = "Rain and fog.")))
+
+        assertEquals(1, f.host.commits.size)
+        val value = mutation(0)["value"]!!.jsonObject
+        assertEquals(listOf("kael", "spy"), value["characters"]!!.jsonArray.map { it.jsonPrimitive.content })
+        assertEquals("secret", value["notes"]?.jsonPrimitive?.content)
+        assertEquals("Rain and fog.", value["description"]?.jsonPrimitive?.content)
+    }
+
+    @Test
     fun aRetriedNoteIsNotSavedTwice() = runTest {
         val (site, _) = openEditor()
         val note = EventBase.new("Met the mayor", "abc123")

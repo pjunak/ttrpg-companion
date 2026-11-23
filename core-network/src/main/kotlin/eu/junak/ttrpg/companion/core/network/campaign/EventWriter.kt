@@ -29,23 +29,27 @@ sealed interface EventSaveResult {
 /**
  * Saves events online against the latest campaign. A write that races with
  * another change is prepared again on the refreshed campaign, so edits to
- * different fields merge; only a clash on the same field asks the user.
+ * different fields merge; only a clash on the same field asks the user. A
+ * change is prepared for the role its campaign was fetched for, and again
+ * when the session's role turns out to differ.
  */
 @Singleton
 class EventWriter @Inject constructor(private val campaigns: CampaignRepository) {
 
     suspend fun save(site: Site, base: EventBase, fields: EventFields, overwrite: Boolean = false): EventSaveResult {
         repeat(MAX_ATTEMPTS) {
-            val dataset = campaigns.state(site).value.dataset ?: return EventSaveResult.NotSaved(WriteResult.Failed(""))
-            val mutation = when (val prepared = dataset.prepareEventSave(base, fields, site.role == Role.DM, overwrite)) {
+            val state = campaigns.state(site).value
+            val dataset = state.dataset ?: return EventSaveResult.NotSaved(WriteResult.Failed(""))
+            // Prepared for the role the campaign was fetched for; the commit checks it against the session.
+            val mutation = when (val prepared = dataset.prepareEventSave(base, fields, state.role == Role.DM, overwrite)) {
                 is EventSave.Ready -> prepared.mutation
                 is EventSave.Conflict -> return EventSaveResult.Conflict(prepared.fields)
                 EventSave.Gone -> return EventSaveResult.Gone
                 EventSave.AlreadySaved -> return EventSaveResult.Saved
             }
-            when (val result = campaigns.commit(site, listOf(mutation))) {
+            when (val result = campaigns.commit(site, listOf(mutation), state.role)) {
                 WriteResult.Saved -> return EventSaveResult.Saved
-                WriteResult.Conflict -> Unit // The campaign was refreshed; prepare again.
+                WriteResult.Conflict -> Unit // The campaign was refreshed (new records or role); prepare again.
                 else -> return EventSaveResult.NotSaved(result)
             }
         }
@@ -55,15 +59,16 @@ class EventWriter @Inject constructor(private val campaigns: CampaignRepository)
     /** Deletes the event the editor opened as [base], unless it changed since. */
     suspend fun delete(site: Site, base: EventBase): EventSaveResult {
         repeat(MAX_ATTEMPTS) {
-            val dataset = campaigns.state(site).value.dataset ?: return EventSaveResult.NotSaved(WriteResult.Failed(""))
+            val state = campaigns.state(site).value
+            val dataset = state.dataset ?: return EventSaveResult.NotSaved(WriteResult.Failed(""))
             val mutation = when (val prepared = dataset.prepareEventDelete(base)) {
                 is EventDelete.Ready -> prepared.mutation
                 EventDelete.Changed -> return EventSaveResult.Changed
                 EventDelete.AlreadyGone -> return EventSaveResult.Saved
             }
-            when (val result = campaigns.commit(site, listOf(mutation))) {
+            when (val result = campaigns.commit(site, listOf(mutation), state.role)) {
                 WriteResult.Saved -> return EventSaveResult.Saved
-                WriteResult.Conflict -> Unit // The campaign was refreshed; preparing again shows what changed.
+                WriteResult.Conflict -> Unit // The campaign was refreshed (new records or role); prepare again.
                 else -> return EventSaveResult.NotSaved(result)
             }
         }

@@ -1,6 +1,7 @@
 package eu.junak.ttrpg.companion.core.network
 
 import eu.junak.ttrpg.companion.core.model.CampaignMutation
+import eu.junak.ttrpg.companion.core.model.Role
 import eu.junak.ttrpg.companion.core.network.FakeHost.Companion.campaign
 import eu.junak.ttrpg.companion.core.network.FakeHost.Companion.event
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignProblem
@@ -114,7 +115,7 @@ class CampaignRepositoryTest {
         // The refresh after the commit reads a session answer it cannot parse.
         f.host.onCommit = { f.host.role = "wizard" }
 
-        assertEquals(WriteResult.Saved, f.campaigns.commit(site, listOf(rename)))
+        assertEquals(WriteResult.Saved, f.campaigns.commit(site, listOf(rename), Role.PLAYER))
 
         assertTrue(f.state(site).problem is CampaignProblem.Unavailable)
         assertFalse(f.state(site).refreshing)
@@ -127,7 +128,7 @@ class CampaignRepositoryTest {
         f.host.commitAnswers += FakeHost.error(409, "WRITE_CONFLICT")
         f.host.onCommit = { f.host.failing += "/api/campaign" }
 
-        assertTrue(f.campaigns.commit(site, listOf(rename)) is WriteResult.Failed)
+        assertTrue(f.campaigns.commit(site, listOf(rename), Role.PLAYER) is WriteResult.Failed)
     }
 
     @Test
@@ -135,18 +136,44 @@ class CampaignRepositoryTest {
         val site = f.site("player")
         // The host answers 403, never 401, when the session ended.
         f.host.onCommit = { f.host.role = null }
-        assertEquals(WriteResult.SignedOut, f.campaigns.commit(site, listOf(rename)))
+        assertEquals(WriteResult.SignedOut, f.campaigns.commit(site, listOf(rename), Role.PLAYER))
 
         f.host.role = "player"
         f.host.onCommit = {}
         f.host.commitAnswers += FakeHost.error(403, "FORBIDDEN")
-        assertEquals(WriteResult.Forbidden, f.campaigns.commit(site, listOf(rename)))
+        assertEquals(WriteResult.Forbidden, f.campaigns.commit(site, listOf(rename), Role.PLAYER))
+    }
+
+    @Test
+    fun remembersTheRoleTheCampaignWasFetchedFor() = runTest {
+        val site = f.site("player")
+        f.store.writeCampaign(site.id, campaign(arrival))
+        f.host.failing += "/api/campaign"
+        f.campaigns.open(site)
+        assertEquals("a cached copy's role is not known", null, f.state(site).role)
+
+        f.host.failing.clear()
+        f.campaigns.refresh(site)
+        assertEquals(Role.PLAYER, f.state(site).role)
+    }
+
+    @Test
+    fun aChangePreparedForAnotherRoleIsNotSent() = runTest {
+        val site = f.site("player")
+        f.campaigns.refresh(site)
+        // Signed in again as the DM, but that sign-in could not fetch the campaign.
+        f.host.role = "dm"
+
+        assertEquals(WriteResult.Conflict, f.campaigns.commit(site, listOf(rename), Role.PLAYER))
+
+        assertTrue(f.host.commits.isEmpty())
+        assertEquals("refreshed for the session's role", Role.DM, f.state(site).role)
     }
 
     @Test
     fun aSignedOutSiteSendsNothing() = runTest {
         val site = f.site()
-        assertEquals(WriteResult.SignedOut, f.campaigns.commit(site, listOf(rename)))
+        assertEquals(WriteResult.SignedOut, f.campaigns.commit(site, listOf(rename), Role.PLAYER))
         assertTrue(f.host.commits.isEmpty())
     }
 }
