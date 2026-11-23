@@ -64,6 +64,7 @@ import eu.junak.ttrpg.companion.ui.components.Banner
 import eu.junak.ttrpg.companion.ui.components.BannerButton
 import eu.junak.ttrpg.companion.ui.components.BannerTone
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
+import eu.junak.ttrpg.companion.ui.components.WholeWordText
 import eu.junak.ttrpg.companion.ui.components.relativeTime
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
@@ -248,7 +249,7 @@ private fun SheetTabs(selected: SheetTab, onSelect: (SheetTab) -> Unit) {
                 selected = tab == selected,
                 onClick = { onSelect(tab) },
                 icon = { Icon(icon, contentDescription = null) },
-                label = { Text(stringResource(label)) },
+                label = { WholeWordText(stringResource(label)) },
             )
         }
     }

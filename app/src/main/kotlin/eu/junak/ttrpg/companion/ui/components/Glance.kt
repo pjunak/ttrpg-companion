@@ -17,9 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.foundation.text.modifiers.TextAutoSizeLayoutScope
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,15 +34,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.sp
 import eu.junak.ttrpg.companion.ui.theme.Emphasis
-import eu.junak.ttrpg.companion.ui.theme.LabelMinSize
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import eu.junak.ttrpg.companion.ui.theme.NumberStyles
 
@@ -233,41 +224,10 @@ fun GlanceFacts(facts: List<GlanceFact>, modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * The small capitals under or beside a glance value. A narrow box or a large
- * font shrinks it instead of breaking a word across lines (INSPIRE-D).
- */
+/** The small capitals under or beside a glance value; it shrinks rather than split a word. */
 @Composable
-private fun GlanceLabel(text: String, color: Color, align: TextAlign, modifier: Modifier = Modifier) {
-    val style = MaterialTheme.typography.labelSmall
-    BasicText(
-        text.uppercase(),
-        modifier,
-        style = style.copy(color = color, textAlign = align),
-        maxLines = 2,
-        autoSize = WholeWords(max = style.fontSize, min = LabelMinSize),
-    )
-}
-
-/** The largest size from [max] down to [min] at which the text fits its lines without splitting a word. */
-private data class WholeWords(val max: TextUnit, val min: TextUnit) : TextAutoSize {
-    override fun TextAutoSizeLayoutScope.getFontSize(constraints: Constraints, text: AnnotatedString): TextUnit {
-        var size = max.value
-        while (size > min.value) {
-            val layout = performLayout(constraints, text, size.sp)
-            if (!layout.hasVisualOverflow && !layout.splitsWord(text.text)) return size.sp
-            size -= STEP
-        }
-        return min
-    }
-}
-
-private const val STEP = 0.5f
-
-private fun TextLayoutResult.splitsWord(text: String): Boolean = (0 until lineCount - 1).any { line ->
-    val end = getLineEnd(line)
-    end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit()
-}
+private fun GlanceLabel(text: String, color: Color, align: TextAlign, modifier: Modifier = Modifier) =
+    WholeWordText(text.uppercase(), modifier, MaterialTheme.typography.labelSmall, color, align, maxLines = 2)
 
 private fun Modifier.glanceBox(shape: Shape, fill: Color, line: Color, width: Dp): Modifier =
     clip(shape).background(fill).border(width, line, shape)

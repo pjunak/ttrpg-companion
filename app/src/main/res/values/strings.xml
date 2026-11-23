@@ -404,6 +404,7 @@
     <string name="sheet_spell_attack_description">Spell attack %1$s</string>
     <string name="sheet_prepared">Prepared</string>
     <string name="sheet_prepared_description">Prepared spells: %1$d of %2$d</string>
+    <string name="sheet_carried_weight">Carried</string>
     <string name="sheet_weight_description">Carried weight: %1$s of %2$s pounds</string>
     <string name="sheet_attuned">Attuned</string>
     <string name="sheet_attuned_description">Attuned items: %1$d of %2$d</string>

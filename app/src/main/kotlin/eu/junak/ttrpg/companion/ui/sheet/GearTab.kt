@@ -96,7 +96,7 @@ private fun GearGlance(gear: SheetGear) {
                     val capacity = formatPounds(gear.capacityPounds ?: 0.0, locale)
                     GlanceMeter(
                         Icons.Outlined.Scale,
-                        stringResource(R.string.sheet_carried),
+                        stringResource(R.string.sheet_carried_weight),
                         stringResource(R.string.sheet_weight, carried, capacity),
                         share,
                         stringResource(R.string.sheet_weight_description, carried, capacity),
