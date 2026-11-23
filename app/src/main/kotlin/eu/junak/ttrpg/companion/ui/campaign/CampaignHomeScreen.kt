@@ -4,12 +4,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -102,7 +106,7 @@ fun CampaignHomeScreen(
     val overview = remember(state.dataset) { state.dataset?.overview(recentLimit = 6) }
     val baseUrl = site?.baseUrl.orEmpty()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    var menuOpen by remember { mutableStateOf(false) }
+    var menuOpen by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -325,12 +329,14 @@ private fun PageGrid(overview: CampaignOverview, onOpenPage: (CampaignPage) -> U
     Column(Modifier.padding(horizontal = spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
         SectionHeader(stringResource(R.string.home_browse))
         tiles.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+            // Both tiles of a row take the taller one's height when a label wraps.
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
                 row.forEach { page ->
+                    val tile = Modifier.weight(1f).fillMaxHeight()
                     if (page == null) {
-                        PageTile(Icons.Outlined.Map, stringResource(R.string.map_world), null, Modifier.weight(1f), onOpenMap)
+                        PageTile(Icons.Outlined.Map, stringResource(R.string.map_world), null, tile, onOpenMap)
                     } else {
-                        PageTile(pageIcon(page), pageLabel(page), overview.counts[page] ?: 0, Modifier.weight(1f)) { onOpenPage(page) }
+                        PageTile(pageIcon(page), pageLabel(page), overview.counts[page] ?: 0, tile) { onOpenPage(page) }
                     }
                 }
                 if (row.size == 1) Spacer(Modifier.weight(1f))
@@ -346,7 +352,7 @@ private fun PageTile(icon: ImageVector, label: String, count: Int?, modifier: Mo
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = modifier.height(spacing.tileHeight),
+        modifier = modifier.heightIn(min = spacing.tileHeight),
     ) {
         Column(Modifier.padding(spacing.md), verticalArrangement = Arrangement.SpaceBetween) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -356,7 +362,13 @@ private fun PageTile(icon: ImageVector, label: String, count: Int?, modifier: Mo
                     Text(count.toString(), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            Text(label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                label,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = spacing.sm),
+            )
         }
     }
 }

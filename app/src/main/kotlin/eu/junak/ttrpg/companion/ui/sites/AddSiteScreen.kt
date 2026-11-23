@@ -2,10 +2,14 @@ package eu.junak.ttrpg.companion.ui.sites
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -20,7 +24,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -103,14 +110,15 @@ fun AddSiteScreen(onBack: () -> Unit, onDone: (Site) -> Unit, viewModel: AddSite
         },
     ) { padding ->
         Column(
-            Modifier.padding(padding).padding(spacing.md).fillMaxWidth(),
+            Modifier.padding(padding).consumeWindowInsets(padding).imePadding()
+                .verticalScroll(rememberScrollState()).padding(spacing.md).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(spacing.md),
         ) {
             OutlinedTextField(
                 value = viewModel.address,
                 onValueChange = { viewModel.address = it },
                 label = { Text(stringResource(R.string.field_address)) },
-                placeholder = { Text("asurai.junak.eu") },
+                placeholder = { Text(stringResource(R.string.site_address_example)) },
                 singleLine = true,
                 enabled = existing == null && !viewModel.busy,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
@@ -126,7 +134,7 @@ fun AddSiteScreen(onBack: () -> Unit, onDone: (Site) -> Unit, viewModel: AddSite
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { viewModel.submit() }),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().semantics { contentType = ContentType.Password },
             )
             viewModel.problem?.let { Text(problemText(it), color = MaterialTheme.colorScheme.error) }
             Button(onClick = viewModel::submit, enabled = !viewModel.busy, modifier = Modifier.fillMaxWidth()) {

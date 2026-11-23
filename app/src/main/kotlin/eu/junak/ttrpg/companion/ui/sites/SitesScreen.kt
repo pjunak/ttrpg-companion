@@ -37,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,7 +83,7 @@ fun SitesScreen(
 ) {
     val spacing = LocalSpacing.current
     val sites by viewModel.sites.collectAsStateWithLifecycle()
-    var removing by remember { mutableStateOf<Site?>(null) }
+    var removingId by rememberSaveable { mutableStateOf<String?>(null) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
@@ -120,20 +121,20 @@ fun SitesScreen(
             verticalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
             items(sites, key = Site::id) { site ->
-                SiteCard(site, onOpen = { onOpen(site) }, onSignIn = { onSignIn(site) }, onRemove = { removing = site })
+                SiteCard(site, onOpen = { onOpen(site) }, onSignIn = { onSignIn(site) }, onRemove = { removingId = site.id })
             }
         }
     }
 
-    removing?.let { site ->
+    sites.firstOrNull { it.id == removingId }?.let { site ->
         AlertDialog(
-            onDismissRequest = { removing = null },
+            onDismissRequest = { removingId = null },
             title = { Text(stringResource(R.string.site_remove_title, site.name)) },
             text = { Text(stringResource(R.string.site_remove_text)) },
             confirmButton = {
-                TextButton(onClick = { viewModel.remove(site); removing = null }) { Text(stringResource(R.string.site_remove)) }
+                TextButton(onClick = { viewModel.remove(site); removingId = null }) { Text(stringResource(R.string.site_remove)) }
             },
-            dismissButton = { TextButton(onClick = { removing = null }) { Text(stringResource(R.string.action_cancel)) } },
+            dismissButton = { TextButton(onClick = { removingId = null }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
 }
