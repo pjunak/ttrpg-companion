@@ -120,7 +120,7 @@
     <string name="field_map_notes">Poznámky k mapě</string>
     <string name="field_short">Shrnutí</string>
     <string name="field_summary">Shrnutí</string>
-    <string name="field_body">Vyprávění</string>
+    <string name="field_body">Podrobnosti</string>
     <string name="field_note">Poznámka</string>
 
     <string name="search_hint">Hledat jména</string>

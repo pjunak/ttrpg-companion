@@ -123,7 +123,7 @@
     <string name="field_map_notes">Map notes</string>
     <string name="field_short">Summary</string>
     <string name="field_summary">Summary</string>
-    <string name="field_body">Account</string>
+    <string name="field_body">Details</string>
     <string name="field_note">Note</string>
 
     <string name="search_hint">Search names</string>
