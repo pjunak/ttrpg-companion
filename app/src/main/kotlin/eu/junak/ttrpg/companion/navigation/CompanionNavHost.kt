@@ -26,6 +26,7 @@ import eu.junak.ttrpg.companion.ui.sessions.EventEditScreen
 import eu.junak.ttrpg.companion.ui.sessions.SessionScreen
 import eu.junak.ttrpg.companion.ui.sessions.SessionsScreen
 import eu.junak.ttrpg.companion.ui.settings.SettingsScreen
+import eu.junak.ttrpg.companion.ui.sheet.SheetScreen
 import eu.junak.ttrpg.companion.ui.sites.AddSiteScreen
 import eu.junak.ttrpg.companion.ui.sites.SitesScreen
 import eu.junak.ttrpg.companion.ui.web.WebScreen
@@ -115,6 +116,17 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?, updatePen
                     onEditEvent = { navController.open(backStack, EventEditRoute(route.siteId, it)) },
                     onOpenMap = { parentId, focus -> navController.open(backStack, MapRoute(route.siteId, parentId, focus)) },
                     onSignIn = { navController.open(backStack, AddSiteRoute(route.siteId)) },
+                    onOpenSheet = { navController.open(backStack, SheetRoute(route.siteId, route.key)) },
+                )
+            }
+        }
+        composable<SheetRoute> { backStack ->
+            val route = backStack.toRoute<SheetRoute>()
+            SiteScope {
+                SheetScreen(
+                    onBack = { navController.leave(backStack) },
+                    onSignIn = { navController.open(backStack, AddSiteRoute(route.siteId)) },
+                    onOpenWebsite = { navController.open(backStack, WebRoute(route.siteId, it)) },
                 )
             }
         }

@@ -43,6 +43,10 @@ data class EventEditRoute(val siteId: String, val key: String? = null, val sitti
 @Serializable
 data class MapRoute(val siteId: String, val parentId: String? = null, val focus: String? = null)
 
+/** The character sheet of the character record [key]. */
+@Serializable
+data class SheetRoute(val siteId: String, val key: String)
+
 /** A page of the site's own web app, at [path] (`/characters/kael`). */
 @Serializable
 data class WebRoute(val siteId: String, val path: String = "/")

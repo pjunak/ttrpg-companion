@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,6 +58,7 @@ import eu.junak.ttrpg.companion.ui.components.SectionHeader
 import eu.junak.ttrpg.companion.ui.components.pageLabel
 import eu.junak.ttrpg.companion.ui.components.readableWidth
 import eu.junak.ttrpg.companion.ui.components.relatedLabel
+import eu.junak.ttrpg.companion.ui.sheet.SheetEntryViewModel
 import eu.junak.ttrpg.companion.ui.theme.ArticleTheme
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 
@@ -77,8 +79,11 @@ fun RecordScreen(
     onEditEvent: (key: String) -> Unit,
     onOpenMap: (parentId: String?, focus: String?) -> Unit,
     onSignIn: () -> Unit,
+    onOpenSheet: () -> Unit,
     viewModel: CampaignViewModel = hiltViewModel(),
+    sheetEntry: SheetEntryViewModel = hiltViewModel(),
 ) {
+    val offersSheet by sheetEntry.offered.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
     val site by viewModel.site.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -98,6 +103,11 @@ fun RecordScreen(
                 title = { Text(pageLabel(page), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = { BackButton(onBack) },
                 actions = {
+                    if (offersSheet && details != null) {
+                        IconButton(onClick = onOpenSheet) {
+                            Icon(Icons.Outlined.Description, contentDescription = stringResource(R.string.record_open_sheet))
+                        }
+                    }
                     // Events are the session notes the app edits; other records are edited on the website.
                     if (page == CampaignPage.EVENTS && site?.role != null && details != null) {
                         IconButton(onClick = { onEditEvent(key) }) {

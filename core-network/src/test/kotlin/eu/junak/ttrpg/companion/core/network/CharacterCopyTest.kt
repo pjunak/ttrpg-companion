@@ -206,10 +206,12 @@ class CharacterCopyTest {
         )
         for ((answer, expected) in outcomes) {
             keep("load-sheet")
+            assertTrue(f.store.hasCharacter(site.id, KEY))
             val session = open(answer)
             val after = session.until { it.copy == null && it.load !is SheetLoad.Sheet && it.load != SheetLoad.Loading }
             assertTrue("${after.load}", expected(after.load))
             assertNull("${after.load}: removed", f.store.readCharacter(site.id, KEY))
+            assertFalse(f.store.hasCharacter(site.id, KEY))
             session.close()
         }
     }

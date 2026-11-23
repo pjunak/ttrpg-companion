@@ -126,6 +126,9 @@ class SiteStore internal constructor(
     /** The last character sheet kept for record [key] of site [id], as the character session wrote it. */
     fun readCharacter(id: String, key: String): String? = characterFile(id, key).takeIf(File::isFile)?.readText()
 
+    /** Whether a character sheet is kept for record [key] of site [id], without reading it. */
+    fun hasCharacter(id: String, key: String): Boolean = characterFile(id, key).isFile
+
     /** Replaces the kept character sheet of [key] atomically; nothing is written once the site is removed. */
     fun writeCharacter(id: String, key: String, json: String) = writeAtomically(id, characterFile(id, key), json)
 
