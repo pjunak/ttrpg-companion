@@ -337,6 +337,7 @@
     <string name="sheet_hit_die_title">Použít kostku životů (%1$s)</string>
     <string name="sheet_hit_die_text">Klepněte na číslo, které vám padlo, nebo nechte hodit telefon.</string>
     <string name="sheet_roll_on_phone">Hodit v telefonu</string>
+    <string name="sheet_rolled">Hod %1$s: padlo %2$d</string>
     <string name="sheet_short_rest">Krátký odpočinek</string>
     <string name="sheet_long_rest">Dlouhý odpočinek</string>
     <string name="sheet_short_rest_title">Dát si krátký odpočinek?</string>

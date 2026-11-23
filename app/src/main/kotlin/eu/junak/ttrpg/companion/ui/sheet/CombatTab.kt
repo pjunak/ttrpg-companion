@@ -177,6 +177,7 @@ private fun PoolSheet(use: LimitedUse, actions: SheetActions, onDismiss: () -> U
 private fun HitDieSheet(dice: HitDice, actions: SheetActions, onDismiss: () -> Unit) {
     val spacing = LocalSpacing.current
     val colors = MaterialTheme.colorScheme
+    val resources = LocalResources.current
     val size = dieSize(dice.die) ?: return
     val enabled = actions.canWrite && canSpendHitDie(dice)
     fun spend(result: Int) {
@@ -197,7 +198,9 @@ private fun HitDieSheet(dice: HitDice, actions: SheetActions, onDismiss: () -> U
             }
             Row {
                 ActionKey(R.string.sheet_roll_on_phone, colors.primaryContainer, colors.onPrimaryContainer, colors.primary, enabled, Modifier.weight(1f)) {
-                    spend(rollDie(size))
+                    val result = rollDie(size)
+                    spend(result)
+                    actions.announce(resources.getString(R.string.sheet_rolled, dice.die, result))
                 }
             }
         }

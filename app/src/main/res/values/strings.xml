@@ -336,6 +336,7 @@
     <string name="sheet_hit_die_title">Spend a hit die (%1$s)</string>
     <string name="sheet_hit_die_text">Tap the number you rolled, or let the phone roll.</string>
     <string name="sheet_roll_on_phone">Roll on the phone</string>
+    <string name="sheet_rolled">Rolled on the %1$s: %2$d</string>
     <string name="sheet_short_rest">Short rest</string>
     <string name="sheet_long_rest">Long rest</string>
     <string name="sheet_short_rest_title">Take a short rest?</string>

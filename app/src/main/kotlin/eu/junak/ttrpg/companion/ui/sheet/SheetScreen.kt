@@ -53,6 +53,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -98,6 +99,7 @@ import eu.junak.ttrpg.companion.ui.components.relativeTime
 import eu.junak.ttrpg.companion.ui.theme.Emphasis
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import eu.junak.ttrpg.companion.ui.theme.LocalVitalColors
+import kotlinx.coroutines.launch
 
 /**
  * A character's sheet: a header with hit points, stats, concentration and
@@ -120,6 +122,7 @@ fun SheetScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val name by viewModel.name.collectAsStateWithLifecycle()
     val snackbars = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val resources = LocalResources.current
     LaunchedEffect(viewModel, resources) { viewModel.notices.collect { snackbars.showSnackbar(noticeText(resources, it)) } }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.screenStopped() }
@@ -161,7 +164,9 @@ fun SheetScreen(
                     KeepScreenOn()
                     SheetBannerView(sheetBanner(state), name.orEmpty(), state.refreshing, viewModel, website)
                     Header(load.sheet.header, state, onHitPoints = { keypad = true }, onAddCondition = { picker = true }, viewModel)
-                    val actions = SheetActions(state.canWrite, viewModel::play, viewModel::edit, website)
+                    val actions = SheetActions(state.canWrite, viewModel::play, viewModel::edit, website) { message ->
+                        scope.launch { snackbars.showSnackbar(message) }
+                    }
                     Box(Modifier.weight(1f).fillMaxWidth()) { tabBody(tab, load.sheet, actions) }
                 }
                 SheetLoad.NoSheet -> NoSheet(name.orEmpty(), website)

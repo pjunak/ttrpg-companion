@@ -24,6 +24,8 @@ class SheetActions(
     val edit: ((JsonObject) -> JsonObject) -> Unit,
     /** Opens the character's page on the website, where the sheet is built. */
     val openWebsite: () -> Unit,
+    /** Shows a short message, such as what the phone rolled. */
+    val announce: (String) -> Unit,
 )
 
 /**
