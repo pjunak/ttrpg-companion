@@ -55,6 +55,9 @@ class FakeHost : Dispatcher() {
 
     val requests = CopyOnWriteArrayList<String>()
 
+    /** Called with each request as "METHOD /path" before it is answered, for example to change [failing]. */
+    @Volatile var onRequest: (String) -> Unit = {}
+
     /** The bodies of every transaction received, committed or not. */
     val commits = CopyOnWriteArrayList<String>()
 
@@ -63,6 +66,7 @@ class FakeHost : Dispatcher() {
     override fun dispatch(request: RecordedRequest): MockResponse {
         val path = request.url.encodedPath
         requests += "${request.method} $path"
+        onRequest("${request.method} $path")
         if (path in failing) return MockResponse.Builder().code(500).build()
         val hasCookie = request.headers["Cookie"]?.contains("edit_session=") == true
         val session = role.takeIf { hasCookie }
