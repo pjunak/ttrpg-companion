@@ -24,10 +24,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mikepenz.markdown.m3.Markdown
 import dagger.hilt.android.lifecycle.HiltViewModel
 import eu.junak.ttrpg.companion.AppPreferences
 import eu.junak.ttrpg.companion.BuildConfig
@@ -108,15 +108,8 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 }
                 is UpdateState.Available -> {
                     Text(stringResource(R.string.update_available, state.version))
-                    state.notes?.takeIf(String::isNotBlank)?.let {
-                        Text(
-                            it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 6,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                    // Release notes are Markdown, as on GitHub.
+                    state.notes?.takeIf(String::isNotBlank)?.let { Markdown(content = it) }
                     Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
                         Button(onClick = { viewModel.download(state) }) { Text(stringResource(R.string.update_download)) }
                         TextButton(onClick = viewModel::dismissUpdate) { Text(stringResource(R.string.update_dismiss)) }
