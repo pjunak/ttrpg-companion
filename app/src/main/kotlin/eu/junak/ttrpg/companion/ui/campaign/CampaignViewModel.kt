@@ -26,8 +26,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Shared by every screen of one site: the saved site and its campaign. The
- * first screen to open a site loads the cached copy and refreshes it.
+ * One site's saved site and campaign for one screen. Each screen (back-stack
+ * entry) has its own instance; they share the campaign through
+ * [CampaignRepository], and [SiteScope] loads it when a screen is shown
+ * without one.
  */
 @HiltViewModel
 class CampaignViewModel @Inject constructor(
@@ -60,8 +62,8 @@ class CampaignViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     init {
+        // Any screen of a site counts as opening it; setting it again is harmless.
         sites.lastOpenedId = siteId
-        ensureLoaded()
     }
 
     /** Loads the campaign when nothing is shown, for example after signing in again. */

@@ -48,6 +48,7 @@ fun MapScreen(
     onBack: () -> Unit,
     onOpenRecord: (CampaignPage, String) -> Unit,
     onOpenWebsite: (path: String) -> Unit,
+    onSignIn: () -> Unit,
     viewModel: MapViewModel = hiltViewModel(),
     campaign: CampaignViewModel = hiltViewModel(),
 ) {
@@ -108,7 +109,7 @@ fun MapScreen(
                         onTilesRefused = { viewModel.tilesRefused(shown.image.mediaPath) },
                     )
                     Column(Modifier.align(Alignment.TopCenter)) {
-                        if (shown.offline) Notice(stringResource(R.string.map_offline)) else CampaignStatus(state, onSignIn = {})
+                        if (shown.offline) Notice(stringResource(R.string.map_offline)) else CampaignStatus(state, onSignIn)
                     }
                 }
             }

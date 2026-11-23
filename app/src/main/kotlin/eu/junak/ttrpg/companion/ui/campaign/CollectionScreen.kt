@@ -66,6 +66,7 @@ fun CollectionScreen(
     page: CampaignPage,
     onBack: () -> Unit,
     onOpenRecord: (CampaignPage, String) -> Unit,
+    onSignIn: () -> Unit,
     viewModel: CampaignViewModel = hiltViewModel(),
 ) {
     val spacing = LocalSpacing.current
@@ -118,7 +119,7 @@ fun CollectionScreen(
         },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
-            CampaignStatus(state, onSignIn = {})
+            CampaignStatus(state, onSignIn)
             if (searching) {
                 OutlinedTextField(
                     value = query,

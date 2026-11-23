@@ -76,6 +76,7 @@ import eu.junak.ttrpg.companion.ui.theme.optionColor
 fun SessionsScreen(
     onBack: () -> Unit,
     onOpenSession: (Int) -> Unit,
+    onSignIn: () -> Unit,
     viewModel: CampaignViewModel = hiltViewModel(),
 ) {
     val spacing = LocalSpacing.current
@@ -106,7 +107,7 @@ fun SessionsScreen(
         },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
-            CampaignStatus(state, onSignIn = {})
+            CampaignStatus(state, onSignIn)
             when {
                 state.dataset == null -> CenteredMessage(stringResource(R.string.campaign_loading), loading = state.refreshing)
                 sessions.isEmpty() -> CenteredMessage(stringResource(R.string.sessions_empty))

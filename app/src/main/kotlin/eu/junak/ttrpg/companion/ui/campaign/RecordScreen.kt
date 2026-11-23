@@ -101,6 +101,7 @@ fun RecordScreen(
     onOpenWebsite: (path: String) -> Unit,
     onEditEvent: (key: String) -> Unit,
     onOpenMap: (parentId: String?, focus: String?) -> Unit,
+    onSignIn: () -> Unit,
     viewModel: CampaignViewModel = hiltViewModel(),
 ) {
     val spacing = LocalSpacing.current
@@ -168,7 +169,7 @@ fun RecordScreen(
         }
         val open = { ref: RecordRef -> onOpenRecord(ref.page, ref.key) }
         Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
-            CampaignStatus(state, onSignIn = {})
+            CampaignStatus(state, onSignIn)
             Column(Modifier.padding(horizontal = spacing.md).padding(bottom = spacing.xl)) {
                 Hero(baseUrl, details)
                 // Status is a badge and the subtitle is under the name, so neither is repeated here.

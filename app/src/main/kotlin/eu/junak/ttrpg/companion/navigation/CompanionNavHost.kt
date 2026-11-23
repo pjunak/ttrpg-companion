@@ -97,6 +97,7 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?, updatePen
                     page = page,
                     onBack = navController::popBackStack,
                     onOpenRecord = { target, key -> navController.navigate(RecordRoute(route.siteId, target.id, key)) },
+                    onSignIn = { navController.navigate(AddSiteRoute(route.siteId)) },
                 )
             }
         }
@@ -112,6 +113,7 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?, updatePen
                     onOpenWebsite = { navController.navigate(WebRoute(route.siteId, it)) },
                     onEditEvent = { navController.navigate(EventEditRoute(route.siteId, it)) },
                     onOpenMap = { parentId, focus -> navController.navigate(MapRoute(route.siteId, parentId, focus)) },
+                    onSignIn = { navController.navigate(AddSiteRoute(route.siteId)) },
                 )
             }
         }
@@ -130,6 +132,7 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?, updatePen
                 SessionsScreen(
                     onBack = navController::popBackStack,
                     onOpenSession = { navController.navigate(SessionRoute(siteId, it)) },
+                    onSignIn = { navController.navigate(AddSiteRoute(siteId)) },
                 )
             }
         }
@@ -169,6 +172,7 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?, updatePen
                     onBack = navController::popBackStack,
                     onOpenRecord = { page, key -> navController.navigate(RecordRoute(siteId, page.id, key)) },
                     onOpenWebsite = { navController.navigate(WebRoute(siteId, it)) },
+                    onSignIn = { navController.navigate(AddSiteRoute(siteId)) },
                 )
             }
         }
