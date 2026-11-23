@@ -25,7 +25,7 @@ import eu.junak.ttrpg.companion.ui.components.StatChip
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 
 /**
- * The Gear tab: quick-use items with Use, what is in hand, coins, the
+ * The Gear tab: quick-use items with Use, what is in hand and worn, coins, the
  * carried weight and items, and the way to all equipment on the website.
  * Only quick use changes the sheet; the rest is read here and edited there.
  */
@@ -36,6 +36,7 @@ fun GearTab(sheet: CharacterSheet, actions: SheetActions) {
     val gear = sheet.gear
     val locale = LocalConfiguration.current.locales[0]
     val carried = carriedItems(gear.items)
+    val worn = wornItems(gear)
     val hands = listOfNotNull(gear.mainHand?.let { it to R.string.sheet_main_hand }, gear.offHand?.let { it to R.string.sheet_off_hand })
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = spacing.md, end = spacing.md, bottom = spacing.lg)) {
         if (gear.quickUse.isNotEmpty()) {
@@ -52,6 +53,12 @@ fun GearTab(sheet: CharacterSheet, actions: SheetActions) {
             item { SectionHeader(stringResource(R.string.sheet_in_hand)) }
             items(hands, key = { "hand:" + it.second }) { (held, hand) ->
                 ListRow(held.name, compact = true) { RowValue(stringResource(hand)) }
+            }
+        }
+        if (worn.isNotEmpty()) {
+            item { SectionHeader(stringResource(R.string.sheet_worn)) }
+            items(worn, key = { "worn:" + it.id }) { item ->
+                ListRow(item.name, compact = true) { RowValue(itemPlace(item.container, item.quantity)) }
             }
         }
         if (gear.coins.isNotEmpty()) {

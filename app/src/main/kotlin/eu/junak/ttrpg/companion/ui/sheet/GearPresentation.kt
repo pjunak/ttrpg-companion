@@ -3,11 +3,18 @@ package eu.junak.ttrpg.companion.ui.sheet
 import eu.junak.ttrpg.companion.core.model.character.FeatureSource
 import eu.junak.ttrpg.companion.core.model.character.GearItem
 import eu.junak.ttrpg.companion.core.model.character.QuickUseItem
+import eu.junak.ttrpg.companion.core.model.character.SheetGear
 import java.text.NumberFormat
 import java.util.Locale
 
 /** The items the character carries (not those equipped or stored), for the Gear tab's carried list. */
 fun carriedItems(items: List<GearItem>): List<GearItem> = items.filter { it.location == "carried" }
+
+/** Equipped items that are not in a hand, such as armour: the Gear tab's worn list. */
+fun wornItems(gear: SheetGear): List<GearItem> {
+    val held = setOfNotNull(gear.mainHand?.itemId, gear.offHand?.itemId)
+    return gear.items.filter { it.location == "equipped" && it.id !in held }
+}
 
 /** A weight in pounds with at most one decimal, in the reader's number format: "97.6", "270". */
 fun formatPounds(pounds: Double, locale: Locale): String =

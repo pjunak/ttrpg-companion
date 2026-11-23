@@ -382,6 +382,7 @@
     <string name="sheet_in_hand">In hand</string>
     <string name="sheet_main_hand">Main hand</string>
     <string name="sheet_off_hand">Off hand</string>
+    <string name="sheet_worn">Worn</string>
     <string name="sheet_coins">Coins</string>
     <string name="sheet_carried">Carried</string>
     <string name="sheet_weight">%1$s of %2$s lb</string>

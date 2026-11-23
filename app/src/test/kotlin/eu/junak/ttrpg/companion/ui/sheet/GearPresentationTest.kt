@@ -2,7 +2,9 @@ package eu.junak.ttrpg.companion.ui.sheet
 
 import eu.junak.ttrpg.companion.core.model.character.FeatureSource
 import eu.junak.ttrpg.companion.core.model.character.GearItem
+import eu.junak.ttrpg.companion.core.model.character.HeldItem
 import eu.junak.ttrpg.companion.core.model.character.QuickUseItem
+import eu.junak.ttrpg.companion.core.model.character.SheetGear
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -20,6 +22,26 @@ class GearPresentationTest {
             GearItem("tent", "Tent", 1, "stored", null),
         )
         assertEquals(listOf("rations"), carriedItems(items).map { it.id })
+    }
+
+    @Test
+    fun wornItemsAreEquippedAndNotInHand() {
+        val gear = SheetGear(
+            quickUse = emptyList(),
+            mainHand = HeldItem("sword", "Longsword", true),
+            offHand = HeldItem("shield", "Shield", true),
+            coins = emptyList(),
+            carriedPounds = 0.0,
+            capacityPounds = 0.0,
+            items = listOf(
+                GearItem("sword", "Longsword", 1, "equipped", null),
+                GearItem("shield", "Shield", 1, "equipped", null),
+                GearItem("mail", "Chain Mail", 1, "equipped", null),
+                GearItem("rations", "Rations", 6, "carried", "Backpack"),
+            ),
+        )
+        assertEquals(listOf("mail"), wornItems(gear).map { it.id })
+        assertEquals("empty hands", listOf("sword", "shield", "mail"), wornItems(gear.copy(mainHand = null, offHand = null)).map { it.id })
     }
 
     @Test
