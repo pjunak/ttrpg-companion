@@ -94,8 +94,10 @@ fun CampaignDataset.details(page: CampaignPage, key: String, dm: Boolean = false
     // `articleReferences`: one key or a list of keys, each once.
     fun references(target: CampaignPage, field: String): List<RecordRef> =
         (value.text(field).takeIf(String::isNotEmpty)?.let(::listOf) ?: value.textList(field)).distinct().mapNotNull { ref(target, it) }
+    // Records that name either half of this record's twin pair, one per pair of their own (`articleContext`).
+    val keys = twinKeys(page.collection, key)
     fun records(target: CampaignPage, matches: (JsonObject) -> Boolean): List<RecordRef> =
-        records(target.collection).filter { it.key != key && matches(it.value) }.map { it.ref(target) }
+        groupTwins(records(target.collection).filter { it.key !in keys && matches(it.value) }).map { it.ref(target) }
 
     when (page) {
         CampaignPage.CHARACTERS -> {
@@ -108,21 +110,21 @@ fun CampaignDataset.details(page: CampaignPage, key: String, dm: Boolean = false
             factionFact(value.text("faction"), settings)?.let(facts::add)
             link(FactKind.LOCATION, CampaignPage.LOCATIONS, "location")
             group(RelatedKind.COMPANIONS, records(CampaignPage.COMPANIONS) {
-                it.text("ownerType") == "character" && it.text("ownerId") == key
+                it.text("ownerType") == "character" && it.text("ownerId") in keys
             })
-            group(RelatedKind.EVENTS, records(CampaignPage.EVENTS) { key in it.textList("characters") })
+            group(RelatedKind.EVENTS, records(CampaignPage.EVENTS) { event -> event.textList("characters").any { it in keys } })
         }
         CampaignPage.LOCATIONS -> {
             fact(FactKind.TYPE, "type")
             fact(FactKind.REGION, "region")
             link(FactKind.PARENT, CampaignPage.LOCATIONS, "parentId")
             option(FactKind.MARKER, "pinType", settings::pinType)
-            group(RelatedKind.PLACES_WITHIN, records(CampaignPage.LOCATIONS) { it.text("parentId") == key })
+            group(RelatedKind.PLACES_WITHIN, records(CampaignPage.LOCATIONS) { it.text("parentId") in keys })
             group(RelatedKind.PEOPLE_HERE, records(CampaignPage.CHARACTERS) { character ->
-                character.text("location") == key ||
-                    (character["locationRoles"] as? JsonArray).orEmpty().any { (it as? JsonObject)?.text("locationId") == key }
+                character.text("location") in keys ||
+                    (character["locationRoles"] as? JsonArray).orEmpty().any { (it as? JsonObject)?.text("locationId") in keys }
             })
-            group(RelatedKind.EVENTS, records(CampaignPage.EVENTS) { key in it.textList("locations") })
+            group(RelatedKind.EVENTS, records(CampaignPage.EVENTS) { event -> event.textList("locations").any { it in keys } })
         }
         CampaignPage.EVENTS -> {
             fact(FactKind.DATE, "date")

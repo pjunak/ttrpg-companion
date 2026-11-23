@@ -112,4 +112,33 @@ class CampaignTwinsTest {
         assertEquals(listOf("Ambush (what happened)"), dm.sessions().first { it.number == 2 }.events.map { it.name })
         assertEquals(listOf("fort-dm"), dm.campaignMap(null)!!.pins.map { it.ref.key })
     }
+
+    /** `articleContext` matches either half of the record's pair and lists each related pair once. */
+    @Test
+    fun aRecordPageListsRelatedPairsOnce() {
+        val people = dataset(
+            listOf(
+                collection(
+                    "locations",
+                    listOf(
+                        record("fort", """{"name": "Fort", "linkedTwinId": "fort-dm"}"""),
+                        record("fort-dm", """{"name": "Fort (garrison)", "visibility": "dm", "linkedTwinId": "fort"}"""),
+                        record("cellar", """{"name": "Cellar", "parentId": "fort-dm"}"""),
+                    ).joinToString(","),
+                ),
+                collection(
+                    "characters",
+                    listOf(
+                        record("mira", """{"name": "Mira", "location": "fort", "linkedTwinId": "mira-dm"}"""),
+                        record("mira-dm", """{"name": "Mira (truth)", "location": "fort", "visibility": "dm", "linkedTwinId": "mira"}"""),
+                        record("tom", """{"name": "Tom", "location": "fort-dm"}"""),
+                    ).joinToString(","),
+                ),
+            ).joinToString(","),
+        )
+        val related = people.details(CampaignPage.LOCATIONS, "fort")!!.related.associate { group -> group.kind to group.records.map { it.key } }
+        assertEquals(listOf("cellar"), related[RelatedKind.PLACES_WITHIN])
+        assertEquals(listOf("mira-dm", "tom"), related[RelatedKind.PEOPLE_HERE])
+        assertEquals(setOf("fort", "fort-dm"), people.twinKeys("locations", "fort-dm"))
+    }
 }

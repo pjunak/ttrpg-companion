@@ -1,5 +1,7 @@
 package eu.junak.ttrpg.companion.core.model
 
+import kotlinx.serialization.json.JsonObject
+
 /**
  * The record that stands for each record of one collection, as the website
  * groups twins (`twinRepresentatives` in the host's `campaign-twins.ts`): the
@@ -26,6 +28,13 @@ fun groupTwins(records: List<CampaignRecord>): List<CampaignRecord> {
 /** A collection's records as the website lists them, one per twin pair. */
 fun CampaignDataset.groupedRecords(collection: String): List<CampaignRecord> = groupTwins(records(collection))
 
-private fun kotlinx.serialization.json.JsonObject.stringField(field: String): String? = this[field].stringOrNull()
+/** The record [key] and its twin when the pair is grouped (`identityKeys` in the host's `article-context.ts`). */
+fun CampaignDataset.twinKeys(collection: String, key: String): Set<String> {
+    val representatives = twinRepresentatives(records(collection))
+    val representative = representatives[key] ?: return setOf(key)
+    return representatives.filterValues { it == representative }.keys
+}
 
-private fun kotlinx.serialization.json.JsonObject.isDmOnly(): Boolean = this["visibility"].stringOrNull() == "dm"
+private fun JsonObject.stringField(field: String): String? = this[field].stringOrNull()
+
+private fun JsonObject.isDmOnly(): Boolean = this["visibility"].stringOrNull() == "dm"
