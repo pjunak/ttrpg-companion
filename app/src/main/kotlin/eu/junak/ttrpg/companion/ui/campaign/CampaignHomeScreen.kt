@@ -155,7 +155,7 @@ fun CampaignHomeScreen(
                 val problem = state.problem
                 CenteredMessage(
                     text = if (problem is CampaignProblem.Unavailable) {
-                        stringResource(R.string.campaign_failed, problem.detail)
+                        campaignProblemText(problem)
                     } else {
                         stringResource(R.string.campaign_loading)
                     },

@@ -34,10 +34,14 @@
     <string name="problem_unsupported">Tento web běží na TTRPG Codex %1$s; aplikace potřebuje verzi 2.</string>
     <string name="problem_wrong_password">Heslo nesouhlasí.</string>
     <string name="problem_too_many">Příliš mnoho pokusů. Počkej minutu a zkus to znovu.</string>
-    <string name="problem_unreachable">Web není dostupný: %1$s</string>
 
     <string name="campaign_loading">Načítám kampaň…</string>
-    <string name="campaign_failed">Kampaň se nepodařilo načíst: %1$s</string>
+    <string name="campaign_failed">Kampaň se nepodařilo načíst. %1$s</string>
+    <string name="failure_offline">Web není dostupný. Zkontroluj připojení.</string>
+    <string name="failure_timeout">Web neodpověděl včas.</string>
+    <string name="failure_host_error">Web odpověděl chybou (%1$d).</string>
+    <string name="failure_malformed">Web poslal odpověď, které aplikace nerozumí.</string>
+    <string name="failure_other">Web se nepodařilo zastihnout (%1$s).</string>
     <string name="status_cached">Zobrazuji kopii uloženou %1$s. %2$s</string>
     <string name="status_expired">Přihlášení vypršelo, proto vidíš jen veřejnou část kampaně.</string>
 

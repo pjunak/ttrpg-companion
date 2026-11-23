@@ -23,6 +23,10 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
+import java.io.InterruptedIOException
+import java.net.ConnectException
+import java.net.NoRouteToHostException
+import java.net.UnknownHostException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,6 +36,31 @@ import javax.inject.Singleton
  */
 class HostException(val status: Int?, message: String, val kind: String? = null) : IOException(message) {
     val isUnauthorized: Boolean get() = status == 401 || status == 403
+}
+
+/**
+ * Why a host call failed, for the UI to explain in the reader's language.
+ * [status] is the HTTP status of a [Reason.HOST_ERROR]; [detail] is the
+ * technical message, for when the cause is not one of the known ones.
+ */
+data class HostFailure(val reason: Reason, val detail: String, val status: Int? = null) {
+    enum class Reason { OFFLINE, TIMEOUT, HOST_ERROR, MALFORMED, OTHER }
+
+    companion object {
+        fun of(error: IOException): HostFailure {
+            val detail = error.message.orEmpty()
+            return when (error) {
+                is HostException -> {
+                    val status = error.status
+                    if (status != null && status >= 400) HostFailure(Reason.HOST_ERROR, detail, status) else HostFailure(Reason.MALFORMED, detail)
+                }
+                // SocketTimeoutException, and OkHttp's call timeout.
+                is InterruptedIOException -> HostFailure(Reason.TIMEOUT, detail)
+                is UnknownHostException, is ConnectException, is NoRouteToHostException -> HostFailure(Reason.OFFLINE, detail)
+                else -> HostFailure(Reason.OTHER, detail)
+            }
+        }
+    }
 }
 
 /**

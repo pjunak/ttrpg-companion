@@ -6,6 +6,8 @@ import eu.junak.ttrpg.companion.core.network.FakeHost.Companion.campaign
 import eu.junak.ttrpg.companion.core.network.FakeHost.Companion.event
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignProblem
 import eu.junak.ttrpg.companion.core.network.campaign.WriteResult
+import eu.junak.ttrpg.companion.core.network.site.Site
+import mockwebserver3.MockWebServer
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -61,8 +63,21 @@ class CampaignRepositoryTest {
 
         val state = f.state(site)
         assertNotNull(state.dataset?.record("events", "arrival"))
-        assertTrue(state.problem is CampaignProblem.Unavailable)
+        assertEquals(HostFailure.Reason.HOST_ERROR, (state.problem as CampaignProblem.Unavailable).failure.reason)
+        assertEquals(500, (state.problem as CampaignProblem.Unavailable).failure.status)
         assertFalse(state.refreshing)
+    }
+
+    @Test
+    fun anUnreachableHostIsOffline() = runTest {
+        val down = MockWebServer().apply { start() }
+        val url = down.url("/").toString().trimEnd('/')
+        down.close()
+        val site = f.store.save(Site("s2", url, "Tiamat"))
+
+        f.campaigns.refresh(site)
+
+        assertEquals(HostFailure.Reason.OFFLINE, (f.state(site).problem as CampaignProblem.Unavailable).failure.reason)
     }
 
     @Test

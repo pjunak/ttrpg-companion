@@ -69,6 +69,7 @@ import eu.junak.ttrpg.companion.core.model.normalizeIdentity
 import eu.junak.ttrpg.companion.core.model.settings
 import eu.junak.ttrpg.companion.core.model.summaries
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignProblem
+import eu.junak.ttrpg.companion.ui.campaign.campaignProblemText
 import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.components.Notice
 import eu.junak.ttrpg.companion.ui.components.Portrait
@@ -400,11 +401,5 @@ private fun RecordPicker(
 
 /** Why the campaign behind the editor could not be loaded. */
 @Composable
-private fun loadProblemText(problem: CampaignProblem?): String {
-    val offline = stringResource(R.string.save_offline)
-    return when (problem) {
-        is CampaignProblem.Unavailable -> stringResource(R.string.campaign_failed, problem.detail.ifEmpty { offline })
-        is CampaignProblem.UnsupportedHost -> stringResource(R.string.problem_unsupported, problem.version)
-        CampaignProblem.SessionExpired, null -> stringResource(R.string.campaign_failed, offline)
-    }
-}
+private fun loadProblemText(problem: CampaignProblem?): String =
+    problem?.let { campaignProblemText(it) } ?: stringResource(R.string.campaign_failed, stringResource(R.string.failure_offline))

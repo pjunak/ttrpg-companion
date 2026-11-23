@@ -109,6 +109,18 @@ class CodexClientTest {
     }
 
     @Test
+    fun failuresAreSortedByCause() {
+        assertEquals(HostFailure.Reason.HOST_ERROR, HostFailure.of(HostException(502, "bad gateway")).reason)
+        assertEquals(502, HostFailure.of(HostException(502, "bad gateway")).status)
+        assertEquals(HostFailure.Reason.MALFORMED, HostFailure.of(HostException(200, "response must be JSON")).reason)
+        assertEquals(HostFailure.Reason.MALFORMED, HostFailure.of(HostException(null, "version is missing")).reason)
+        assertEquals(HostFailure.Reason.TIMEOUT, HostFailure.of(java.net.SocketTimeoutException("timeout")).reason)
+        assertEquals(HostFailure.Reason.OFFLINE, HostFailure.of(java.net.UnknownHostException("asurai.example")).reason)
+        assertEquals(HostFailure.Reason.OFFLINE, HostFailure.of(java.net.ConnectException("refused")).reason)
+        assertEquals(HostFailure(HostFailure.Reason.OTHER, "odd"), HostFailure.of(java.io.IOException("odd")))
+    }
+
+    @Test
     fun nonJsonAnswersAreRejected() = runTest {
         server.enqueue(MockResponse.Builder().body("<html>proxy error</html>").addHeader("Content-Type", "text/html").build())
         assertThrows(HostException::class.java) { kotlinx.coroutines.runBlocking { client.version(base) } }

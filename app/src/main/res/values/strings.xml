@@ -36,10 +36,14 @@
     <string name="problem_unsupported">This site runs TTRPG Codex %1$s; this app needs version 2.</string>
     <string name="problem_wrong_password">That password is not right.</string>
     <string name="problem_too_many">Too many attempts. Wait a minute and try again.</string>
-    <string name="problem_unreachable">Couldn’t reach the site: %1$s</string>
 
     <string name="campaign_loading">Loading the campaign…</string>
-    <string name="campaign_failed">Couldn’t load the campaign: %1$s</string>
+    <string name="campaign_failed">Couldn’t load the campaign. %1$s</string>
+    <string name="failure_offline">The site can’t be reached. Check the connection.</string>
+    <string name="failure_timeout">The site took too long to answer.</string>
+    <string name="failure_host_error">The site answered with an error (%1$d).</string>
+    <string name="failure_malformed">The site sent an answer this app can’t read.</string>
+    <string name="failure_other">The site couldn’t be reached (%1$s).</string>
     <string name="status_cached">Showing the copy saved %1$s. %2$s</string>
     <string name="status_expired">Your session ended, so only the public campaign is shown.</string>
 

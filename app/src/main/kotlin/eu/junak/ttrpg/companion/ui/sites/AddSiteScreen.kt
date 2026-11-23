@@ -38,6 +38,7 @@ import eu.junak.ttrpg.companion.core.network.site.SiteProblem
 import eu.junak.ttrpg.companion.core.network.site.SiteRepository
 import eu.junak.ttrpg.companion.core.network.site.SiteStore
 import eu.junak.ttrpg.companion.navigation.SITE_ID_ARGUMENT
+import eu.junak.ttrpg.companion.ui.campaign.hostFailureText
 import eu.junak.ttrpg.companion.ui.components.BackButton
 import eu.junak.ttrpg.companion.ui.theme.LocalSpacing
 import kotlinx.coroutines.launch
@@ -150,5 +151,5 @@ private fun problemText(problem: SiteProblem): String = when (problem) {
     is SiteProblem.UnsupportedHost -> stringResource(R.string.problem_unsupported, problem.version)
     SiteProblem.WrongPassword -> stringResource(R.string.problem_wrong_password)
     SiteProblem.TooManyAttempts -> stringResource(R.string.problem_too_many)
-    is SiteProblem.Unreachable -> stringResource(R.string.problem_unreachable, problem.detail)
+    is SiteProblem.Unreachable -> hostFailureText(problem.failure)
 }

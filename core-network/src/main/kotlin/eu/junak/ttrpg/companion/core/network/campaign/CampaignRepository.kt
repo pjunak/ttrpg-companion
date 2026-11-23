@@ -7,6 +7,7 @@ import eu.junak.ttrpg.companion.core.model.HostVersion
 import eu.junak.ttrpg.companion.core.model.Role
 import eu.junak.ttrpg.companion.core.network.CodexClient
 import eu.junak.ttrpg.companion.core.network.HostException
+import eu.junak.ttrpg.companion.core.network.HostFailure
 import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
 import eu.junak.ttrpg.companion.core.network.site.Site
 import eu.junak.ttrpg.companion.core.network.site.SiteStore
@@ -42,7 +43,9 @@ data class CampaignState(
 
 sealed interface CampaignProblem {
     /** The campaign could not be refreshed (offline or a host error); the cached copy is shown. */
-    data class Unavailable(val detail: String) : CampaignProblem
+    data class Unavailable(val failure: HostFailure) : CampaignProblem {
+        val detail: String get() = failure.detail
+    }
 
     /** The saved session ended; the public campaign is shown until the user signs in again. */
     data object SessionExpired : CampaignProblem
@@ -130,7 +133,7 @@ class CampaignRepository @Inject constructor(
                 )
                 true
             } catch (error: IOException) {
-                state.update { it.copy(problem = CampaignProblem.Unavailable(error.message.orEmpty())) }
+                state.update { it.copy(problem = CampaignProblem.Unavailable(HostFailure.of(error))) }
                 false
             } finally {
                 state.update { it.copy(refreshing = false) }

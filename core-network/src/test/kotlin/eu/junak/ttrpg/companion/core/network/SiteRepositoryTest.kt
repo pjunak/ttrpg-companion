@@ -62,7 +62,15 @@ class SiteRepositoryTest {
     @Test
     fun aMalformedSignInAnswerIsAProblemNotACrash() = runTest {
         f.host.loginAnswer = FakeHost.json("""{"ok":true,"role":"wizard"}""")
-        assertTrue(problemOf { f.sites.add(f.baseUrl, "dm-secret", allowLocalHttp = true) } is SiteProblem.Unreachable)
+        val problem = problemOf { f.sites.add(f.baseUrl, "dm-secret", allowLocalHttp = true) } as SiteProblem.Unreachable
+        assertEquals(HostFailure.Reason.MALFORMED, problem.failure.reason)
+    }
+
+    @Test
+    fun aHostErrorKeepsItsStatus() = runTest {
+        f.host.loginAnswer = FakeHost.error(503, "CAMPAIGN_UNAVAILABLE")
+        val problem = problemOf { f.sites.add(f.baseUrl, "dm-secret", allowLocalHttp = true) } as SiteProblem.Unreachable
+        assertEquals(HostFailure(HostFailure.Reason.HOST_ERROR, "POST /api/login returned 503", 503), problem.failure)
     }
 
     @Test

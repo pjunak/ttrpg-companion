@@ -6,6 +6,7 @@ import eu.junak.ttrpg.companion.core.model.SiteAddress
 import eu.junak.ttrpg.companion.core.model.SiteAddressResult
 import eu.junak.ttrpg.companion.core.network.CodexClient
 import eu.junak.ttrpg.companion.core.network.HostException
+import eu.junak.ttrpg.companion.core.network.HostFailure
 import eu.junak.ttrpg.companion.core.network.campaign.CampaignRepository
 import eu.junak.ttrpg.companion.core.network.session.SiteCookieJar
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +22,7 @@ sealed interface SiteProblem {
     data class UnsupportedHost(val version: String) : SiteProblem
     data object WrongPassword : SiteProblem
     data object TooManyAttempts : SiteProblem
-    data class Unreachable(val detail: String) : SiteProblem
+    data class Unreachable(val failure: HostFailure) : SiteProblem
 }
 
 class SiteException(val problem: SiteProblem) : Exception(problem.toString())
@@ -80,11 +81,11 @@ class SiteRepository @Inject constructor(
                     when (error.status) {
                         401, 403 -> SiteProblem.WrongPassword
                         429 -> SiteProblem.TooManyAttempts
-                        else -> SiteProblem.Unreachable(error.message.orEmpty())
+                        else -> SiteProblem.Unreachable(HostFailure.of(error))
                     },
                 )
             } catch (error: IOException) {
-                throw SiteException(SiteProblem.Unreachable(error.message.orEmpty()))
+                throw SiteException(SiteProblem.Unreachable(HostFailure.of(error)))
             }
         }
         val (json, dataset) = hostCall { client.campaign(baseUrl) }
@@ -107,6 +108,6 @@ class SiteRepository @Inject constructor(
     private suspend fun <T> hostCall(block: suspend () -> T): T = try {
         block()
     } catch (error: IOException) {
-        throw SiteException(SiteProblem.Unreachable(error.message.orEmpty()))
+        throw SiteException(SiteProblem.Unreachable(HostFailure.of(error)))
     }
 }
