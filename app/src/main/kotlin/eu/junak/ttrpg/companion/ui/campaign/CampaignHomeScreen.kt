@@ -162,7 +162,9 @@ fun CampaignHomeScreen(
             }
             PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = viewModel::refresh) {
                 LazyColumn(Modifier.fillMaxSize().readableWidth(), contentPadding = PaddingValues(bottom = spacing.xl)) {
-                    item { Introduction(overview, roleLabel(site?.role), state.fetchedAt) }
+                    // An expired session shows the public campaign, so it is read as a reader until the user signs in again.
+                    val shownRole = if (state.problem == CampaignProblem.SessionExpired) null else site?.role
+                    item { Introduction(overview, roleLabel(shownRole), state.fetchedAt) }
                     item { CampaignStatus(state, onSignIn) }
                     item { SearchField(onSearch) }
                     if (overview.party.isNotEmpty() || overview.companions.isNotEmpty()) {
