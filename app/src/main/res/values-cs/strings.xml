@@ -395,4 +395,6 @@
     <string name="sheet_my_character_text">Ukázat postavu %1$s na úvodní obrazovce webu</string>
     <string name="sheet_open_website">Otevřít na webu</string>
     <string name="sheet_open_website_text">Tvorba, vybavení, import a export</string>
+    <string name="home_my_character">Moje postava</string>
+    <string name="home_open_sheet">Otevřít deník postavy</string>
 </resources>

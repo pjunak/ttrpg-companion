@@ -61,6 +61,11 @@ class CampaignViewModel @Inject constructor(
         addresses.mapNotNull(dataset::recordRef)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** The site's "My character", while the site is signed in and the character's record is shown. */
+    val myCharacter: StateFlow<RecordRef?> = combine(state, site, sites.myCharacter(siteId)) { campaign, site, key ->
+        if (site?.role == null || key == null) null else campaign.dataset?.recordRef("${CampaignPage.CHARACTERS.id}/$key")
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     init {
         // Any screen of a site counts as opening it; setting it again is harmless.
         sites.lastOpenedId = siteId

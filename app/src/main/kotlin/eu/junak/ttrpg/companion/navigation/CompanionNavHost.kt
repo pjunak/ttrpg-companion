@@ -87,6 +87,7 @@ fun CompanionNavHost(liveUpdates: LiveUpdates, initialSiteId: String?, updatePen
                     onOpenWebsite = { navController.open(backStack, WebRoute(siteId, it)) },
                     onSignIn = { navController.open(backStack, AddSiteRoute(siteId)) },
                     onSettings = { navController.open(backStack, SettingsRoute) },
+                    onOpenSheet = { navController.open(backStack, SheetRoute(siteId, it)) },
                     updatePending = updatePending,
                 )
             }

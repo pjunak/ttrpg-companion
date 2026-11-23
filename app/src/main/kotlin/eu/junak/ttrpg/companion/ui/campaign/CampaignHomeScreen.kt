@@ -66,6 +66,7 @@ import eu.junak.ttrpg.companion.ui.components.CenteredMessage
 import eu.junak.ttrpg.companion.ui.components.Portrait
 import eu.junak.ttrpg.companion.ui.components.PortraitTile
 import eu.junak.ttrpg.companion.ui.components.RecordRow
+import eu.junak.ttrpg.companion.ui.components.RefRow
 import eu.junak.ttrpg.companion.ui.components.SectionCard
 import eu.junak.ttrpg.companion.ui.components.SectionHeader
 import eu.junak.ttrpg.companion.ui.components.TappableCard
@@ -97,6 +98,7 @@ fun CampaignHomeScreen(
     onOpenWebsite: (path: String) -> Unit,
     onSignIn: () -> Unit,
     onSettings: () -> Unit,
+    onOpenSheet: (key: String) -> Unit,
     updatePending: Boolean,
     viewModel: CampaignViewModel = hiltViewModel(),
 ) {
@@ -105,6 +107,7 @@ fun CampaignHomeScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val recentlyOpened by viewModel.recentlyOpened.collectAsStateWithLifecycle()
+    val myCharacter by viewModel.myCharacter.collectAsStateWithLifecycle()
     val overview = remember(state.dataset) { state.dataset?.overview(recentLimit = 6) }
     val baseUrl = site?.baseUrl.orEmpty()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -167,6 +170,9 @@ fun CampaignHomeScreen(
                     item { Introduction(overview, roleLabel(shownRole), state.fetchedAt) }
                     item { CampaignStatus(state, onSignIn) }
                     item { SearchField(onSearch) }
+                    myCharacter?.let { character ->
+                        item { MyCharacter(baseUrl, character) { onOpenSheet(character.key) } }
+                    }
                     if (overview.party.isNotEmpty() || overview.companions.isNotEmpty()) {
                         item {
                             SectionHeader(partyName(settings?.party?.name.orEmpty()), Modifier.padding(horizontal = spacing.md))
@@ -220,6 +226,17 @@ fun CampaignHomeScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/** The character the user marked as theirs, with the way to its sheet. */
+@Composable
+private fun MyCharacter(baseUrl: String, character: RecordRef, onOpenSheet: () -> Unit) {
+    Column(Modifier.padding(horizontal = LocalSpacing.current.md)) {
+        SectionHeader(stringResource(R.string.home_my_character))
+        SectionCard {
+            RefRow(baseUrl, character, supporting = stringResource(R.string.home_open_sheet), onClick = onOpenSheet)
         }
     }
 }
