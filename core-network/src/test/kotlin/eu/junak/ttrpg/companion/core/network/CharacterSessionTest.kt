@@ -42,6 +42,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -175,6 +176,29 @@ class CharacterSessionTest {
         val signedOut = open()
         f.host.role = null
         assertEquals(SheetLoad.SignedOut, signedOut.until { it.load != SheetLoad.Loading && it.copy == null }.load)
+    }
+
+    @Test
+    fun aFailedReloadKeepsTheSheetUnlessItIsNoLongerForThisSession() = runTest {
+        val unavailable = open(answer("load-sheet"), error(503, "SERVICE_UNAVAILABLE"))
+        unavailable.loaded()
+        unavailable.reload()
+        val kept = unavailable.until { !it.refreshing && calls().size == 2 }
+        assertTrue("a lost connection keeps the sheet", kept.load is SheetLoad.Sheet)
+
+        val hidden = open(answer("load-sheet"), error(403, "FORBIDDEN"))
+        hidden.loaded()
+        hidden.reload()
+        assertEquals(SheetLoad.Forbidden, hidden.until { it.load !is SheetLoad.Sheet }.load)
+        assertFalse(hidden.state.value.canWrite)
+        assertNull("no copy of a sheet the session may not see", f.store.readCharacter(f.site("player").id, KEY))
+
+        val gone = open(answer("load-sheet"))
+        gone.loaded()
+        // The provider went away: the load meets a stale binding, connects again and finds none.
+        f.host.providers.clear()
+        gone.reload()
+        assertEquals(SheetLoad.NotOffered(hostTooOld = false), gone.until { it.load !is SheetLoad.Sheet }.load)
     }
 
     @Test

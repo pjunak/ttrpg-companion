@@ -602,13 +602,15 @@ class CharacterSession internal constructor(
 
     /**
      * A load failed. A character gone or hidden from this session leaves no
-     * copy on the device. With [keepSheet] a sheet already shown stays, as
-     * after a failed refresh.
+     * copy on the device. With [keepSheet] a sheet already shown stays after a
+     * failure such as a lost connection, as after a failed refresh; an answer
+     * that the sheet is not for this session (signed out, forbidden, not
+     * found, not offered, a host too old) replaces it all the same.
      */
     private suspend fun loadFailed(failure: ServiceFailure, keepSheet: Boolean = true) {
         if (failure == ServiceFailure.SignedOut) _state.update { it.copy(signedOut = true) }
         if (failure == ServiceFailure.Forbidden || failure == ServiceFailure.NotFound) forgetCopy()
-        if (keepSheet && _state.value.load is SheetLoad.Sheet) return
+        if (keepSheet && _state.value.load is SheetLoad.Sheet && !hidesCopy(failure)) return
         val outcome = when (failure) {
             ServiceFailure.NotOffered -> SheetLoad.NotOffered(hostTooOld = false)
             ServiceFailure.HostTooOld -> SheetLoad.NotOffered(hostTooOld = true)
