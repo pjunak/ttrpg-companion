@@ -70,6 +70,8 @@ data class CharacterSheet(
     /** The conditions the "+ Condition" picker offers; empty without an evaluation. */
     val conditionOptions: List<ConditionOption>,
     val identity: SheetIdentity,
+    /** The values temporary effects change, from the answer's own evaluation; empty without one. */
+    val marks: List<ValueMark> = emptyList(),
 ) {
     companion object {
         /**
@@ -88,7 +90,7 @@ data class CharacterSheet(
                 evidence = state.projection.evidence,
                 options = evaluation?.let { Node(it.spellOptions, "spellOptions") },
                 conditions = evaluation?.let { Node(it.guidance, "guidance").obj("conditions") },
-            ).read()
+            ).read().copy(marks = TemporaryEffects.read(answer.evaluation?.sheet))
         }
     }
 }
@@ -139,6 +141,8 @@ data class Attack(
     val range: AttackRange?,
     val reach: Int?,
     val itemId: String?,
+    /** The Engine's stable key of the row (`character.AttackKey`), which its temporary effect marks use. */
+    val key: String = itemId?.let { "item:$it" } ?: "",
 )
 
 data class AttackRange(val normal: Int, val long: Int, val thrown: Boolean)
@@ -340,6 +344,12 @@ private class Node(val json: JsonObject, val path: String) {
         (this as? JsonPrimitive)?.takeIf { !it.isString } ?: fail("$path.$field", "must be a number")
 }
 
+/** An attack row's stable key, as the Engine forms it (`character.AttackKey`). */
+private fun attackKey(row: Node): String = row.string("itemId")?.takeIf(String::isNotEmpty)?.let { "item:$it" }
+    ?: row.string("featureAttack")?.takeIf(String::isNotEmpty)?.let { "feature:$it" }
+    ?: "unarmed".takeIf { row.bool("unarmed") == true }
+    ?: "ref:" + (row.string("ref") ?: "")
+
 private class SheetReader(
     private val sheet: Node,
     private val play: Node,
@@ -439,6 +449,7 @@ private class SheetReader(
                 range = range?.let { r -> AttackRange(r.int("normal") ?: 0, r.int("long") ?: 0, r.bool("thrown") ?: false) },
                 reach = it.int("reach"),
                 itemId = it.string("itemId"),
+                key = attackKey(it),
             )
         },
         limitedUses = resources.filter { it.kind == ResourceKind.POOL || it.kind == null },

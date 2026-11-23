@@ -51,7 +51,7 @@ class CharacterSheetTest {
     fun combatHasAttacksLimitedUsesTogglesAndHitDice() {
         assertEquals(
             listOf(
-                Attack("Unarmed Strike", 7, "5", "bludgeoning", null, emptyList(), null, false, null, 5, null),
+                Attack("Unarmed Strike", 7, "5", "bludgeoning", null, emptyList(), null, false, null, 5, null, key = "unarmed"),
                 Attack("Longsword", 7, "1d8 +4", "slashing", "1d10 +4", listOf("versatile"), "Sap", true, null, 5, "sword"),
             ),
             bren.combat.attacks,
@@ -272,6 +272,50 @@ class CharacterSheetTest {
         assertThrows(HostFormatException::class.java) { CharacterSheet.read(CharacterAnswer.parse(badSlots, "bren-ashcroft")) }
     }
 
+    @Test
+    fun marksComeFromTheEvaluationOnly() {
+        val answer = answer("sheet-bren-marks")
+        val marks = CharacterSheet.read(answer).marks
+        assertEquals(37, marks.size)
+        assertEquals(
+            ValueMark("derived.speed", null, EffectTone.PENALTY, listOf(
+                EffectCause(CauseKind.CONDITION, "exhaustion", "Exhaustion", "Exhaustion", 2, EffectTone.PENALTY, listOf(EffectChange(ChangeKind.ADD, -10, true))),
+            )),
+            marks.single { it.path == "derived.speed" },
+        )
+        val sword = marks.single { it.path == "weapons.attackBonus" && it.row == "item:sword" }
+        assertEquals(EffectTone.MIXED, sword.tone)
+        assertEquals(listOf(CauseKind.CONDITION, CauseKind.CONDITION, CauseKind.ACTIVE_FEATURE), sword.causes.map { it.kind })
+        assertEquals(EffectChange(ChangeKind.ADD, -4, false), sword.causes.single { it.id == "exhaustion" }.changes.single())
+        assertEquals(CauseKind.TIMED_GRANT, marks.single { it.path == "derived.armorClass" }.causes.single().kind)
+        // Rows are named by the Engine's key, which the attacks carry too.
+        assertEquals(listOf("unarmed", "item:sword"), CharacterSheet.read(answer).combat.attacks.map { it.key })
+        // The saved projection never holds marks; an answer without them reads none.
+        assertEquals(null, answer.state!!.projection.sheet["temporaryEffects"])
+        assertEquals(emptyList<ValueMark>(), sheet("load-sheet").marks)
+        // The phone's copy keeps the answer with its evaluation, so a copy shown offline keeps its marks.
+        assertEquals(CharacterSheet.read(answer).marks, CharacterSheet.read(CharacterAnswer.parse(answer.toJson(), answer.key)).marks)
+        // An answer without its own evaluation shows none, even when the caller lends the last one.
+        assertEquals(emptyList<ValueMark>(), CharacterSheet.read(answer.copy(evaluation = null), answer.evaluation).marks)
+    }
+
+    @Test
+    fun aMarkThisAppCannotReadIsSkipped() {
+        fun mark(tone: String, kind: String, change: String) = Json.parseToJsonElement(
+            """{"path":"derived.speed","tone":"$tone","causes":[{"kind":"$kind","id":"a","name":"A","tone":"penalty","changes":[{"kind":"$change","value":-5,"included":true}]}]}""",
+        )
+        val sheet = JsonObject(mapOf("temporaryEffects" to JsonArray(listOf(
+            mark("penalty", "condition", "add"),
+            mark("radiant", "condition", "add"),
+            mark("penalty", "weather", "add"),
+            mark("penalty", "condition", "halve"),
+            JsonPrimitive("broken"),
+        ))))
+        assertEquals(listOf("derived.speed"), TemporaryEffects.read(sheet).map { it.path })
+        assertEquals(emptyList<ValueMark>(), TemporaryEffects.read(JsonObject(mapOf("temporaryEffects" to JsonPrimitive(3)))))
+        assertEquals(emptyList<ValueMark>(), TemporaryEffects.read(null))
+    }
+
     /** Every field the view reads is declared in the pinned schemas. */
     @Test
     fun theViewReadsOnlyDeclaredFields() {
@@ -279,14 +323,17 @@ class CharacterSheetTest {
         val request = Recordings.schema().getValue("\$defs").jsonObject
         val read = mapOf(
             response to mapOf(
-                "Sheet" to listOf("species", "classes", "derived", "inspiration", "concentration", "conditions", "weapons", "resources", "activations", "abilities", "saves", "skills", "spellcasting", "quickUse", "hands", "storage", "carrying", "features"),
+                "Sheet" to listOf("species", "classes", "derived", "inspiration", "concentration", "conditions", "weapons", "resources", "activations", "abilities", "saves", "skills", "spellcasting", "quickUse", "hands", "storage", "carrying", "features", "temporaryEffects"),
                 "RecordIdentity" to listOf("id", "name"),
                 "SheetClass" to listOf("classId", "name", "level", "subclass"),
                 "Derived" to listOf("maxHp", "armorClass", "speed", "initiative", "proficiencyBonus", "passivePerception"),
                 "SheetConcentration" to listOf("ref", "name"),
                 "SheetCondition" to listOf("id", "name", "level", "status"),
-                "Attack" to listOf("name", "attackBonus", "damage", "damageType", "versatileDamage", "properties", "mastery", "masteryActive", "range", "reach", "itemId"),
+                "Attack" to listOf("name", "attackBonus", "damage", "damageType", "versatileDamage", "properties", "mastery", "masteryActive", "range", "reach", "itemId", "featureAttack", "unarmed", "ref"),
                 "WeaponRange" to listOf("normal", "long", "thrown"),
+                "TemporaryEffect" to listOf("path", "row", "tone", "causes"),
+                "EffectCause" to listOf("kind", "id", "name", "labelKey", "level", "tone", "changes"),
+                "EffectChange" to listOf("kind", "value", "included"),
                 "Resource" to listOf("key", "name", "kind", "max", "remaining", "spent", "die", "level", "source"),
                 "Source" to listOf("type", "id", "level"),
                 "Activation" to listOf("key", "name", "active", "available", "resource"),

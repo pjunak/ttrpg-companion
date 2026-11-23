@@ -12,8 +12,16 @@ through the host's client service routes against a throwaway local host.
 | D&D 2024 Compendium | 3.8.0 | `6b0f079` |
 
 `character.request.schema.json` and `character.response.schema.json` are
-copied unchanged from the Sheets add-on's `contracts/` (last changed in
-`6857213`; identical to the installed 6.4.0 package).
+copied unchanged from the Sheets add-on's `contracts/` (the response schema
+last changed in `3ace7f1`, Sheets 6.5.0, which adds the Engine's optional
+`temporaryEffects`; the request schema in `6857213`).
+
+`sheet-bren-marks.json` is a `load` of Bren recorded on 2026-11-23 with Sheets
+6.5.0 (`5e885fd`) and Engine 6.6.0 (`03cc68b`, `dnd5e.rules-engine` 6.1.0),
+while he was Poisoned, at Exhaustion 2, with Sacred Weapon on and a timed DM
+grant "Shrine blessing" (+1 Armor Class). It is trimmed as the other
+`sheet-*.json` files are and also keeps `evaluation.sheet.temporaryEffects`;
+the saved projection has none.
 
 ## The characters
 
