@@ -413,6 +413,26 @@ class CharacterSessionTest {
     }
 
     @Test
+    fun discardGivesUpTheChangesBehindAndLoadsBeforeTakingNewOnes() = runTest {
+        ids += listOf("mira-play-0001", "mira-play-0003")
+        val session = open(answer("load-sheet"), error(503, "SERVICE_UNAVAILABLE"), answer("save-play-damage"), answer("save-play-heal"))
+        session.loaded()
+        session.play(PlayChange.Damage(9))
+        session.until { it.save is SaveState.NotSaved }
+        assertTrue(session.play(PlayChange.Heal(4)))
+        assertEquals(2, session.state.value.pending)
+        session.discard()
+
+        val loaded = session.until { it.answer?.revision == 3L && !it.reloading }
+        assertEquals(0, loaded.pending)
+        assertEquals("the waiting heal is never sent", listOf("load", "save", "load"), methods())
+
+        assertTrue(session.play(PlayChange.Heal(4)))
+        session.until { it.answer?.revision == 4L }
+        assertEquals("a new change goes on the loaded revision", params("save-play-heal"), sent(3))
+    }
+
+    @Test
     fun eventsForTheSheetsProviderLoadOnceTheSessionIsIdle() = runTest {
         val session = open(answer("load-sheet"), answer("save-play-damage"))
         val first = session.loaded().answer

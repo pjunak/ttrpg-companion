@@ -100,7 +100,9 @@ sealed interface CharacterNotice {
  * character (with its saved state, or the blank one of a character without a
  * sheet); [evaluation] is the last evaluation seen, kept while answers without
  * one (a refused change, a repeat) arrive. [pending] counts the changes not
- * yet answered, including one that is kept after a lost answer.
+ * yet answered: one kept after a lost answer and those waiting behind it,
+ * which [CharacterSession.discard] gives up together. [reloading] is true
+ * while the sheet loads after a discard; no change is taken meanwhile.
  */
 data class CharacterSessionState(
     val load: SheetLoad = SheetLoad.Loading,
@@ -109,11 +111,12 @@ data class CharacterSessionState(
     val save: SaveState = SaveState.Saved,
     val pending: Int = 0,
     val signedOut: Boolean = false,
+    val reloading: Boolean = false,
 ) {
     /** Whether changes can be sent: a saved sheet that the current rules evaluate as ready. */
     val canWrite: Boolean
         get() = answer?.state != null && evaluation?.ready == true && !answer.rulesChanged &&
-            answer.status != CharacterStatus.UNAVAILABLE && !signedOut
+            answer.status != CharacterStatus.UNAVAILABLE && !signedOut && !reloading
 }
 
 /** The pauses of a session; delays run on its coroutines' clock. */
@@ -246,7 +249,11 @@ class CharacterSession internal constructor(
         commands.trySend(Command.Retry)
     }
 
-    /** Gives up a change whose answer was lost, then loads the character. */
+    /**
+     * Gives up a change whose answer was lost and every change waiting behind
+     * it (they were made on a sheet that may no longer be the saved one), then
+     * loads the character. New changes are taken once the load is done.
+     */
     fun discard() {
         commands.trySend(Command.Discard)
     }
@@ -290,12 +297,7 @@ class CharacterSession internal constructor(
         when (command) {
             is Command.Submit -> if (_state.value.canWrite) queue.addLast(command.change) else finish()
             Command.Retry -> held?.let { resend(it, scope) }
-            Command.Discard -> held?.let {
-                held = null
-                retryTimer?.cancel()
-                finish()
-                loadDue = true
-            }
+            Command.Discard -> if (held != null) discard(scope)
             Command.Reload -> if (_state.value.load is SheetLoad.Sheet) {
                 loadDue = true
                 forceLoad = true
@@ -310,6 +312,24 @@ class CharacterSession internal constructor(
             }
             Command.ChangedDue -> loadDue = true
         }
+    }
+
+    /** Gives up the held change and everything behind it, and loads before taking new changes. */
+    private suspend fun discard(scope: CoroutineScope) {
+        held = null
+        retryTimer?.cancel()
+        finish()
+        dropQueue()
+        _state.update { it.copy(reloading = true) }
+        // Changes sent in before the discard wait in the channel too; other commands run after the load.
+        val later = mutableListOf<Command>()
+        while (true) {
+            val command = commands.tryReceive().getOrNull() ?: break
+            if (command is Command.Submit) finish() else later += command
+        }
+        load(LoadMode.EXPLICIT)
+        _state.update { it.copy(reloading = false) }
+        for (command in later) handle(command, scope)
     }
 
     /** Sends queued changes, then a due load, while nothing is held. */
