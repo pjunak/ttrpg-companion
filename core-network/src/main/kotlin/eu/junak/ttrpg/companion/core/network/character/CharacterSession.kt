@@ -327,7 +327,8 @@ class CharacterSession internal constructor(
         retryTimer?.cancel()
         finish()
         dropQueue()
-        _state.update { it.copy(reloading = true) }
+        // The change is given up, not waiting: nothing is unsaved any more.
+        _state.update { it.copy(reloading = true, save = SaveState.Saved) }
         // Changes sent in before the discard wait in the channel too; other commands run after the load.
         val later = mutableListOf<Command>()
         while (true) {
