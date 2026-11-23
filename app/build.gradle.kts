@@ -120,4 +120,8 @@ dependencies {
     implementation(libs.markdown.renderer.coil3)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    // Navigation routes decode from Android's Bundle, which needs Robolectric on the JVM.
+    testImplementation(libs.robolectric)
+    testImplementation(testFixtures(project(":core-network")))
 }

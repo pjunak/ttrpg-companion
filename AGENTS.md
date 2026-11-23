@@ -103,8 +103,9 @@ need the owner's explicit approval.
 
 ## Testing
 
-Models, wire parsing, the host client, the repositories and `EventWriter` have
-JVM tests, the network ones against MockWebServer (`FakeHost` in the
-`core-network` tests answers like a host). For UI or protocol changes, also run the app on an emulator
-against a throwaway local host (README); never point it at a live site's data
-during development.
+Models, wire parsing, the host client, the repositories, `EventWriter` and the
+session-note ViewModels have JVM tests. Network and ViewModel tests run against
+`FakeHost` (MockWebServer), shared as `core-network` test fixtures; app tests
+use Robolectric for Android classes such as navigation routes. For UI or
+protocol changes, also run the app on an emulator against a throwaway local
+host (README); never point it at a live site's data during development.
