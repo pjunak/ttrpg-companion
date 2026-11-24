@@ -151,6 +151,9 @@ the workflow run number and must only grow. Signing needs the
 `KEYSTORE_KEY_PASSWORD` secrets; never commit a keystore or change the signing
 key without the owner. Commit locally after validation; pushing and publishing
 need the owner's explicit approval.
+`app/src/main/assets/adi-registration.properties` proves the signing key for
+Google's Android developer verification and ships in every release; do not
+remove or edit it without the owner.
 
 ## Testing
 
